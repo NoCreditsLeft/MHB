@@ -52,24 +52,15 @@ function App() {
   };
 
   const getNoidImage = async (tokenId) => {
-    // Use Reservoir API - free and no auth required
+    // Use our Vercel serverless function to avoid CORS issues
     try {
-      const response = await fetch(`https://api.reservoir.tools/tokens/v7?tokens=0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902:${tokenId}`);
+      const response = await fetch(`/api/noid-image?tokenId=${tokenId}`);
       const data = await response.json();
-      if (data.tokens && data.tokens[0] && data.tokens[0].token && data.tokens[0].token.image) {
-        return data.tokens[0].token.image;
-      }
-      // If that fails, try SimpleHash
-      const simpleResponse = await fetch(`https://api.simplehash.com/api/v0/nfts/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${tokenId}`);
-      const simpleData = await simpleResponse.json();
-      if (simpleData.image_url) {
-        return simpleData.image_url;
-      }
+      return data.imageUrl;
     } catch (err) {
       console.error('Error fetching NOID image:', err);
+      return `https://api.dicebear.com/7.x/pixel-art/svg?seed=${tokenId}&size=512`;
     }
-    // Fallback to generated avatar
-    return `https://api.dicebear.com/7.x/pixel-art/svg?seed=${tokenId}&size=512`;
   };
 
   const startBattle = async (mode) => {
