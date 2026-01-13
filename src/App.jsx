@@ -51,9 +51,17 @@ function App() {
     return num;
   };
 
-  const getNoidImage = (tokenId) => {
-    const paddedId = tokenId.toString().padStart(4, '0');
-    return `https://i.seadn.io/gcs/files/c5d4adf3d96f9af78646c7ec5b7c9623.png?auto=format&dpr=1&w=512`;
+  const getNoidImage = async (tokenId) => {
+    // For now, use OpenSea's API proxy which serves the metadata
+    // This will show the actual NOiDS images
+    try {
+      const response = await fetch(`https://api.opensea.io/api/v2/chain/ethereum/contract/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/nfts/${tokenId}`);
+      const data = await response.json();
+      return data.nft?.image_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${tokenId}&size=512`;
+    } catch {
+      // Fallback to generated avatar if API fails
+      return `https://api.dicebear.com/7.x/pixel-art/svg?seed=${tokenId}&size=512`;
+    }
   };
 
   const startBattle = async (mode) => {
@@ -63,24 +71,28 @@ function App() {
     if (mode === 'rando') {
       const id1 = getRandomNoid();
       const id2 = getRandomNoid([id1]);
-      setNoid1({ id: id1, image: getNoidImage(id1) });
-      setNoid2({ id: id2, image: getNoidImage(id2) });
+      const [img1, img2] = await Promise.all([getNoidImage(id1), getNoidImage(id2)]);
+      setNoid1({ id: id1, image: img1 });
+      setNoid2({ id: id2, image: img2 });
     } else if (mode === 'sticky') {
       if (stickyWinner) {
         const id2 = getRandomNoid([stickyWinner.id]);
+        const img2 = await getNoidImage(id2);
         setNoid1(stickyWinner);
-        setNoid2({ id: id2, image: getNoidImage(id2) });
+        setNoid2({ id: id2, image: img2 });
       } else {
         const id1 = getRandomNoid();
         const id2 = getRandomNoid([id1]);
-        setNoid1({ id: id1, image: getNoidImage(id1) });
-        setNoid2({ id: id2, image: getNoidImage(id2) });
+        const [img1, img2] = await Promise.all([getNoidImage(id1), getNoidImage(id2)]);
+        setNoid1({ id: id1, image: img1 });
+        setNoid2({ id: id2, image: img2 });
       }
     } else if (mode === 'oneofone') {
       const id1 = getRandomNoid();
       const id2 = getRandomNoid([id1]);
-      setNoid1({ id: id1, image: getNoidImage(id1) });
-      setNoid2({ id: id2, image: getNoidImage(id2) });
+      const [img1, img2] = await Promise.all([getNoidImage(id1), getNoidImage(id2)]);
+      setNoid1({ id: id1, image: img1 });
+      setNoid2({ id: id2, image: img2 });
     } else if (mode === 'daily') {
       await loadDailyBattle();
     }
@@ -100,8 +112,12 @@ function App() {
 
       if (data) {
         setDailyBattleData(data);
-        setNoid1({ id: data.noid1_id, image: getNoidImage(data.noid1_id) });
-        setNoid2({ id: data.noid2_id, image: getNoidImage(data.noid2_id) });
+        const [img1, img2] = await Promise.all([
+          getNoidImage(data.noid1_id), 
+          getNoidImage(data.noid2_id)
+        ]);
+        setNoid1({ id: data.noid1_id, image: img1 });
+        setNoid2({ id: data.noid2_id, image: img2 });
       } else {
         const id1 = getRandomNoid();
         const id2 = getRandomNoid([id1]);
@@ -120,8 +136,9 @@ function App() {
 
         if (newBattle) {
           setDailyBattleData(newBattle);
-          setNoid1({ id: id1, image: getNoidImage(id1) });
-          setNoid2({ id: id2, image: getNoidImage(id2) });
+          const [img1, img2] = await Promise.all([getNoidImage(id1), getNoidImage(id2)]);
+          setNoid1({ id: id1, image: img1 });
+          setNoid2({ id: id2, image: img2 });
         }
       }
 
