@@ -52,16 +52,24 @@ function App() {
   };
 
   const getNoidImage = async (tokenId) => {
-    // For now, use OpenSea's API proxy which serves the metadata
-    // This will show the actual NOiDS images
+    // Use Reservoir API - free and no auth required
     try {
-      const response = await fetch(`https://api.opensea.io/api/v2/chain/ethereum/contract/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/nfts/${tokenId}`);
+      const response = await fetch(`https://api.reservoir.tools/tokens/v7?tokens=0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902:${tokenId}`);
       const data = await response.json();
-      return data.nft?.image_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${tokenId}&size=512`;
-    } catch {
-      // Fallback to generated avatar if API fails
-      return `https://api.dicebear.com/7.x/pixel-art/svg?seed=${tokenId}&size=512`;
+      if (data.tokens && data.tokens[0] && data.tokens[0].token && data.tokens[0].token.image) {
+        return data.tokens[0].token.image;
+      }
+      // If that fails, try SimpleHash
+      const simpleResponse = await fetch(`https://api.simplehash.com/api/v0/nfts/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${tokenId}`);
+      const simpleData = await simpleResponse.json();
+      if (simpleData.image_url) {
+        return simpleData.image_url;
+      }
+    } catch (err) {
+      console.error('Error fetching NOID image:', err);
     }
+    // Fallback to generated avatar
+    return `https://api.dicebear.com/7.x/pixel-art/svg?seed=${tokenId}&size=512`;
   };
 
   const startBattle = async (mode) => {
