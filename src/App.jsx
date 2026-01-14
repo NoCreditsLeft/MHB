@@ -313,6 +313,94 @@ async function updateGameModeStats(noidId, gameMode, won) {
 }
 
 // ============================================
+// MATRIX RAIN COMPONENT
+// ============================================
+
+const MatrixRain = () => {
+  const canvasRef = React.useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Matrix characters - katakana, numbers, and symbols
+    const chars = 'アィイゥウェエォオカガキギクグケゲコゴサザシジスズセゼソゾタダチヂッツヅテデトドナニヌネノハバパヒビピフブプヘベペホボポマミムメモャヤュユョヨラリルレロヮワヰヱヲンヴヵヶ01234567890';
+    const fontSize = 14;
+    const columns = canvas.width / fontSize;
+    
+    // Array of y-positions for each column
+    const drops = [];
+    for (let i = 0; i < columns; i++) {
+      drops[i] = Math.random() * -100;
+    }
+
+    const draw = () => {
+      // Fade effect - paint over previous frame with semi-transparent black
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Set text style
+      ctx.fillStyle = '#00ff41';
+      ctx.font = `${fontSize}px monospace`;
+
+      // Loop through drops
+      for (let i = 0; i < drops.length; i++) {
+        // Random character
+        const char = chars[Math.floor(Math.random() * chars.length)];
+        
+        // Draw character
+        ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+
+        // Reset drop to top randomly after it crosses screen
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.95) {
+          drops[i] = 0;
+        }
+        
+        // Move drop down
+        drops[i]++;
+      }
+    };
+
+    const interval = setInterval(draw, 50);
+
+    // Handle resize
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        zIndex: 1,
+        opacity: 0.15
+      }}
+    />
+  );
+};
+
+// ============================================
 // MAIN APP COMPONENT
 // ============================================
 
@@ -535,7 +623,7 @@ function App() {
 
   const Menu = () => (
     <div className="menu-container">
-      <div className="matrix-rain" />
+      <MatrixRain />
       
       <div className="logo-section">
         <img 
@@ -624,7 +712,7 @@ function App() {
 
   const Battle = () => (
     <div className="battle-container">
-      <div className="matrix-rain" />
+      <MatrixRain />
       
       <div className="battle-header glass-panel">
         <button className="back-btn" onClick={() => setGameMode('menu')}>

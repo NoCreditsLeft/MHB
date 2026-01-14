@@ -21,37 +21,6 @@ body {
   overflow-x: hidden;
 }
 
-/* ===== MATRIX RAIN EFFECT ===== */
-.matrix-rain {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0.15;
-  background-image: 
-    linear-gradient(transparent 0%, transparent 70%, rgba(0, 255, 65, 0.1) 100%),
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 255, 65, 0.03) 2px,
-      rgba(0, 255, 65, 0.03) 4px
-    );
-  animation: matrix-scroll 20s linear infinite;
-}
-
-@keyframes matrix-scroll {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 0 1000px;
-  }
-}
-
 /* ===== GLASS PANEL EFFECT ===== */
 .glass-panel {
   background: rgba(255, 255, 255, 0.03);
@@ -192,6 +161,7 @@ body {
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  width: 100%;
 }
 
 .mode-btn::before {
