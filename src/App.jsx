@@ -52,15 +52,23 @@ function App() {
   };
 
   const getNoidImage = async (tokenId) => {
-    // Use our Vercel serverless function to avoid CORS issues
+    // Fetch from our database cache
     try {
-      const response = await fetch(`/api/noid-image?tokenId=${tokenId}`);
-      const data = await response.json();
-      return data.imageUrl;
+      const { data, error } = await supabase
+        .from('noid_images')
+        .select('image_url')
+        .eq('token_id', tokenId)
+        .single();
+
+      if (data && data.image_url) {
+        return data.image_url;
+      }
     } catch (err) {
-      console.error('Error fetching NOID image:', err);
-      return `https://api.dicebear.com/7.x/pixel-art/svg?seed=${tokenId}&size=512`;
+      console.error('Error fetching NOID image from database:', err);
     }
+    
+    // Fallback to placeholder if not in database yet
+    return `https://api.dicebear.com/7.x/pixel-art/svg?seed=${tokenId}&size=512`;
   };
 
   const startBattle = async (mode) => {
