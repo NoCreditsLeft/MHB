@@ -1232,3 +1232,161 @@ body {
     grid-template-columns: 1fr;
   }
 }
+/* Connect Wallet Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+}
+
+.connect-wallet-modal {
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid #00ff41;
+  border-radius: 12px;
+  padding: 40px;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+  box-shadow: 0 0 40px rgba(0, 255, 65, 0.3);
+}
+
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: #00ff41;
+  font-size: 32px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+}
+
+.modal-close:hover {
+  color: #fff;
+}
+
+.connect-wallet-modal h2 {
+  color: #00ff41;
+  margin-bottom: 15px;
+  font-size: 28px;
+  text-align: center;
+}
+
+.modal-description {
+  color: #ccc;
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 16px;
+}
+
+.wallet-options {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.wallet-button {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 18px 24px;
+  background: rgba(0, 255, 65, 0.1);
+  border: 1px solid #00ff41;
+  border-radius: 8px;
+  color: #00ff41;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wallet-button:hover:not(:disabled) {
+  background: rgba(0, 255, 65, 0.2);
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+  transform: translateY(-2px);
+}
+
+.wallet-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wallet-icon {
+  font-size: 32px;
+}
+
+.wallet-name {
+  flex: 1;
+  text-align: left;
+}
+
+.modal-note {
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+  margin-top: 20px;
+}
+
+.modal-note a {
+  color: #00ff41;
+  text-decoration: none;
+}
+
+.modal-note a:hover {
+  text-decoration: underline;
+}
+
+.wallet-address {
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-size: 20px;
+  color: #00ff41;
+  background: rgba(0, 255, 65, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.disconnect-button,
+.continue-button {
+  width: 100%;
+  padding: 15px;
+  margin-top: 10px;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.disconnect-button {
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid #ff4444;
+  color: #ff4444;
+}
+
+.disconnect-button:hover {
+  background: rgba(255, 0, 0, 0.2);
+}
+
+.continue-button {
+  background: rgba(0, 255, 65, 0.1);
+  border: 1px solid #00ff41;
+  color: #00ff41;
+}
+
+.continue-button:hover {
+  background: rgba(0, 255, 65, 0.2);
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+}

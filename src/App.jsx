@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { useAccount } from 'wagmi';
+import ConnectWalletModal from './ConnectWalletModal';
 import './App.css';
 
 // Supabase configuration
@@ -972,6 +974,11 @@ function App() {
   const [userDailyVoted, setUserDailyVoted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [pendingGameMode, setPendingGameMode] = useState(null);
+  
+  // Get wallet connection status
+  const { isConnected } = useAccount();
 
   useEffect(() => {
     let id = localStorage.getItem('noids_user_id');
@@ -1049,6 +1056,13 @@ function App() {
   };
 
   const startBattle = async (mode) => {
+    // Check if wallet is connected before starting battle
+    if (!isConnected) {
+      setPendingGameMode(mode);
+      setShowWalletModal(true);
+      return;
+    }
+    
     setGameMode(mode);
     setView('battle');
     setLoading(true);
@@ -1096,6 +1110,14 @@ function App() {
     }
 
     setLoading(false);
+  };
+
+  const handleWalletConnected = () => {
+    setShowWalletModal(false);
+    if (pendingGameMode) {
+      startBattle(pendingGameMode);
+      setPendingGameMode(null);
+    }
   };
 
   const loadDailyBattle = async () => {
@@ -1450,6 +1472,15 @@ function App() {
           getNoidImage={getNoidImage}
         />
       )}
+      
+      <ConnectWalletModal
+        isOpen={showWalletModal}
+        onClose={() => {
+          setShowWalletModal(false);
+          setPendingGameMode(null);
+        }}
+        onConnect={handleWalletConnected}
+      />
     </div>
   );
 }
