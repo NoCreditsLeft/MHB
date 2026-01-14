@@ -1294,11 +1294,10 @@ function App() {
       
       <div className="logo-section">
         <img 
-          src="https://c.animaapp.com/9Omv44Zl/img/noidss-1-2@2x.png" 
-          alt="NOiDS Logo" 
+          src="/NOiDS_Battle.png" 
+          alt="NOiDS Battle Logo" 
           className="main-logo"
         />
-        <h2 className="tagline">BATTLE</h2>
         <p className="subtitle">Which NOID reigns supreme?</p>
       </div>
 
