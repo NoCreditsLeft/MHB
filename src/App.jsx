@@ -5,7 +5,7 @@ import './App.css';
 // Supabase configuration
 const supabaseUrl = 'https://jvmddbqxhfaicyctmmvt.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bWRkYnF4aGZhaWN5Y3RtbXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4MDc5NjYsImV4cCI6MjA1MjM4Mzk2Nn0.59rhWuZ3r93r5YBxhcKYVGaNgy6NykDFqIpJbSCWbBo';
-const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 const TOTAL_NOIDS = 5555;
 const DAILY_VOTE_LIMIT = 55;
@@ -401,11 +401,569 @@ const MatrixRain = () => {
 };
 
 // ============================================
+// LEADERBOARD COMPONENT
+// ============================================
+
+const Leaderboard = ({ onClose, onViewNoid }) => {
+  const [view, setView] = useState('winrate');
+  const [leaderboardData, setLeaderboardData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadLeaderboard();
+  }, [view]);
+
+  const loadLeaderboard = async () => {
+    setLoading(true);
+    try {
+      let query = supabase.from('noid_stats').select('*');
+      
+      switch (view) {
+        case 'winrate':
+          query = query.gte('total_battles', 10).order('win_rate', { ascending: false }).limit(50);
+          break;
+        case 'totalwins':
+          query = query.order('total_wins', { ascending: false }).limit(50);
+          break;
+        case 'hotstreak':
+          query = query.gte('current_streak', 3).order('current_streak', { ascending: false }).limit(50);
+          break;
+        default:
+          query = query.order('win_rate', { ascending: false }).limit(50);
+      }
+
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      const processedData = (data || []).map(noid => ({
+        ...noid,
+        win_rate: noid.total_battles > 0 
+          ? ((noid.total_wins / noid.total_battles) * 100).toFixed(2)
+          : 0
+      }));
+      
+      setLeaderboardData(processedData);
+    } catch (error) {
+      console.error('Error loading leaderboard:', error);
+    }
+    setLoading(false);
+  };
+
+  const getStreakEmoji = (streak) => {
+    if (streak >= 10) return '🔥';
+    if (streak >= 5) return '⚡';
+    if (streak >= 3) return '✨';
+    if (streak <= -3) return '❄️';
+    return '';
+  };
+
+  return (
+    <div className="leaderboard-container">
+      <MatrixRain />
+      
+      <div className="leaderboard-header glass-panel">
+        <button className="back-btn" onClick={onClose}>
+          <span className="back-arrow">←</span>
+          Back to Menu
+        </button>
+        <h2 className="leaderboard-title">Leaderboard</h2>
+        <div className="spacer"></div>
+      </div>
+
+      <div className="leaderboard-tabs glass-panel">
+        <button 
+          className={`tab-btn ${view === 'winrate' ? 'active' : ''}`}
+          onClick={() => setView('winrate')}
+        >
+          <span className="tab-icon">🏆</span>
+          Win Rate
+        </button>
+        <button 
+          className={`tab-btn ${view === 'totalwins' ? 'active' : ''}`}
+          onClick={() => setView('totalwins')}
+        >
+          <span className="tab-icon">👑</span>
+          Total Wins
+        </button>
+        <button 
+          className={`tab-btn ${view === 'hotstreak' ? 'active' : ''}`}
+          onClick={() => setView('hotstreak')}
+        >
+          <span className="tab-icon">🔥</span>
+          Hot Streak
+        </button>
+      </div>
+
+      <div className="leaderboard-content">
+        {loading ? (
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <p>Loading stats...</p>
+          </div>
+        ) : (
+          <div className="leaderboard-list">
+            {leaderboardData.map((noid, index) => (
+              <div 
+                key={noid.noid_id} 
+                className="leaderboard-item glass-panel"
+                onClick={() => onViewNoid(noid.noid_id)}
+              >
+                <div className="rank-badge">
+                  {index === 0 && '🥇'}
+                  {index === 1 && '🥈'}
+                  {index === 2 && '🥉'}
+                  {index > 2 && `#${index + 1}`}
+                </div>
+
+                <div className="noid-preview">
+                  <div className="noid-id">NOID #{noid.noid_id}</div>
+                  {noid.current_streak !== 0 && (
+                    <div className="streak-indicator">
+                      {getStreakEmoji(noid.current_streak)}
+                      <span className={noid.current_streak > 0 ? 'positive' : 'negative'}>
+                        {Math.abs(noid.current_streak)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="noid-stats-grid">
+                  <div className="stat-item">
+                    <span className="stat-label">Win Rate</span>
+                    <span className="stat-value">{noid.win_rate}%</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Wins</span>
+                    <span className="stat-value wins">{noid.total_wins}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Battles</span>
+                    <span className="stat-value">{noid.total_battles}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-label">Best Streak</span>
+                    <span className="stat-value streak">{noid.best_streak || 0}</span>
+                  </div>
+                </div>
+
+                <div className="view-profile-btn">
+                  <span>View Profile →</span>
+                </div>
+              </div>
+            ))}
+
+            {leaderboardData.length === 0 && (
+              <div className="empty-state glass-panel">
+                <p>No stats yet. Start battling to see rankings!</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// NOID PROFILE COMPONENT
+// ============================================
+
+const NoidProfile = ({ noidId, onClose, getNoidImage }) => {
+  const [noidData, setNoidData] = useState(null);
+  const [imageUrl, setImageUrl] = useState(null);
+  const [headToHead, setHeadToHead] = useState([]);
+  const [beatenBy, setBeatenBy] = useState([]);
+  const [beaten, setBeaten] = useState([]);
+  const [gameModeStats, setGameModeStats] = useState([]);
+  const [achievements, setAchievements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+
+  useEffect(() => {
+    loadNoidProfile();
+  }, [noidId]);
+
+  const loadNoidProfile = async () => {
+    setLoading(true);
+    try {
+      const { data: stats } = await supabase
+        .from('noid_stats')
+        .select('*')
+        .eq('noid_id', noidId)
+        .single();
+
+      if (stats) {
+        stats.win_rate = stats.total_battles > 0 
+          ? ((stats.total_wins / stats.total_battles) * 100).toFixed(2)
+          : 0;
+        setNoidData(stats);
+      }
+
+      const img = await getNoidImage(noidId);
+      setImageUrl(img);
+
+      const { data: h2hData } = await supabase
+        .from('head_to_head')
+        .select('*')
+        .eq('noid_id', noidId)
+        .order('battles', { ascending: false })
+        .limit(5);
+      setHeadToHead(h2hData || []);
+
+      const { data: beatenByData } = await supabase
+        .from('noid_beaten_by')
+        .select('*')
+        .eq('noid_id', noidId)
+        .order('times_beaten', { ascending: false })
+        .limit(5);
+      setBeatenBy(beatenByData || []);
+
+      const { data: beatenData } = await supabase
+        .from('noid_beaten')
+        .select('*')
+        .eq('noid_id', noidId)
+        .order('times_beaten', { ascending: false })
+        .limit(5);
+      setBeaten(beatenData || []);
+
+      const { data: modeData } = await supabase
+        .from('noid_gamemode_stats')
+        .select('*')
+        .eq('noid_id', noidId);
+      setGameModeStats(modeData || []);
+
+      const { data: achievementData } = await supabase
+        .from('noid_achievements')
+        .select('*')
+        .eq('noid_id', noidId)
+        .order('earned_date', { ascending: false });
+      setAchievements(achievementData || []);
+
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+    setLoading(false);
+  };
+
+  const getStreakEmoji = (streak) => {
+    if (!streak) return '';
+    if (streak >= 10) return '🔥';
+    if (streak >= 5) return '⚡';
+    if (streak >= 3) return '✨';
+    if (streak <= -3) return '❄️';
+    return '';
+  };
+
+  const getGameModeIcon = (mode) => {
+    switch (mode) {
+      case 'rando': return '🎲';
+      case 'sticky': return '🏆';
+      case 'oneofone': return '👑';
+      case 'daily': return '⭐';
+      default: return '🎮';
+    }
+  };
+
+  const getAchievementIcon = (type) => {
+    if (type.includes('win_streak')) return '🔥';
+    if (type.includes('wins_')) return '🏆';
+    if (type.includes('win_rate')) return '👑';
+    if (type === 'first_win') return '⭐';
+    return '🎖️';
+  };
+
+  if (loading) {
+    return (
+      <div className="profile-container">
+        <MatrixRain />
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          <p>Loading NOID profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!noidData) {
+    return (
+      <div className="profile-container">
+        <MatrixRain />
+        <div className="glass-panel empty-state">
+          <h2>NOID #{noidId}</h2>
+          <p>This NOID hasn't battled yet!</p>
+          <button className="back-btn" onClick={onClose}>Back to Menu</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="profile-container">
+      <MatrixRain />
+      
+      <div className="profile-header glass-panel">
+        <button className="back-btn" onClick={onClose}>
+          <span className="back-arrow">←</span>
+          Back
+        </button>
+        <h2 className="profile-title">NOID #{noidId}</h2>
+        <div className="spacer"></div>
+      </div>
+
+      <div className="profile-content">
+        <div className="profile-hero glass-panel">
+          <div className="hero-image">
+            {imageUrl && <img src={imageUrl} alt={`NOID #${noidId}`} />}
+          </div>
+          <div className="hero-stats">
+            <div className="hero-title">
+              <h1>NOID #{noidId}</h1>
+              {noidData.current_streak !== 0 && (
+                <div className="streak-badge">
+                  {getStreakEmoji(noidData.current_streak)}
+                  <span className={noidData.current_streak > 0 ? 'positive' : 'negative'}>
+                    {Math.abs(noidData.current_streak)} Streak
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="hero-main-stats">
+              <div className="main-stat">
+                <div className="stat-value large">{noidData.win_rate}%</div>
+                <div className="stat-label">Win Rate</div>
+              </div>
+              <div className="main-stat">
+                <div className="stat-value large wins">{noidData.total_wins}</div>
+                <div className="stat-label">Total Wins</div>
+              </div>
+              <div className="main-stat">
+                <div className="stat-value large">{noidData.total_battles}</div>
+                <div className="stat-label">Battles</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="profile-tabs glass-panel">
+          <button 
+            className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            Overview
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'h2h' ? 'active' : ''}`}
+            onClick={() => setActiveTab('h2h')}
+          >
+            Head-to-Head
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'achievements' ? 'active' : ''}`}
+            onClick={() => setActiveTab('achievements')}
+          >
+            Achievements
+          </button>
+        </div>
+
+        {activeTab === 'overview' && (
+          <div className="tab-content">
+            <div className="stats-section glass-panel">
+              <h3 className="section-title">Core Stats</h3>
+              <div className="stats-grid">
+                <div className="stat-box">
+                  <div className="stat-icon">🏆</div>
+                  <div className="stat-info">
+                    <div className="stat-label">Total Wins</div>
+                    <div className="stat-value wins">{noidData.total_wins}</div>
+                  </div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-icon">💔</div>
+                  <div className="stat-info">
+                    <div className="stat-label">Total Losses</div>
+                    <div className="stat-value losses">{noidData.total_losses}</div>
+                  </div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-icon">⚔️</div>
+                  <div className="stat-info">
+                    <div className="stat-label">Total Battles</div>
+                    <div className="stat-value">{noidData.total_battles}</div>
+                  </div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-icon">📊</div>
+                  <div className="stat-info">
+                    <div className="stat-label">Win Rate</div>
+                    <div className="stat-value">{noidData.win_rate}%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="stats-section glass-panel">
+              <h3 className="section-title">Streaks</h3>
+              <div className="stats-grid">
+                <div className="stat-box">
+                  <div className="stat-icon">{getStreakEmoji(noidData.current_streak) || '📈'}</div>
+                  <div className="stat-info">
+                    <div className="stat-label">Current Streak</div>
+                    <div className={`stat-value ${noidData.current_streak > 0 ? 'positive' : noidData.current_streak < 0 ? 'negative' : ''}`}>
+                      {noidData.current_streak > 0 ? '+' : ''}{noidData.current_streak || 0}
+                    </div>
+                  </div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-icon">🔥</div>
+                  <div className="stat-info">
+                    <div className="stat-label">Best Streak</div>
+                    <div className="stat-value streak">{noidData.best_streak || 0}</div>
+                  </div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-icon">🎯</div>
+                  <div className="stat-info">
+                    <div className="stat-label">Underdog Wins</div>
+                    <div className="stat-value">{noidData.underdog_wins || 0}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {gameModeStats.length > 0 && (
+              <div className="stats-section glass-panel">
+                <h3 className="section-title">Performance by Game Mode</h3>
+                <div className="mode-stats-list">
+                  {gameModeStats.map(mode => {
+                    const modeWinRate = mode.battles > 0 
+                      ? ((mode.wins / mode.battles) * 100).toFixed(2)
+                      : 0;
+                    return (
+                      <div key={mode.game_mode} className="mode-stat-item">
+                        <div className="mode-header">
+                          <span className="mode-icon">{getGameModeIcon(mode.game_mode)}</span>
+                          <span className="mode-name">{mode.game_mode.toUpperCase()}</span>
+                        </div>
+                        <div className="mode-numbers">
+                          <span className="mode-record">{mode.wins}W - {mode.losses}L</span>
+                          <span className="mode-winrate">{modeWinRate}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'h2h' && (
+          <div className="tab-content">
+            {headToHead.length > 0 && (
+              <div className="stats-section glass-panel">
+                <h3 className="section-title">Most Battled Opponents</h3>
+                <div className="h2h-list">
+                  {headToHead.map(h2h => {
+                    const winRate = h2h.battles > 0 
+                      ? ((h2h.wins / h2h.battles) * 100).toFixed(0)
+                      : 0;
+                    return (
+                      <div key={h2h.opponent_id} className="h2h-item">
+                        <div className="h2h-opponent">
+                          <span className="opponent-label">NOID #{h2h.opponent_id}</span>
+                          <span className="battles-count">{h2h.battles} battles</span>
+                        </div>
+                        <div className="h2h-record">
+                          <span className="record">{h2h.wins}W - {h2h.losses}L</span>
+                          <span className="winrate">{winRate}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {beaten.length > 0 && (
+              <div className="stats-section glass-panel">
+                <h3 className="section-title">💪 Most Beaten Opponents</h3>
+                <div className="beaten-list">
+                  {beaten.map(b => (
+                    <div key={b.beaten_id} className="beaten-item">
+                      <span className="beaten-id">NOID #{b.beaten_id}</span>
+                      <span className="times-beaten">{b.times_beaten}x</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {beatenBy.length > 0 && (
+              <div className="stats-section glass-panel">
+                <h3 className="section-title">😤 Beaten By</h3>
+                <div className="beaten-list">
+                  {beatenBy.map(b => (
+                    <div key={b.beaten_by_id} className="beaten-item nemesis">
+                      <span className="beaten-id">NOID #{b.beaten_by_id}</span>
+                      <span className="times-beaten">{b.times_beaten}x</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {headToHead.length === 0 && beaten.length === 0 && beatenBy.length === 0 && (
+              <div className="empty-state glass-panel">
+                <p>No head-to-head data yet.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'achievements' && (
+          <div className="tab-content">
+            <div className="stats-section glass-panel">
+              <h3 className="section-title">Achievements Unlocked</h3>
+              {achievements.length > 0 ? (
+                <div className="achievements-grid">
+                  {achievements.map(achievement => (
+                    <div key={achievement.id} className="achievement-item">
+                      <div className="achievement-icon">
+                        {getAchievementIcon(achievement.achievement_type)}
+                      </div>
+                      <div className="achievement-info">
+                        <div className="achievement-name">{achievement.achievement_name}</div>
+                        <div className="achievement-desc">{achievement.achievement_description}</div>
+                        <div className="achievement-date">
+                          {new Date(achievement.earned_date).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <p>No achievements yet. Keep battling!</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================
 // MAIN APP COMPONENT
 // ============================================
 
 function App() {
   const [gameMode, setGameMode] = useState('menu');
+  const [view, setView] = useState('menu'); // menu, battle, leaderboard, profile
+  const [selectedNoidId, setSelectedNoidId] = useState(null);
   const [noid1, setNoid1] = useState(null);
   const [noid2, setNoid2] = useState(null);
   const [votesRemaining, setVotesRemaining] = useState(DAILY_VOTE_LIMIT);
@@ -492,6 +1050,7 @@ function App() {
 
   const startBattle = async (mode) => {
     setGameMode(mode);
+    setView('battle');
     setLoading(true);
 
     try {
@@ -775,6 +1334,13 @@ function App() {
             <p>You've used all your daily votes!<br/>Come back tomorrow.</p>
           </div>
         )}
+
+        <button 
+          className="stats-btn glass-panel"
+          onClick={() => setView('leaderboard')}
+        >
+          📊 View Stats & Leaderboard
+        </button>
       </div>
     </div>
   );
@@ -784,7 +1350,7 @@ function App() {
       <MatrixRain />
       
       <div className="battle-header glass-panel">
-        <button className="back-btn" onClick={() => setGameMode('menu')}>
+        <button className="back-btn" onClick={() => setView('menu')}>
           <span className="back-arrow">←</span>
           Back to Menu
         </button>
@@ -866,7 +1432,24 @@ function App() {
 
   return (
     <div className="app">
-      {gameMode === 'menu' ? <Menu /> : <Battle />}
+      {view === 'menu' && <Menu />}
+      {view === 'battle' && <Battle />}
+      {view === 'leaderboard' && (
+        <Leaderboard 
+          onClose={() => setView('menu')}
+          onViewNoid={(noidId) => {
+            setSelectedNoidId(noidId);
+            setView('profile');
+          }}
+        />
+      )}
+      {view === 'profile' && (
+        <NoidProfile
+          noidId={selectedNoidId}
+          onClose={() => setView('leaderboard')}
+          getNoidImage={getNoidImage}
+        />
+      )}
     </div>
   );
 }
