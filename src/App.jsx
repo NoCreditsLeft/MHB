@@ -51,24 +51,14 @@ function App() {
     return num;
   };
 
-  const getNoidImage = async (tokenId) => {
-    // Fetch from our database cache
-    try {
-      const { data, error } = await supabase
-        .from('noid_images')
-        .select('image_url')
-        .eq('token_id', tokenId)
-        .single();
-
-      if (data && data.image_url) {
-        return data.image_url;
-      }
-    } catch (err) {
-      console.error('Error fetching NOID image from database:', err);
-    }
+  const getNoidImage = (tokenId) => {
+    // Use IPFS gateway with the NOiDS collection CID
+    // Primary gateway: dweb.link (fast, reliable, maintained by IPFS Foundation)
+    return `https://dweb.link/ipfs/QmcXuDARMGMv59Q4ZZuoN5rjdM9GQrmp8NjLH5PDLixgAE/${tokenId}`;
     
-    // Fallback to placeholder if not in database yet
-    return `https://api.dicebear.com/7.x/pixel-art/svg?seed=${tokenId}&size=512`;
+    // Alternative gateways if needed:
+    // return `https://ipfs.io/ipfs/QmcXuDARMGMv59Q4ZZuoN5rjdM9GQrmp8NjLH5PDLixgAE/${tokenId}`;
+    // return `https://gateway.pinata.cloud/ipfs/QmcXuDARMGMv59Q4ZZuoN5rjdM9GQrmp8NjLH5PDLixgAE/${tokenId}`;
   };
 
   const startBattle = async (mode) => {
@@ -78,28 +68,24 @@ function App() {
     if (mode === 'rando') {
       const id1 = getRandomNoid();
       const id2 = getRandomNoid([id1]);
-      const [img1, img2] = await Promise.all([getNoidImage(id1), getNoidImage(id2)]);
-      setNoid1({ id: id1, image: img1 });
-      setNoid2({ id: id2, image: img2 });
+      setNoid1({ id: id1, image: getNoidImage(id1) });
+      setNoid2({ id: id2, image: getNoidImage(id2) });
     } else if (mode === 'sticky') {
       if (stickyWinner) {
         const id2 = getRandomNoid([stickyWinner.id]);
-        const img2 = await getNoidImage(id2);
         setNoid1(stickyWinner);
-        setNoid2({ id: id2, image: img2 });
+        setNoid2({ id: id2, image: getNoidImage(id2) });
       } else {
         const id1 = getRandomNoid();
         const id2 = getRandomNoid([id1]);
-        const [img1, img2] = await Promise.all([getNoidImage(id1), getNoidImage(id2)]);
-        setNoid1({ id: id1, image: img1 });
-        setNoid2({ id: id2, image: img2 });
+        setNoid1({ id: id1, image: getNoidImage(id1) });
+        setNoid2({ id: id2, image: getNoidImage(id2) });
       }
     } else if (mode === 'oneofone') {
       const id1 = getRandomNoid();
       const id2 = getRandomNoid([id1]);
-      const [img1, img2] = await Promise.all([getNoidImage(id1), getNoidImage(id2)]);
-      setNoid1({ id: id1, image: img1 });
-      setNoid2({ id: id2, image: img2 });
+      setNoid1({ id: id1, image: getNoidImage(id1) });
+      setNoid2({ id: id2, image: getNoidImage(id2) });
     } else if (mode === 'daily') {
       await loadDailyBattle();
     }
@@ -119,12 +105,8 @@ function App() {
 
       if (data) {
         setDailyBattleData(data);
-        const [img1, img2] = await Promise.all([
-          getNoidImage(data.noid1_id), 
-          getNoidImage(data.noid2_id)
-        ]);
-        setNoid1({ id: data.noid1_id, image: img1 });
-        setNoid2({ id: data.noid2_id, image: img2 });
+        setNoid1({ id: data.noid1_id, image: getNoidImage(data.noid1_id) });
+        setNoid2({ id: data.noid2_id, image: getNoidImage(data.noid2_id) });
       } else {
         const id1 = getRandomNoid();
         const id2 = getRandomNoid([id1]);
@@ -143,9 +125,8 @@ function App() {
 
         if (newBattle) {
           setDailyBattleData(newBattle);
-          const [img1, img2] = await Promise.all([getNoidImage(id1), getNoidImage(id2)]);
-          setNoid1({ id: id1, image: img1 });
-          setNoid2({ id: id2, image: img2 });
+          setNoid1({ id: id1, image: getNoidImage(id1) });
+          setNoid2({ id: id2, image: getNoidImage(id2) });
         }
       }
 
