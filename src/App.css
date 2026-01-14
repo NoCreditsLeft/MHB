@@ -1390,3 +1390,54 @@ body {
   background: rgba(0, 255, 65, 0.2);
   box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
 }
+
+/* Wallet Header Button */
+.wallet-header-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(0, 255, 65, 0.1);
+  border: 1px solid #00ff41;
+  border-radius: 8px;
+  color: #00ff41;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 100;
+}
+
+.wallet-header-btn:hover {
+  background: rgba(0, 255, 65, 0.2);
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+  transform: translateY(-2px);
+}
+
+.wallet-header-btn .wallet-icon {
+  font-size: 20px;
+}
+
+.wallet-header-btn .wallet-text {
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .wallet-header-btn {
+    top: 10px;
+    right: 10px;
+    padding: 10px 15px;
+    font-size: 14px;
+  }
+  
+  .wallet-header-btn .wallet-text {
+    display: none;
+  }
+  
+  .wallet-header-btn .wallet-icon {
+    font-size: 24px;
+  }
+}

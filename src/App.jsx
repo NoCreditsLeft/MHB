@@ -977,8 +977,8 @@ function App() {
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [pendingGameMode, setPendingGameMode] = useState(null);
   
-  // Get wallet connection status
-  const { isConnected } = useAccount();
+  // Get wallet connection status and address
+  const { isConnected, address } = useAccount();
 
   useEffect(() => {
     let id = localStorage.getItem('noids_user_id');
@@ -1274,6 +1274,23 @@ function App() {
   const Menu = () => (
     <div className="menu-container">
       <MatrixRain />
+      
+      <button 
+        className="wallet-header-btn"
+        onClick={() => setShowWalletModal(true)}
+      >
+        {isConnected ? (
+          <>
+            <span className="wallet-icon">💳</span>
+            <span className="wallet-text">{address.slice(0, 6)}...{address.slice(-4)}</span>
+          </>
+        ) : (
+          <>
+            <span className="wallet-icon">💳</span>
+            <span className="wallet-text">Connect Wallet</span>
+          </>
+        )}
+      </button>
       
       <div className="logo-section">
         <img 

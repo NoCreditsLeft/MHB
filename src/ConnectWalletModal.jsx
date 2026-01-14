@@ -29,21 +29,19 @@ function ConnectWalletModal({ isOpen, onClose, onConnect }) {
             </p>
             
             <div className="wallet-options">
-              {connectors.map((connector) => (
-                <button
-                  key={connector.uid}
-                  onClick={() => handleConnect(connector)}
-                  disabled={isPending}
-                  className="wallet-button"
-                >
-                  <span className="wallet-icon">
-                    {connector.name === 'MetaMask' && '🦊'}
-                    {connector.name === 'WalletConnect' && '🔗'}
-                    {connector.name === 'Injected' && '💳'}
-                  </span>
-                  <span className="wallet-name">{connector.name}</span>
-                </button>
-              ))}
+              {connectors
+                .filter((connector) => connector.name === 'Injected')
+                .map((connector) => (
+                  <button
+                    key={connector.uid}
+                    onClick={() => handleConnect(connector)}
+                    disabled={isPending}
+                    className="wallet-button"
+                  >
+                    <span className="wallet-icon">💳</span>
+                    <span className="wallet-name">Connect</span>
+                  </button>
+                ))}
             </div>
             
             <p className="modal-note">
