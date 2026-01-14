@@ -1,13 +1,320 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import './App.css';
 
 // Supabase configuration
 const supabaseUrl = 'https://jvmddbqxhfaicyctmmvt.supabase.co';
-const supabaseKey = 'sb_publishable_Gn7WXHUlJkrcKNwS38pD-g_DEDG3WB1';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bWRkYnF4aGZhaWN5Y3RtbXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4MDc5NjYsImV4cCI6MjA1MjM4Mzk2Nn0.59rhWuZ3r93r5YBxhcKYVGaNgy6NykDFqIpJbSCWbBo';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const TOTAL_NOIDS = 5555;
 const DAILY_VOTE_LIMIT = 55;
+
+// ============================================
+// STATS TRACKING FUNCTIONS (Inline)
+// ============================================
+
+async function recordCompleteBattle({
+  noid1Id,
+  noid2Id,
+  winnerId,
+  gameMode,
+  userId,
+  isDailyBattle = false,
+  totalVotes = null,
+  voteMargin = null
+}) {
+  try {
+    const loserId = winnerId === noid1Id ? noid2Id : noid1Id;
+    
+    // Get current ranks
+    const { data: noid1Data } = await supabase
+      .from('noid_stats')
+      .select('current_rank')
+      .eq('noid_id', noid1Id)
+      .single();
+    
+    const { data: noid2Data } = await supabase
+      .from('noid_stats')
+      .select('current_rank')
+      .eq('noid_id', noid2Id)
+      .single();
+    
+    const noid1Rank = noid1Data?.current_rank || null;
+    const noid2Rank = noid2Data?.current_rank || null;
+    
+    const rankDifference = Math.abs((noid1Rank || 9999) - (noid2Rank || 9999));
+    const wasUpset = (
+      (winnerId === noid1Id && noid1Rank > noid2Rank) ||
+      (winnerId === noid2Id && noid2Rank > noid1Rank)
+    );
+    const wasUnderdogWin = wasUpset && rankDifference >= 50;
+    
+    // Record battle history
+    await supabase.from('battle_history').insert([{
+      noid1_id: noid1Id,
+      noid2_id: noid2Id,
+      winner_id: winnerId,
+      loser_id: loserId,
+      game_mode: gameMode,
+      noid1_rank_before: noid1Rank,
+      noid2_rank_before: noid2Rank,
+      was_upset: wasUpset,
+      was_underdog_win: wasUnderdogWin,
+      rank_difference: rankDifference,
+      user_id: userId,
+      is_daily_battle: isDailyBattle,
+      total_votes: totalVotes,
+      vote_margin: voteMargin
+    }]);
+    
+    // Update both NOiDs
+    await Promise.all([
+      updateNoidStats(noid1Id, winnerId === noid1Id, wasUnderdogWin && winnerId === noid1Id),
+      updateNoidStats(noid2Id, winnerId === noid2Id, wasUnderdogWin && winnerId === noid2Id)
+    ]);
+    
+    // Update head-to-head
+    await updateHeadToHead(winnerId, loserId);
+    
+    // Update beaten tracking
+    await updateBeatenTracking(winnerId, loserId);
+    
+    // Update game mode stats
+    await Promise.all([
+      updateGameModeStats(noid1Id, gameMode, winnerId === noid1Id),
+      updateGameModeStats(noid2Id, gameMode, winnerId === noid2Id)
+    ]);
+    
+    console.log('✅ Battle recorded successfully');
+    return { success: true };
+    
+  } catch (error) {
+    console.error('❌ Error recording battle:', error);
+    return { success: false, error };
+  }
+}
+
+async function updateNoidStats(noidId, won, wasUnderdogWin = false) {
+  try {
+    const { data: currentStats } = await supabase
+      .from('noid_stats')
+      .select('*')
+      .eq('noid_id', noidId)
+      .single();
+    
+    const now = new Date().toISOString();
+    
+    if (!currentStats) {
+      await supabase.from('noid_stats').insert([{
+        noid_id: noidId,
+        total_battles: 1,
+        total_wins: won ? 1 : 0,
+        total_losses: won ? 0 : 1,
+        current_streak: won ? 1 : -1,
+        best_streak: won ? 1 : 0,
+        first_battle_date: now,
+        last_battle_date: now,
+        last_win_date: won ? now : null,
+        last_loss_date: won ? null : now,
+        underdog_wins: wasUnderdogWin ? 1 : 0
+      }]);
+    } else {
+      const newStreak = won 
+        ? Math.max(currentStats.current_streak, 0) + 1 
+        : Math.min(currentStats.current_streak, 0) - 1;
+      
+      const newBestStreak = won 
+        ? Math.max(currentStats.best_streak, newStreak)
+        : currentStats.best_streak;
+      
+      await supabase
+        .from('noid_stats')
+        .update({
+          total_battles: currentStats.total_battles + 1,
+          total_wins: currentStats.total_wins + (won ? 1 : 0),
+          total_losses: currentStats.total_losses + (won ? 0 : 1),
+          current_streak: newStreak,
+          best_streak: newBestStreak,
+          last_battle_date: now,
+          last_win_date: won ? now : currentStats.last_win_date,
+          last_loss_date: won ? currentStats.last_loss_date : now,
+          underdog_wins: currentStats.underdog_wins + (wasUnderdogWin ? 1 : 0),
+          updated_at: now
+        })
+        .eq('noid_id', noidId);
+    }
+  } catch (error) {
+    console.error('Error updating noid stats:', error);
+  }
+}
+
+async function updateHeadToHead(winnerId, loserId) {
+  try {
+    const now = new Date().toISOString();
+    
+    // Winner's record
+    const { data: winnerRecord } = await supabase
+      .from('head_to_head')
+      .select('*')
+      .eq('noid_id', winnerId)
+      .eq('opponent_id', loserId)
+      .single();
+    
+    if (!winnerRecord) {
+      await supabase.from('head_to_head').insert([{
+        noid_id: winnerId,
+        opponent_id: loserId,
+        battles: 1,
+        wins: 1,
+        losses: 0,
+        last_battle_date: now,
+        last_winner: winnerId
+      }]);
+    } else {
+      await supabase
+        .from('head_to_head')
+        .update({
+          battles: winnerRecord.battles + 1,
+          wins: winnerRecord.wins + 1,
+          last_battle_date: now,
+          last_winner: winnerId
+        })
+        .eq('noid_id', winnerId)
+        .eq('opponent_id', loserId);
+    }
+    
+    // Loser's record
+    const { data: loserRecord } = await supabase
+      .from('head_to_head')
+      .select('*')
+      .eq('noid_id', loserId)
+      .eq('opponent_id', winnerId)
+      .single();
+    
+    if (!loserRecord) {
+      await supabase.from('head_to_head').insert([{
+        noid_id: loserId,
+        opponent_id: winnerId,
+        battles: 1,
+        wins: 0,
+        losses: 1,
+        last_battle_date: now,
+        last_winner: winnerId
+      }]);
+    } else {
+      await supabase
+        .from('head_to_head')
+        .update({
+          battles: loserRecord.battles + 1,
+          losses: loserRecord.losses + 1,
+          last_battle_date: now,
+          last_winner: winnerId
+        })
+        .eq('noid_id', loserId)
+        .eq('opponent_id', winnerId);
+    }
+  } catch (error) {
+    console.error('Error updating head-to-head:', error);
+  }
+}
+
+async function updateBeatenTracking(winnerId, loserId) {
+  try {
+    const now = new Date().toISOString();
+    
+    // Winner's "beaten" list
+    const { data: beatenRecord } = await supabase
+      .from('noid_beaten')
+      .select('*')
+      .eq('noid_id', winnerId)
+      .eq('beaten_id', loserId)
+      .single();
+    
+    if (!beatenRecord) {
+      await supabase.from('noid_beaten').insert([{
+        noid_id: winnerId,
+        beaten_id: loserId,
+        times_beaten: 1,
+        last_beaten_date: now
+      }]);
+    } else {
+      await supabase
+        .from('noid_beaten')
+        .update({
+          times_beaten: beatenRecord.times_beaten + 1,
+          last_beaten_date: now
+        })
+        .eq('noid_id', winnerId)
+        .eq('beaten_id', loserId);
+    }
+    
+    // Loser's "beaten by" list
+    const { data: beatenByRecord } = await supabase
+      .from('noid_beaten_by')
+      .select('*')
+      .eq('noid_id', loserId)
+      .eq('beaten_by_id', winnerId)
+      .single();
+    
+    if (!beatenByRecord) {
+      await supabase.from('noid_beaten_by').insert([{
+        noid_id: loserId,
+        beaten_by_id: winnerId,
+        times_beaten: 1,
+        last_beaten_date: now
+      }]);
+    } else {
+      await supabase
+        .from('noid_beaten_by')
+        .update({
+          times_beaten: beatenByRecord.times_beaten + 1,
+          last_beaten_date: now
+        })
+        .eq('noid_id', loserId)
+        .eq('beaten_by_id', winnerId);
+    }
+  } catch (error) {
+    console.error('Error updating beaten tracking:', error);
+  }
+}
+
+async function updateGameModeStats(noidId, gameMode, won) {
+  try {
+    const { data: existing } = await supabase
+      .from('noid_gamemode_stats')
+      .select('*')
+      .eq('noid_id', noidId)
+      .eq('game_mode', gameMode)
+      .single();
+    
+    if (!existing) {
+      await supabase.from('noid_gamemode_stats').insert([{
+        noid_id: noidId,
+        game_mode: gameMode,
+        battles: 1,
+        wins: won ? 1 : 0,
+        losses: won ? 0 : 1
+      }]);
+    } else {
+      await supabase
+        .from('noid_gamemode_stats')
+        .update({
+          battles: existing.battles + 1,
+          wins: existing.wins + (won ? 1 : 0),
+          losses: existing.losses + (won ? 0 : 1)
+        })
+        .eq('noid_id', noidId)
+        .eq('game_mode', gameMode);
+    }
+  } catch (error) {
+    console.error('Error updating game mode stats:', error);
+  }
+}
+
+// ============================================
+// MAIN APP COMPONENT
+// ============================================
 
 function App() {
   const [gameMode, setGameMode] = useState('menu');
@@ -52,13 +359,7 @@ function App() {
   };
 
   const getNoidImage = (tokenId) => {
-    // Use IPFS gateway with the NOiDS collection CID
-    // Primary gateway: dweb.link (fast, reliable, maintained by IPFS Foundation)
     return `https://dweb.link/ipfs/QmcXuDARMGMv59Q4ZZuoN5rjdM9GQrmp8NjLH5PDLixgAE/${tokenId}`;
-    
-    // Alternative gateways if needed:
-    // return `https://ipfs.io/ipfs/QmcXuDARMGMv59Q4ZZuoN5rjdM9GQrmp8NjLH5PDLixgAE/${tokenId}`;
-    // return `https://gateway.pinata.cloud/ipfs/QmcXuDARMGMv59Q4ZZuoN5rjdM9GQrmp8NjLH5PDLixgAE/${tokenId}`;
   };
 
   const startBattle = async (mode) => {
@@ -103,95 +404,120 @@ function App() {
         .eq('battle_date', today)
         .single();
 
-      if (data) {
-        setDailyBattleData(data);
-        setNoid1({ id: data.noid1_id, image: getNoidImage(data.noid1_id) });
-        setNoid2({ id: data.noid2_id, image: getNoidImage(data.noid2_id) });
-      } else {
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading daily battle:', error);
+        return;
+      }
+
+      if (!data) {
         const id1 = getRandomNoid();
         const id2 = getRandomNoid([id1]);
         
-        const { data: newBattle } = await supabase
+        const { data: newBattle, error: insertError } = await supabase
           .from('daily_battles')
-          .insert({
+          .insert([{
             battle_date: today,
             noid1_id: id1,
             noid2_id: id2,
             noid1_votes: 0,
             noid2_votes: 0
-          })
+          }])
           .select()
           .single();
 
-        if (newBattle) {
-          setDailyBattleData(newBattle);
-          setNoid1({ id: id1, image: getNoidImage(id1) });
-          setNoid2({ id: id2, image: getNoidImage(id2) });
+        if (insertError) {
+          console.error('Error creating daily battle:', insertError);
+          return;
         }
+
+        setNoid1({ id: id1, image: getNoidImage(id1) });
+        setNoid2({ id: id2, image: getNoidImage(id2) });
+        setDailyBattleData(newBattle);
+      } else {
+        setNoid1({ id: data.noid1_id, image: getNoidImage(data.noid1_id) });
+        setNoid2({ id: data.noid2_id, image: getNoidImage(data.noid2_id) });
+        setDailyBattleData(data);
       }
 
       const voteKey = `daily_vote_${userId}_${today}`;
       const hasVoted = localStorage.getItem(voteKey);
       setUserDailyVoted(!!hasVoted);
+
     } catch (err) {
-      console.error('Error loading daily battle:', err);
+      console.error('Unexpected error:', err);
     }
   };
 
   const handleVote = async (winner) => {
     if (gameMode === 'daily') {
-      if (userDailyVoted) {
-        alert('You already voted in today\'s battle!');
-        return;
-      }
-      await submitDailyVote(winner);
-    } else {
-      if (votesRemaining <= 0) {
-        alert('You\'ve used all your daily votes! Come back tomorrow.');
-        return;
-      }
-      await submitRegularVote(winner);
-    }
-  };
-
-  const submitDailyVote = async (winner) => {
-    const today = new Date().toISOString().split('T')[0];
-    const winnerField = winner === 1 ? 'noid1_votes' : 'noid2_votes';
-
-    try {
-      await supabase
-        .from('daily_battles')
-        .update({
-          [winnerField]: dailyBattleData[winnerField] + 1
-        })
-        .eq('id', dailyBattleData.id);
-
+      if (userDailyVoted) return;
+      
+      const today = new Date().toISOString().split('T')[0];
       const voteKey = `daily_vote_${userId}_${today}`;
-      localStorage.setItem(voteKey, 'true');
-      setUserDailyVoted(true);
-      await loadDailyBattle();
-    } catch (err) {
-      console.error('Error submitting daily vote:', err);
-    }
-  };
+      
+      const winnerField = winner === 1 ? 'noid1_votes' : 'noid2_votes';
+      const winnerNoid = winner === 1 ? noid1 : noid2;
 
-  const submitRegularVote = async (winner) => {
+      try {
+        const { error } = await supabase
+          .from('daily_battles')
+          .update({ [winnerField]: dailyBattleData[winnerField] + 1 })
+          .eq('battle_date', today);
+
+        if (error) {
+          console.error('Error updating daily battle:', error);
+          return;
+        }
+
+        // Record complete battle with all stats
+        await recordCompleteBattle({
+          noid1Id: noid1.id,
+          noid2Id: noid2.id,
+          winnerId: winnerNoid.id,
+          gameMode: 'daily',
+          userId: userId,
+          isDailyBattle: true,
+          totalVotes: dailyBattleData.noid1_votes + dailyBattleData.noid2_votes + 1,
+          voteMargin: Math.abs(dailyBattleData.noid1_votes - dailyBattleData.noid2_votes)
+        });
+
+        localStorage.setItem(voteKey, winner.toString());
+        setUserDailyVoted(true);
+        
+        await loadDailyBattle();
+      } catch (err) {
+        console.error('Error voting:', err);
+      }
+      return;
+    }
+
+    if (votesRemaining <= 0) return;
+
     const winnerNoid = winner === 1 ? noid1 : noid2;
-    const loserNoid = winner === 1 ? noid2 : noid1;
 
     try {
-      await supabase.from('votes').insert({
-        user_id: userId,
-        winner_id: winnerNoid.id,
-        loser_id: loserNoid.id,
-        game_mode: gameMode
+      // Record complete battle with all stats
+      await recordCompleteBattle({
+        noid1Id: noid1.id,
+        noid2Id: noid2.id,
+        winnerId: winnerNoid.id,
+        gameMode: gameMode,
+        userId: userId,
+        isDailyBattle: false
       });
 
-      await supabase.rpc('increment_noid_wins', { noid_id: winnerNoid.id });
-      await supabase.rpc('increment_noid_battles', { noid_id: winnerNoid.id });
-      await supabase.rpc('increment_noid_battles', { noid_id: loserNoid.id });
+      const { error: voteError } = await supabase
+        .from('votes')
+        .insert([{
+          user_id: userId,
+          winner_noid_id: winnerNoid.id,
+          loser_noid_id: winner === 1 ? noid2.id : noid1.id,
+          game_mode: gameMode
+        }]);
+
+      if (voteError) console.error('Error recording vote:', voteError);
     } catch (err) {
-      console.error('Error recording vote:', err);
+      console.error('Error in vote handling:', err);
     }
 
     const today = new Date().toISOString().split('T')[0];
@@ -209,116 +535,162 @@ function App() {
 
   const Menu = () => (
     <div className="menu-container">
-      <div className="logo">
-        <h1>NOiDS BATTLE</h1>
-        <p>Which NOID reigns supreme?</p>
+      <div className="matrix-rain" />
+      
+      <div className="logo-section">
+        <img 
+          src="https://c.animaapp.com/9Omv44Zl/img/noidss-1-2@2x.png" 
+          alt="NOiDS Logo" 
+          className="main-logo"
+        />
+        <h2 className="tagline">BATTLE</h2>
+        <p className="subtitle">Which NOID reigns supreme?</p>
       </div>
 
       <div className="game-modes">
-        <h2>Single Player Modes</h2>
-        <p className="votes-remaining">Daily Votes: {votesRemaining}/55</p>
-        
-        <button 
-          className="mode-btn"
-          onClick={() => startBattle('rando')}
-          disabled={votesRemaining <= 0}
-        >
-          <h3>🎲 Rando Battle</h3>
-          <p>Two random NOiDS face off</p>
-        </button>
+        <div className="glass-panel">
+          <div className="panel-header">
+            <h3>Single Player</h3>
+            <div className="votes-badge">
+              <span className="votes-text">Votes:</span>
+              <span className="votes-number">{votesRemaining}/55</span>
+            </div>
+          </div>
+          
+          <button 
+            className="mode-btn"
+            onClick={() => startBattle('rando')}
+            disabled={votesRemaining <= 0}
+          >
+            <div className="btn-icon">🎲</div>
+            <div className="btn-content">
+              <h4>Rando Battle</h4>
+              <p>Two random NOiDS face off</p>
+            </div>
+          </button>
 
-        <button 
-          className="mode-btn"
-          onClick={() => startBattle('sticky')}
-          disabled={votesRemaining <= 0}
-        >
-          <h3>🏆 Sticky Winner</h3>
-          <p>Winner stays, challenger appears</p>
-        </button>
+          <button 
+            className="mode-btn"
+            onClick={() => startBattle('sticky')}
+            disabled={votesRemaining <= 0}
+          >
+            <div className="btn-icon">🏆</div>
+            <div className="btn-content">
+              <h4>Sticky Winner</h4>
+              <p>Winner stays, challenger appears</p>
+            </div>
+          </button>
 
-        <button 
-          className="mode-btn"
-          onClick={() => startBattle('oneofone')}
-          disabled={votesRemaining <= 0}
-        >
-          <h3>👑 One of One Championship</h3>
-          <p>Battle of the rarest</p>
-        </button>
-
-        <h2 style={{ marginTop: '40px' }}>Community Mode</h2>
-        
-        <button 
-          className="mode-btn daily"
-          onClick={() => startBattle('daily')}
-        >
-          <h3>⭐ Daily Battle</h3>
-          <p>One battle, one vote, 24 hours</p>
-          {userDailyVoted && <span className="voted-badge">✓ Voted</span>}
-        </button>
-      </div>
-
-      {votesRemaining <= 0 && (
-        <div className="limit-notice">
-          You've used all your daily votes! Come back tomorrow.
+          <button 
+            className="mode-btn"
+            onClick={() => startBattle('oneofone')}
+            disabled={votesRemaining <= 0}
+          >
+            <div className="btn-icon">👑</div>
+            <div className="btn-content">
+              <h4>One of One Championship</h4>
+              <p>Battle of the rarest</p>
+            </div>
+          </button>
         </div>
-      )}
+
+        <div className="glass-panel community-panel">
+          <div className="panel-header">
+            <h3>Community Mode</h3>
+          </div>
+          
+          <button 
+            className="mode-btn community-btn"
+            onClick={() => startBattle('daily')}
+          >
+            <div className="btn-icon">⭐</div>
+            <div className="btn-content">
+              <h4>Daily Battle</h4>
+              <p>One battle, one vote, 24 hours</p>
+              {userDailyVoted && <span className="voted-badge">✓ Voted</span>}
+            </div>
+          </button>
+        </div>
+
+        {votesRemaining <= 0 && (
+          <div className="limit-notice glass-panel">
+            <span className="notice-icon">⏰</span>
+            <p>You've used all your daily votes!<br/>Come back tomorrow.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 
   const Battle = () => (
     <div className="battle-container">
-      <div className="battle-header">
+      <div className="matrix-rain" />
+      
+      <div className="battle-header glass-panel">
         <button className="back-btn" onClick={() => setGameMode('menu')}>
-          ← Back to Menu
+          <span className="back-arrow">←</span>
+          Back to Menu
         </button>
         <div className="mode-title">
-          {gameMode === 'rando' && '🎲 Rando Battle'}
-          {gameMode === 'sticky' && '🏆 Sticky Winner'}
-          {gameMode === 'oneofone' && '👑 One of One'}
-          {gameMode === 'daily' && '⭐ Daily Battle'}
+          {gameMode === 'rando' && <><span className="mode-icon">🎲</span> Rando Battle</>}
+          {gameMode === 'sticky' && <><span className="mode-icon">🏆</span> Sticky Winner</>}
+          {gameMode === 'oneofone' && <><span className="mode-icon">👑</span> One of One</>}
+          {gameMode === 'daily' && <><span className="mode-icon">⭐</span> Daily Battle</>}
         </div>
         {gameMode !== 'daily' && (
-          <div className="votes-counter">
-            Votes: {votesRemaining}/55
+          <div className="votes-badge">
+            <span className="votes-text">Votes:</span>
+            <span className="votes-number">{votesRemaining}/55</span>
           </div>
         )}
       </div>
 
       {loading ? (
-        <div className="loading">Loading NOiDS...</div>
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          <p>Loading NOiDS...</p>
+        </div>
       ) : (
         <div className="battle-arena">
           <div 
-            className="noid-card"
+            className={`noid-card glass-card ${userDailyVoted && gameMode === 'daily' ? 'disabled' : ''}`}
             onClick={() => !userDailyVoted && handleVote(1)}
-            style={{ cursor: userDailyVoted && gameMode === 'daily' ? 'not-allowed' : 'pointer' }}
           >
-            <img src={noid1?.image} alt={`NOID #${noid1?.id}`} />
+            <div className="card-glow"></div>
+            <div className="image-container">
+              <img src={noid1?.image} alt={`NOID #${noid1?.id}`} />
+            </div>
             <div className="noid-info">
               <h3>NOID #{noid1?.id}</h3>
               {gameMode === 'daily' && dailyBattleData && (
                 <div className="vote-count">
-                  {dailyBattleData.noid1_votes} votes
+                  <span className="vote-label">Votes:</span>
+                  <span className="vote-number">{dailyBattleData.noid1_votes}</span>
                 </div>
               )}
             </div>
           </div>
 
           <div className="vs-divider">
-            <span>VS</span>
+            <div className="vs-circle">
+              <span>VS</span>
+            </div>
           </div>
 
           <div 
-            className="noid-card"
+            className={`noid-card glass-card ${userDailyVoted && gameMode === 'daily' ? 'disabled' : ''}`}
             onClick={() => !userDailyVoted && handleVote(2)}
-            style={{ cursor: userDailyVoted && gameMode === 'daily' ? 'not-allowed' : 'pointer' }}
           >
-            <img src={noid2?.image} alt={`NOID #${noid2?.id}`} />
+            <div className="card-glow"></div>
+            <div className="image-container">
+              <img src={noid2?.image} alt={`NOID #${noid2?.id}`} />
+            </div>
             <div className="noid-info">
               <h3>NOID #{noid2?.id}</h3>
               {gameMode === 'daily' && dailyBattleData && (
                 <div className="vote-count">
-                  {dailyBattleData.noid2_votes} votes
+                  <span className="vote-label">Votes:</span>
+                  <span className="vote-number">{dailyBattleData.noid2_votes}</span>
                 </div>
               )}
             </div>
@@ -327,8 +699,9 @@ function App() {
       )}
 
       {gameMode === 'daily' && userDailyVoted && (
-        <div className="voted-notice">
-          Thanks for voting! Check back tomorrow for a new battle.
+        <div className="daily-voted-message glass-panel">
+          <span className="check-icon">✓</span>
+          <p>Thanks for voting! Come back tomorrow for the next battle.</p>
         </div>
       )}
     </div>
@@ -337,269 +710,6 @@ function App() {
   return (
     <div className="app">
       {gameMode === 'menu' ? <Menu /> : <Battle />}
-      <style>{`
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-
-        .app {
-          min-height: 100vh;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-          padding: 20px;
-        }
-
-        .menu-container {
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 40px 20px;
-        }
-
-        .logo {
-          text-align: center;
-          margin-bottom: 60px;
-        }
-
-        .logo h1 {
-          font-size: 4rem;
-          font-weight: 900;
-          color: white;
-          text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2);
-          letter-spacing: -2px;
-          margin-bottom: 10px;
-        }
-
-        .logo p {
-          font-size: 1.2rem;
-          color: rgba(255, 255, 255, 0.9);
-        }
-
-        .game-modes {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .game-modes h2 {
-          color: white;
-          font-size: 1.5rem;
-          margin-top: 20px;
-          margin-bottom: 10px;
-        }
-
-        .votes-remaining {
-          color: rgba(255, 255, 255, 0.9);
-          font-size: 1rem;
-          margin-bottom: 10px;
-        }
-
-        .mode-btn {
-          background: white;
-          border: none;
-          border-radius: 16px;
-          padding: 24px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-          text-align: left;
-          position: relative;
-        }
-
-        .mode-btn:hover:not(:disabled) {
-          transform: translateY(-4px);
-          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-        }
-
-        .mode-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .mode-btn.daily {
-          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-          color: white;
-        }
-
-        .mode-btn.daily h3,
-        .mode-btn.daily p {
-          color: white;
-        }
-
-        .mode-btn h3 {
-          font-size: 1.5rem;
-          margin-bottom: 8px;
-          color: #667eea;
-        }
-
-        .mode-btn p {
-          font-size: 1rem;
-          color: #666;
-        }
-
-        .voted-badge {
-          position: absolute;
-          top: 24px;
-          right: 24px;
-          background: rgba(255, 255, 255, 0.3);
-          padding: 8px 16px;
-          border-radius: 20px;
-          font-weight: bold;
-        }
-
-        .limit-notice {
-          background: rgba(255, 255, 255, 0.2);
-          color: white;
-          padding: 20px;
-          border-radius: 12px;
-          text-align: center;
-          margin-top: 30px;
-          font-size: 1.1rem;
-        }
-
-        .battle-container {
-          max-width: 1200px;
-          margin: 0 auto;
-        }
-
-        .battle-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 40px;
-          flex-wrap: wrap;
-          gap: 20px;
-        }
-
-        .back-btn {
-          background: rgba(255, 255, 255, 0.2);
-          color: white;
-          border: none;
-          padding: 12px 24px;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 1rem;
-          transition: all 0.3s ease;
-        }
-
-        .back-btn:hover {
-          background: rgba(255, 255, 255, 0.3);
-        }
-
-        .mode-title {
-          color: white;
-          font-size: 2rem;
-          font-weight: bold;
-          flex: 1;
-          text-align: center;
-        }
-
-        .votes-counter {
-          background: rgba(255, 255, 255, 0.2);
-          color: white;
-          padding: 12px 24px;
-          border-radius: 8px;
-          font-weight: bold;
-        }
-
-        .loading {
-          text-align: center;
-          color: white;
-          font-size: 2rem;
-          padding: 100px 0;
-        }
-
-        .battle-arena {
-          display: grid;
-          grid-template-columns: 1fr auto 1fr;
-          gap: 40px;
-          align-items: center;
-        }
-
-        .noid-card {
-          background: white;
-          border-radius: 20px;
-          padding: 20px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-        }
-
-        .noid-card:hover {
-          transform: scale(1.05);
-          box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
-        }
-
-        .noid-card img {
-          width: 100%;
-          height: auto;
-          border-radius: 12px;
-          display: block;
-        }
-
-        .noid-info {
-          margin-top: 16px;
-          text-align: center;
-        }
-
-        .noid-info h3 {
-          color: #667eea;
-          font-size: 1.5rem;
-          margin-bottom: 8px;
-        }
-
-        .vote-count {
-          color: #666;
-          font-size: 1.1rem;
-          font-weight: bold;
-        }
-
-        .vs-divider {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .vs-divider span {
-          background: white;
-          color: #667eea;
-          font-size: 2rem;
-          font-weight: bold;
-          padding: 20px 30px;
-          border-radius: 50%;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .voted-notice {
-          background: rgba(255, 255, 255, 0.2);
-          color: white;
-          padding: 30px;
-          border-radius: 16px;
-          text-align: center;
-          margin-top: 40px;
-          font-size: 1.3rem;
-        }
-
-        @media (max-width: 768px) {
-          .battle-arena {
-            grid-template-columns: 1fr;
-            gap: 30px;
-          }
-
-          .vs-divider {
-            order: 2;
-          }
-
-          .logo h1 {
-            font-size: 2.5rem;
-          }
-
-          .mode-title {
-            font-size: 1.5rem;
-          }
-        }
-      `}</style>
     </div>
   );
 }
