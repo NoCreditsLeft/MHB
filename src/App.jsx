@@ -446,37 +446,94 @@ function App() {
     return num;
   };
 
-  const getNoidImage = (tokenId) => {
-    return `https://dweb.link/ipfs/QmcXuDARMGMv59Q4ZZuoN5rjdM9GQrmp8NjLH5PDLixgAE/${tokenId}`;
+  // Cache for storing fetched image URLs
+  const [imageCache, setImageCache] = useState({});
+
+  const fetchNoidImageFromOpenSea = async (tokenId) => {
+    // Check cache first
+    if (imageCache[tokenId]) {
+      return imageCache[tokenId];
+    }
+
+    try {
+      const response = await fetch(
+        `https://api.opensea.io/api/v2/chain/ethereum/contract/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/nfts/${tokenId}`,
+        {
+          headers: {
+            'X-API-KEY': 'f6662070d18f4d54936bdd66b94c3f11'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`OpenSea API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const imageUrl = data.nft?.image_url || data.nft?.display_image_url;
+      
+      if (imageUrl) {
+        // Cache the URL
+        setImageCache(prev => ({ ...prev, [tokenId]: imageUrl }));
+        return imageUrl;
+      }
+
+      throw new Error('No image URL in response');
+    } catch (error) {
+      console.error(`Error fetching image for NOID #${tokenId}:`, error);
+      // Fallback to IPFS if API fails
+      return `https://gateway.pinata.cloud/ipfs/QmcXuDARMGMv59Q4ZZuoN5rjdM9GQrmp8NjLH5PDLixgAE/${tokenId}`;
+    }
+  };
+
+  const getNoidImage = async (tokenId) => {
+    return await fetchNoidImageFromOpenSea(tokenId);
   };
 
   const startBattle = async (mode) => {
     setGameMode(mode);
     setLoading(true);
 
-    if (mode === 'rando') {
-      const id1 = getRandomNoid();
-      const id2 = getRandomNoid([id1]);
-      setNoid1({ id: id1, image: getNoidImage(id1) });
-      setNoid2({ id: id2, image: getNoidImage(id2) });
-    } else if (mode === 'sticky') {
-      if (stickyWinner) {
-        const id2 = getRandomNoid([stickyWinner.id]);
-        setNoid1(stickyWinner);
-        setNoid2({ id: id2, image: getNoidImage(id2) });
-      } else {
+    try {
+      if (mode === 'rando') {
         const id1 = getRandomNoid();
         const id2 = getRandomNoid([id1]);
-        setNoid1({ id: id1, image: getNoidImage(id1) });
-        setNoid2({ id: id2, image: getNoidImage(id2) });
+        const [img1, img2] = await Promise.all([
+          getNoidImage(id1),
+          getNoidImage(id2)
+        ]);
+        setNoid1({ id: id1, image: img1 });
+        setNoid2({ id: id2, image: img2 });
+      } else if (mode === 'sticky') {
+        if (stickyWinner) {
+          const id2 = getRandomNoid([stickyWinner.id]);
+          const img2 = await getNoidImage(id2);
+          setNoid1(stickyWinner);
+          setNoid2({ id: id2, image: img2 });
+        } else {
+          const id1 = getRandomNoid();
+          const id2 = getRandomNoid([id1]);
+          const [img1, img2] = await Promise.all([
+            getNoidImage(id1),
+            getNoidImage(id2)
+          ]);
+          setNoid1({ id: id1, image: img1 });
+          setNoid2({ id: id2, image: img2 });
+        }
+      } else if (mode === 'oneofone') {
+        const id1 = getRandomNoid();
+        const id2 = getRandomNoid([id1]);
+        const [img1, img2] = await Promise.all([
+          getNoidImage(id1),
+          getNoidImage(id2)
+        ]);
+        setNoid1({ id: id1, image: img1 });
+        setNoid2({ id: id2, image: img2 });
+      } else if (mode === 'daily') {
+        await loadDailyBattle();
       }
-    } else if (mode === 'oneofone') {
-      const id1 = getRandomNoid();
-      const id2 = getRandomNoid([id1]);
-      setNoid1({ id: id1, image: getNoidImage(id1) });
-      setNoid2({ id: id2, image: getNoidImage(id2) });
-    } else if (mode === 'daily') {
-      await loadDailyBattle();
+    } catch (error) {
+      console.error('Error loading battle:', error);
     }
 
     setLoading(false);
@@ -518,12 +575,24 @@ function App() {
           return;
         }
 
-        setNoid1({ id: id1, image: getNoidImage(id1) });
-        setNoid2({ id: id2, image: getNoidImage(id2) });
+        // Fetch images from OpenSea API
+        const [img1, img2] = await Promise.all([
+          getNoidImage(id1),
+          getNoidImage(id2)
+        ]);
+
+        setNoid1({ id: id1, image: img1 });
+        setNoid2({ id: id2, image: img2 });
         setDailyBattleData(newBattle);
       } else {
-        setNoid1({ id: data.noid1_id, image: getNoidImage(data.noid1_id) });
-        setNoid2({ id: data.noid2_id, image: getNoidImage(data.noid2_id) });
+        // Fetch images from OpenSea API
+        const [img1, img2] = await Promise.all([
+          getNoidImage(data.noid1_id),
+          getNoidImage(data.noid2_id)
+        ]);
+
+        setNoid1({ id: data.noid1_id, image: img1 });
+        setNoid2({ id: data.noid2_id, image: img2 });
         setDailyBattleData(data);
       }
 
