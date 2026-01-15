@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { useAccount } from 'wagmi';
-import ConnectWalletModal from './ConnectWalletModal';
-import MyNoids from './MyNoids';
+import { useState, useEffect } from 'react';
 import './App.css';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { injected } from 'wagmi/connectors';
+import { createClient } from '@supabase/supabase-js';
+import MyNoids from './MyNoids';
+import ConnectWalletModal from './ConnectWalletModal';
 
-// Supabase configuration
 const supabaseUrl = 'https://jvmddbqxhfaicyctmmvt.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bWRkYnF4aGZhaWN5Y3RtbXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4MDc5NjYsImV4cCI6MjA1MjM4Mzk2Nn0.59rhWuZ3r93r5YBxhcKYVGaNgy6NykDFqIpJbSCWbBo';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bWRkYnF4aGZhaWN5Y3RtbXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyOTg4MDYsImV4cCI6MjA4Mzg3NDgwNn0.SD37h5vkKVQwODXavoRkej6yFsAYhT8nLmxIxs3AoZg';
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-const TOTAL_NOIDS = 5555;
-const DAILY_VOTE_LIMIT = 55;
+const OPENSEA_API_KEY = 'f6662070d18f4d54936bdd66b94c3f11';
 
-// 1-of-1 NOIDs with unique traits
 const ONE_OF_ONE_NOIDS = [
   3399, 4550, 46, 3421, 5521, 4200, 814, 1587, 4234, 1601,
   2480, 1046, 4999, 2290, 1401, 2148, 3921, 4900, 4699, 1187,
@@ -22,591 +20,73 @@ const ONE_OF_ONE_NOIDS = [
   3390, 601
 ];
 
-// ============================================
-// STATS TRACKING FUNCTIONS (Inline)
-// ============================================
-
-async function recordCompleteBattle({
-  noid1Id,
-  noid2Id,
-  winnerId,
-  gameMode,
-  userId,
-  isDailyBattle = false,
-  totalVotes = null,
-  voteMargin = null
-}) {
-  try {
-    const loserId = winnerId === noid1Id ? noid2Id : noid1Id;
-    
-    // Get current ranks
-    const { data: noid1Data } = await supabase
-      .from('noid_stats')
-      .select('current_rank')
-      .eq('noid_id', noid1Id)
-      .single();
-    
-    const { data: noid2Data } = await supabase
-      .from('noid_stats')
-      .select('current_rank')
-      .eq('noid_id', noid2Id)
-      .single();
-    
-    const noid1Rank = noid1Data?.current_rank || null;
-    const noid2Rank = noid2Data?.current_rank || null;
-    
-    const rankDifference = Math.abs((noid1Rank || 9999) - (noid2Rank || 9999));
-    const wasUpset = (
-      (winnerId === noid1Id && noid1Rank > noid2Rank) ||
-      (winnerId === noid2Id && noid2Rank > noid1Rank)
-    );
-    const wasUnderdogWin = wasUpset && rankDifference >= 50;
-    
-    // Record battle history
-    await supabase.from('battle_history').insert([{
-      noid1_id: noid1Id,
-      noid2_id: noid2Id,
-      winner_id: winnerId,
-      loser_id: loserId,
-      game_mode: gameMode,
-      noid1_rank_before: noid1Rank,
-      noid2_rank_before: noid2Rank,
-      was_upset: wasUpset,
-      was_underdog_win: wasUnderdogWin,
-      rank_difference: rankDifference,
-      user_id: userId,
-      is_daily_battle: isDailyBattle,
-      total_votes: totalVotes,
-      vote_margin: voteMargin
-    }]);
-    
-    // Update both NOiDs
-    await Promise.all([
-      updateNoidStats(noid1Id, winnerId === noid1Id, wasUnderdogWin && winnerId === noid1Id),
-      updateNoidStats(noid2Id, winnerId === noid2Id, wasUnderdogWin && winnerId === noid2Id)
-    ]);
-    
-    // Update head-to-head
-    await updateHeadToHead(winnerId, loserId);
-    
-    // Update beaten tracking
-    await updateBeatenTracking(winnerId, loserId);
-    
-    // Update game mode stats
-    await Promise.all([
-      updateGameModeStats(noid1Id, gameMode, winnerId === noid1Id),
-      updateGameModeStats(noid2Id, gameMode, winnerId === noid2Id)
-    ]);
-    
-    console.log('✅ Battle recorded successfully');
-    return { success: true };
-    
-  } catch (error) {
-    console.error('❌ Error recording battle:', error);
-    return { success: false, error };
-  }
-}
-
-async function updateNoidStats(noidId, won, wasUnderdogWin = false) {
-  try {
-    const { data: currentStats } = await supabase
-      .from('noid_stats')
-      .select('*')
-      .eq('noid_id', noidId)
-      .single();
-    
-    const now = new Date().toISOString();
-    
-    if (!currentStats) {
-      await supabase.from('noid_stats').insert([{
-        noid_id: noidId,
-        total_battles: 1,
-        total_wins: won ? 1 : 0,
-        total_losses: won ? 0 : 1,
-        current_streak: won ? 1 : -1,
-        best_streak: won ? 1 : 0,
-        first_battle_date: now,
-        last_battle_date: now,
-        last_win_date: won ? now : null,
-        last_loss_date: won ? null : now,
-        underdog_wins: wasUnderdogWin ? 1 : 0
-      }]);
-    } else {
-      const newStreak = won 
-        ? Math.max(currentStats.current_streak, 0) + 1 
-        : Math.min(currentStats.current_streak, 0) - 1;
-      
-      const newBestStreak = won 
-        ? Math.max(currentStats.best_streak, newStreak)
-        : currentStats.best_streak;
-      
-      await supabase
-        .from('noid_stats')
-        .update({
-          total_battles: currentStats.total_battles + 1,
-          total_wins: currentStats.total_wins + (won ? 1 : 0),
-          total_losses: currentStats.total_losses + (won ? 0 : 1),
-          current_streak: newStreak,
-          best_streak: newBestStreak,
-          last_battle_date: now,
-          last_win_date: won ? now : currentStats.last_win_date,
-          last_loss_date: won ? currentStats.last_loss_date : now,
-          underdog_wins: currentStats.underdog_wins + (wasUnderdogWin ? 1 : 0),
-          updated_at: now
-        })
-        .eq('noid_id', noidId);
-    }
-  } catch (error) {
-    console.error('Error updating noid stats:', error);
-  }
-}
-
-async function updateHeadToHead(winnerId, loserId) {
-  try {
-    const now = new Date().toISOString();
-    
-    // Winner's record
-    const { data: winnerRecord } = await supabase
-      .from('head_to_head')
-      .select('*')
-      .eq('noid_id', winnerId)
-      .eq('opponent_id', loserId)
-      .single();
-    
-    if (!winnerRecord) {
-      await supabase.from('head_to_head').insert([{
-        noid_id: winnerId,
-        opponent_id: loserId,
-        battles: 1,
-        wins: 1,
-        losses: 0,
-        last_battle_date: now,
-        last_winner: winnerId
-      }]);
-    } else {
-      await supabase
-        .from('head_to_head')
-        .update({
-          battles: winnerRecord.battles + 1,
-          wins: winnerRecord.wins + 1,
-          last_battle_date: now,
-          last_winner: winnerId
-        })
-        .eq('noid_id', winnerId)
-        .eq('opponent_id', loserId);
-    }
-    
-    // Loser's record
-    const { data: loserRecord } = await supabase
-      .from('head_to_head')
-      .select('*')
-      .eq('noid_id', loserId)
-      .eq('opponent_id', winnerId)
-      .single();
-    
-    if (!loserRecord) {
-      await supabase.from('head_to_head').insert([{
-        noid_id: loserId,
-        opponent_id: winnerId,
-        battles: 1,
-        wins: 0,
-        losses: 1,
-        last_battle_date: now,
-        last_winner: winnerId
-      }]);
-    } else {
-      await supabase
-        .from('head_to_head')
-        .update({
-          battles: loserRecord.battles + 1,
-          losses: loserRecord.losses + 1,
-          last_battle_date: now,
-          last_winner: winnerId
-        })
-        .eq('noid_id', loserId)
-        .eq('opponent_id', winnerId);
-    }
-  } catch (error) {
-    console.error('Error updating head-to-head:', error);
-  }
-}
-
-async function updateBeatenTracking(winnerId, loserId) {
-  try {
-    const now = new Date().toISOString();
-    
-    // Winner's "beaten" list
-    const { data: beatenRecord } = await supabase
-      .from('noid_beaten')
-      .select('*')
-      .eq('noid_id', winnerId)
-      .eq('beaten_id', loserId)
-      .single();
-    
-    if (!beatenRecord) {
-      await supabase.from('noid_beaten').insert([{
-        noid_id: winnerId,
-        beaten_id: loserId,
-        times_beaten: 1,
-        last_beaten_date: now
-      }]);
-    } else {
-      await supabase
-        .from('noid_beaten')
-        .update({
-          times_beaten: beatenRecord.times_beaten + 1,
-          last_beaten_date: now
-        })
-        .eq('noid_id', winnerId)
-        .eq('beaten_id', loserId);
-    }
-    
-    // Loser's "beaten by" list
-    const { data: beatenByRecord } = await supabase
-      .from('noid_beaten_by')
-      .select('*')
-      .eq('noid_id', loserId)
-      .eq('beaten_by_id', winnerId)
-      .single();
-    
-    if (!beatenByRecord) {
-      await supabase.from('noid_beaten_by').insert([{
-        noid_id: loserId,
-        beaten_by_id: winnerId,
-        times_beaten: 1,
-        last_beaten_date: now
-      }]);
-    } else {
-      await supabase
-        .from('noid_beaten_by')
-        .update({
-          times_beaten: beatenByRecord.times_beaten + 1,
-          last_beaten_date: now
-        })
-        .eq('noid_id', loserId)
-        .eq('beaten_by_id', winnerId);
-    }
-  } catch (error) {
-    console.error('Error updating beaten tracking:', error);
-  }
-}
-
-async function updateGameModeStats(noidId, gameMode, won) {
-  try {
-    const { data: existing } = await supabase
-      .from('noid_gamemode_stats')
-      .select('*')
-      .eq('noid_id', noidId)
-      .eq('game_mode', gameMode)
-      .single();
-    
-    if (!existing) {
-      await supabase.from('noid_gamemode_stats').insert([{
-        noid_id: noidId,
-        game_mode: gameMode,
-        battles: 1,
-        wins: won ? 1 : 0,
-        losses: won ? 0 : 1
-      }]);
-    } else {
-      await supabase
-        .from('noid_gamemode_stats')
-        .update({
-          battles: existing.battles + 1,
-          wins: existing.wins + (won ? 1 : 0),
-          losses: existing.losses + (won ? 0 : 1)
-        })
-        .eq('noid_id', noidId)
-        .eq('game_mode', gameMode);
-    }
-  } catch (error) {
-    console.error('Error updating game mode stats:', error);
-  }
-}
-
-// ============================================
-// MATRIX RAIN COMPONENT
-// ============================================
-
-const MatrixRain = () => {
-  const canvasRef = React.useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    
-    // Set canvas size
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    // Matrix characters - katakana, numbers, and symbols
-    const chars = 'アィイゥウェエォオカガキギクグケゲコゴサザシジスズセゼソゾタダチヂッツヅテデトドナニヌネノハバパヒビピフブプヘベペホボポマミムメモャヤュユョヨラリルレロヮワヰヱヲンヴヵヶ01234567890';
-    const fontSize = 14;
-    const columns = canvas.width / fontSize;
-    
-    // Array of y-positions for each column
-    const drops = [];
-    for (let i = 0; i < columns; i++) {
-      drops[i] = Math.random() * -100;
-    }
-
-    const draw = () => {
-      // Fade effect - paint over previous frame with semi-transparent black
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Set text style
-      ctx.fillStyle = '#00ff41';
-      ctx.font = `${fontSize}px monospace`;
-
-      // Loop through drops
-      for (let i = 0; i < drops.length; i++) {
-        // Random character
-        const char = chars[Math.floor(Math.random() * chars.length)];
-        
-        // Draw character
-        ctx.fillText(char, i * fontSize, drops[i] * fontSize);
-
-        // Reset drop to top randomly after it crosses screen
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.95) {
-          drops[i] = 0;
-        }
-        
-        // Move drop down
-        drops[i]++;
-      }
-    };
-
-    const interval = setInterval(draw, 50);
-
-    // Handle resize
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 1,
-        opacity: 0.15
-      }}
-    />
-  );
-};
-
-// ============================================
-// LEADERBOARD COMPONENT
-// ============================================
-
-const Leaderboard = ({ onClose, onViewNoid }) => {
-  const [view, setView] = useState('winrate');
+function App() {
+  const [noid1, setNoid1] = useState(null);
+  const [noid2, setNoid2] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [votedToday, setVotedToday] = useState(0);
+  const [recording, setRecording] = useState(false);
+  const [winner, setWinner] = useState(null);
+  const [view, setView] = useState('battle');
   const [leaderboardData, setLeaderboardData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [leaderboardTab, setLeaderboardTab] = useState('winRate');
+  const [gameMode, setGameMode] = useState('rando');
+  const [stickyWinner, setStickyWinner] = useState(null);
+  const [imageCache, setImageCache] = useState({});
+  const [profileNoid, setProfileNoid] = useState(null);
+  const [profileStats, setProfileStats] = useState(null);
+  const [profileTab, setProfileTab] = useState('overview');
+  const [headToHeadData, setHeadToHeadData] = useState([]);
+  const [dailyBattleData, setDailyBattleData] = useState(null);
+  const [userDailyVoted, setUserDailyVoted] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
 
-  useEffect(() => {
-    loadLeaderboard();
-  }, [view]);
+  const { address, isConnected } = useAccount();
+  const { connect } = useConnect();
+  const { disconnect } = useDisconnect();
 
-  const loadLeaderboard = async () => {
-    setLoading(true);
-    try {
-      let query = supabase.from('noid_stats').select('*');
-      
-      switch (view) {
-        case 'winrate':
-          query = query.gte('total_battles', 10).order('win_rate', { ascending: false }).limit(50);
-          break;
-        case 'totalwins':
-          query = query.order('total_wins', { ascending: false }).limit(50);
-          break;
-        case 'hotstreak':
-          query = query.gte('current_streak', 3).order('current_streak', { ascending: false }).limit(50);
-          break;
-        default:
-          query = query.order('win_rate', { ascending: false }).limit(50);
-      }
+  const userId = isConnected && address ? address.toLowerCase() : getOrCreateUserId();
 
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      const processedData = (data || []).map(noid => ({
-        ...noid,
-        win_rate: noid.total_battles > 0 
-          ? ((noid.total_wins / noid.total_battles) * 100).toFixed(2)
-          : 0
-      }));
-      
-      setLeaderboardData(processedData);
-    } catch (error) {
-      console.error('Error loading leaderboard:', error);
+  function getOrCreateUserId() {
+    let id = localStorage.getItem('noids_user_id');
+    if (!id) {
+      id = 'user_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('noids_user_id', id);
     }
-    setLoading(false);
-  };
+    return id;
+  }
 
-  const getStreakEmoji = (streak) => {
-    if (streak >= 10) return '🔥';
-    if (streak >= 5) return '⚡';
-    if (streak >= 3) return '✨';
-    if (streak <= -3) return '❄️';
-    return '';
-  };
-
-  return (
-    <div className="leaderboard-container">
-      <MatrixRain />
-      
-      <div className="leaderboard-header glass-panel">
-        <button className="back-btn" onClick={onClose}>
-          <span className="back-arrow">←</span>
-          Back to Menu
-        </button>
-        <h2 className="leaderboard-title">Leaderboard</h2>
-        <div className="spacer"></div>
-      </div>
-
-      <div className="leaderboard-tabs glass-panel">
-        <button 
-          className={`tab-btn ${view === 'winrate' ? 'active' : ''}`}
-          onClick={() => setView('winrate')}
-        >
-          <span className="tab-icon">🏆</span>
-          Win Rate
-        </button>
-        <button 
-          className={`tab-btn ${view === 'totalwins' ? 'active' : ''}`}
-          onClick={() => setView('totalwins')}
-        >
-          <span className="tab-icon">👑</span>
-          Total Wins
-        </button>
-        <button 
-          className={`tab-btn ${view === 'hotstreak' ? 'active' : ''}`}
-          onClick={() => setView('hotstreak')}
-        >
-          <span className="tab-icon">🔥</span>
-          Hot Streak
-        </button>
-      </div>
-
-      <div className="leaderboard-content">
-        {loading ? (
-          <div className="loading-state">
-            <div className="loading-spinner"></div>
-            <p>Loading stats...</p>
-          </div>
-        ) : (
-          <div className="leaderboard-list">
-            {leaderboardData.map((noid, index) => (
-              <div 
-                key={noid.noid_id} 
-                className="leaderboard-item glass-panel"
-                onClick={() => onViewNoid(noid.noid_id)}
-              >
-                <div className="rank-badge">
-                  {index === 0 && '🥇'}
-                  {index === 1 && '🥈'}
-                  {index === 2 && '🥉'}
-                  {index > 2 && `#${index + 1}`}
-                </div>
-
-                <div className="noid-preview">
-                  <div className="noid-id">NOID #{noid.noid_id}</div>
-                  <a 
-                    href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid.noid_id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="opensea-link-leaderboard"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <img src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" alt="OpenSea" />
-                  </a>
-                  {noid.current_streak !== 0 && (
-                    <div className="streak-indicator">
-                      {getStreakEmoji(noid.current_streak)}
-                      <span className={noid.current_streak > 0 ? 'positive' : 'negative'}>
-                        {Math.abs(noid.current_streak)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="noid-stats-grid">
-                  <div className="stat-item">
-                    <span className="stat-label">Win Rate</span>
-                    <span className="stat-value">{noid.win_rate}%</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">Wins</span>
-                    <span className="stat-value wins">{noid.total_wins}</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">Battles</span>
-                    <span className="stat-value">{noid.total_battles}</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">Best Streak</span>
-                    <span className="stat-value streak">{noid.best_streak || 0}</span>
-                  </div>
-                </div>
-
-                <div className="view-profile-btn">
-                  <span>View Profile →</span>
-                </div>
-              </div>
-            ))}
-
-            {leaderboardData.length === 0 && (
-              <div className="empty-state glass-panel">
-                <p>No stats yet. Start battling to see rankings!</p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// ============================================
-// NOID PROFILE COMPONENT
-// ============================================
-
-const NoidProfile = ({ noidId, onClose, getNoidImage }) => {
-  const [noidData, setNoidData] = useState(null);
-  const [imageUrl, setImageUrl] = useState(null);
-  const [headToHead, setHeadToHead] = useState([]);
-  const [beatenBy, setBeatenBy] = useState([]);
-  const [beaten, setBeaten] = useState([]);
-  const [gameModeStats, setGameModeStats] = useState([]);
-  const [achievements, setAchievements] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const today = new Date().toISOString().split('T')[0];
+  const voteKey = `votes_${userId}_${today}`;
+  const dailyVoteKey = `daily_vote_${userId}_${today}`;
 
   useEffect(() => {
-    loadNoidProfile();
-  }, [noidId]);
+    const votes = parseInt(localStorage.getItem(voteKey) || '0');
+    setVotedToday(votes);
+    
+    const dailyVoted = localStorage.getItem(dailyVoteKey) === 'true';
+    setUserDailyVoted(dailyVoted);
+  }, [voteKey, dailyVoteKey]);
 
-  const loadNoidProfile = async () => {
-    setLoading(true);
+  useEffect(() => {
+    if (view === 'battle') {
+      if (gameMode === 'daily') {
+        loadDailyBattle();
+      } else {
+        loadBattle();
+      }
+    } else if (view === 'leaderboard') {
+      loadLeaderboard();
+    }
+  }, [view, gameMode]);
+
+  useEffect(() => {
+    if (profileNoid) {
+      loadProfileData(profileNoid);
+    }
+  }, [profileNoid, profileTab]);
+
+  const loadProfileData = async (noidId) => {
     try {
       const { data: stats } = await supabase
         .from('noid_stats')
@@ -614,1125 +94,863 @@ const NoidProfile = ({ noidId, onClose, getNoidImage }) => {
         .eq('noid_id', noidId)
         .single();
 
-      if (stats) {
-        stats.win_rate = stats.total_battles > 0 
-          ? ((stats.total_wins / stats.total_battles) * 100).toFixed(2)
-          : 0;
-        setNoidData(stats);
+      setProfileStats(stats || {
+        noid_id: noidId,
+        total_battles: 0,
+        total_wins: 0,
+        total_losses: 0,
+        win_rate: 0,
+        current_streak: 0,
+        best_streak: 0
+      });
+
+      if (profileTab === 'headToHead') {
+        const { data: h2h } = await supabase
+          .from('head_to_head')
+          .select('*')
+          .or(`noid1_id.eq.${noidId},noid2_id.eq.${noidId}`)
+          .order('total_battles', { ascending: false })
+          .limit(20);
+
+        const formattedData = h2h?.map(record => {
+          const isNoid1 = record.noid1_id === noidId;
+          const opponentId = isNoid1 ? record.noid2_id : record.noid1_id;
+          const wins = isNoid1 ? record.noid1_wins : record.noid2_wins;
+          const losses = isNoid1 ? record.noid2_wins : record.noid1_wins;
+
+          return {
+            opponent_id: opponentId,
+            battles: record.total_battles,
+            wins: wins,
+            losses: losses,
+            win_rate: record.total_battles > 0 ? ((wins / record.total_battles) * 100).toFixed(1) : '0.0'
+          };
+        }) || [];
+
+        setHeadToHeadData(formattedData);
+
+        // Preload opponent images
+        formattedData.forEach(record => {
+          if (!imageCache[record.opponent_id]) {
+            fetchNoidImage(record.opponent_id);
+          }
+        });
       }
-
-      const img = await getNoidImage(noidId);
-      setImageUrl(img);
-
-      const { data: h2hData } = await supabase
-        .from('head_to_head')
-        .select('*')
-        .eq('noid_id', noidId)
-        .order('battles', { ascending: false })
-        .limit(5);
-      setHeadToHead(h2hData || []);
-
-      const { data: beatenByData } = await supabase
-        .from('noid_beaten_by')
-        .select('*')
-        .eq('noid_id', noidId)
-        .order('times_beaten', { ascending: false })
-        .limit(5);
-      setBeatenBy(beatenByData || []);
-
-      const { data: beatenData } = await supabase
-        .from('noid_beaten')
-        .select('*')
-        .eq('noid_id', noidId)
-        .order('times_beaten', { ascending: false })
-        .limit(5);
-      setBeaten(beatenData || []);
-
-      const { data: modeData } = await supabase
-        .from('noid_gamemode_stats')
-        .select('*')
-        .eq('noid_id', noidId);
-      setGameModeStats(modeData || []);
-
-      const { data: achievementData } = await supabase
-        .from('noid_achievements')
-        .select('*')
-        .eq('noid_id', noidId)
-        .order('earned_date', { ascending: false });
-      setAchievements(achievementData || []);
-
     } catch (error) {
       console.error('Error loading profile:', error);
     }
-    setLoading(false);
   };
 
-  const getStreakEmoji = (streak) => {
-    if (!streak) return '';
-    if (streak >= 10) return '🔥';
-    if (streak >= 5) return '⚡';
-    if (streak >= 3) return '✨';
-    if (streak <= -3) return '❄️';
-    return '';
-  };
-
-  const getGameModeIcon = (mode) => {
-    switch (mode) {
-      case 'rando': return '🎲';
-      case 'sticky': return '🏆';
-      case 'oneofone': return '👑';
-      case 'daily': return '⭐';
-      default: return '🎮';
-    }
-  };
-
-  const getAchievementIcon = (type) => {
-    if (type.includes('win_streak')) return '🔥';
-    if (type.includes('wins_')) return '🏆';
-    if (type.includes('win_rate')) return '👑';
-    if (type === 'first_win') return '⭐';
-    return '🎖️';
-  };
-
-  if (loading) {
-    return (
-      <div className="profile-container">
-        <MatrixRain />
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
-          <p>Loading NOID profile...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!noidData) {
-    return (
-      <div className="profile-container">
-        <MatrixRain />
-        <div className="glass-panel empty-state">
-          <h2>NOID #{noidId}</h2>
-          <p>This NOID hasn't battled yet!</p>
-          <button className="back-btn" onClick={onClose}>Back to Menu</button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="profile-container">
-      <MatrixRain />
-      
-      <div className="profile-header glass-panel">
-        <button className="back-btn" onClick={onClose}>
-          <span className="back-arrow">←</span>
-          Back
-        </button>
-        <h2 className="profile-title">NOID #{noidId}</h2>
-        <div className="spacer"></div>
-      </div>
-
-      <div className="profile-content">
-        <div className="profile-hero glass-panel">
-          <div className="hero-image">
-            {imageUrl && <img src={imageUrl} alt={`NOID #${noidId}`} />}
-          </div>
-          <div className="hero-stats">
-            <div className="hero-title">
-              <h1>NOID #{noidId}</h1>
-              <a 
-                href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noidId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="opensea-link-external opensea-link-profile-external"
-              >
-                <img src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" alt="OpenSea" />
-              </a>
-              {noidData.current_streak !== 0 && (
-                <div className="streak-badge">
-                  {getStreakEmoji(noidData.current_streak)}
-                  <span className={noidData.current_streak > 0 ? 'positive' : 'negative'}>
-                    {Math.abs(noidData.current_streak)} Streak
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="hero-main-stats">
-              <div className="main-stat">
-                <div className="stat-value large">{noidData.win_rate}%</div>
-                <div className="stat-label">Win Rate</div>
-              </div>
-              <div className="main-stat">
-                <div className="stat-value large wins">{noidData.total_wins}</div>
-                <div className="stat-label">Total Wins</div>
-              </div>
-              <div className="main-stat">
-                <div className="stat-value large">{noidData.total_battles}</div>
-                <div className="stat-label">Battles</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="profile-tabs glass-panel">
-          <button 
-            className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('overview')}
-          >
-            Overview
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'h2h' ? 'active' : ''}`}
-            onClick={() => setActiveTab('h2h')}
-          >
-            Head-to-Head
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'achievements' ? 'active' : ''}`}
-            onClick={() => setActiveTab('achievements')}
-          >
-            Achievements
-          </button>
-        </div>
-
-        {activeTab === 'overview' && (
-          <div className="tab-content">
-            <div className="stats-section glass-panel">
-              <h3 className="section-title">Core Stats</h3>
-              <div className="stats-grid">
-                <div className="stat-box">
-                  <div className="stat-icon">🏆</div>
-                  <div className="stat-info">
-                    <div className="stat-label">Total Wins</div>
-                    <div className="stat-value wins">{noidData.total_wins}</div>
-                  </div>
-                </div>
-                <div className="stat-box">
-                  <div className="stat-icon">💔</div>
-                  <div className="stat-info">
-                    <div className="stat-label">Total Losses</div>
-                    <div className="stat-value losses">{noidData.total_losses}</div>
-                  </div>
-                </div>
-                <div className="stat-box">
-                  <div className="stat-icon">⚔️</div>
-                  <div className="stat-info">
-                    <div className="stat-label">Total Battles</div>
-                    <div className="stat-value">{noidData.total_battles}</div>
-                  </div>
-                </div>
-                <div className="stat-box">
-                  <div className="stat-icon">📊</div>
-                  <div className="stat-info">
-                    <div className="stat-label">Win Rate</div>
-                    <div className="stat-value">{noidData.win_rate}%</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="stats-section glass-panel">
-              <h3 className="section-title">Streaks</h3>
-              <div className="stats-grid">
-                <div className="stat-box">
-                  <div className="stat-icon">{getStreakEmoji(noidData.current_streak) || '📈'}</div>
-                  <div className="stat-info">
-                    <div className="stat-label">Current Streak</div>
-                    <div className={`stat-value ${noidData.current_streak > 0 ? 'positive' : noidData.current_streak < 0 ? 'negative' : ''}`}>
-                      {noidData.current_streak > 0 ? '+' : ''}{noidData.current_streak || 0}
-                    </div>
-                  </div>
-                </div>
-                <div className="stat-box">
-                  <div className="stat-icon">🔥</div>
-                  <div className="stat-info">
-                    <div className="stat-label">Best Streak</div>
-                    <div className="stat-value streak">{noidData.best_streak || 0}</div>
-                  </div>
-                </div>
-                <div className="stat-box">
-                  <div className="stat-icon">🎯</div>
-                  <div className="stat-info">
-                    <div className="stat-label">Underdog Wins</div>
-                    <div className="stat-value">{noidData.underdog_wins || 0}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {gameModeStats.length > 0 && (
-              <div className="stats-section glass-panel">
-                <h3 className="section-title">Performance by Game Mode</h3>
-                <div className="mode-stats-list">
-                  {gameModeStats.map(mode => {
-                    const modeWinRate = mode.battles > 0 
-                      ? ((mode.wins / mode.battles) * 100).toFixed(2)
-                      : 0;
-                    return (
-                      <div key={mode.game_mode} className="mode-stat-item">
-                        <div className="mode-header">
-                          <span className="mode-icon">{getGameModeIcon(mode.game_mode)}</span>
-                          <span className="mode-name">{mode.game_mode.toUpperCase()}</span>
-                        </div>
-                        <div className="mode-numbers">
-                          <span className="mode-record">{mode.wins}W - {mode.losses}L</span>
-                          <span className="mode-winrate">{modeWinRate}%</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'h2h' && (
-          <div className="tab-content">
-            {headToHead.length > 0 && (
-              <div className="stats-section glass-panel">
-                <h3 className="section-title">Most Battled Opponents</h3>
-                <div className="h2h-list">
-                  {headToHead.map(h2h => {
-                    const winRate = h2h.battles > 0 
-                      ? ((h2h.wins / h2h.battles) * 100).toFixed(0)
-                      : 0;
-                    return (
-                      <div key={h2h.opponent_id} className="h2h-item">
-                        <div className="h2h-opponent">
-                          <span className="opponent-label">NOID #{h2h.opponent_id}</span>
-                          <span className="battles-count">{h2h.battles} battles</span>
-                        </div>
-                        <div className="h2h-record">
-                          <span className="record">{h2h.wins}W - {h2h.losses}L</span>
-                          <span className="winrate">{winRate}%</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {beaten.length > 0 && (
-              <div className="stats-section glass-panel">
-                <h3 className="section-title">💪 Most Beaten Opponents</h3>
-                <div className="beaten-list">
-                  {beaten.map(b => (
-                    <div key={b.beaten_id} className="beaten-item">
-                      <span className="beaten-id">NOID #{b.beaten_id}</span>
-                      <span className="times-beaten">{b.times_beaten}x</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {beatenBy.length > 0 && (
-              <div className="stats-section glass-panel">
-                <h3 className="section-title">😤 Beaten By</h3>
-                <div className="beaten-list">
-                  {beatenBy.map(b => (
-                    <div key={b.beaten_by_id} className="beaten-item nemesis">
-                      <span className="beaten-id">NOID #{b.beaten_by_id}</span>
-                      <span className="times-beaten">{b.times_beaten}x</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {headToHead.length === 0 && beaten.length === 0 && beatenBy.length === 0 && (
-              <div className="empty-state glass-panel">
-                <p>No head-to-head data yet.</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'achievements' && (
-          <div className="tab-content">
-            <div className="stats-section glass-panel">
-              <h3 className="section-title">Achievements Unlocked</h3>
-              {achievements.length > 0 ? (
-                <div className="achievements-grid">
-                  {achievements.map(achievement => (
-                    <div key={achievement.id} className="achievement-item">
-                      <div className="achievement-icon">
-                        {getAchievementIcon(achievement.achievement_type)}
-                      </div>
-                      <div className="achievement-info">
-                        <div className="achievement-name">{achievement.achievement_name}</div>
-                        <div className="achievement-desc">{achievement.achievement_description}</div>
-                        <div className="achievement-date">
-                          {new Date(achievement.earned_date).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <p>No achievements yet. Keep battling!</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// ============================================
-// MAIN APP COMPONENT
-// ============================================
-
-function App() {
-  const [gameMode, setGameMode] = useState('menu');
-  const [view, setView] = useState('menu'); // menu, battle, leaderboard, profile
-  const [selectedNoidId, setSelectedNoidId] = useState(null);
-  const [noid1, setNoid1] = useState(null);
-  const [noid2, setNoid2] = useState(null);
-  const [votesRemaining, setVotesRemaining] = useState(DAILY_VOTE_LIMIT);
-  const [stickyWinner, setStickyWinner] = useState(null);
-  const [dailyBattleData, setDailyBattleData] = useState(null);
-  const [userDailyVoted, setUserDailyVoted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [userId, setUserId] = useState(null);
-  const [showWalletModal, setShowWalletModal] = useState(false);
-  const [pendingGameMode, setPendingGameMode] = useState(null);
-  const [isVoting, setIsVoting] = useState(false);
-  const [votedFor, setVotedFor] = useState(null);
-  
-  // Get wallet connection status and address
-  const { isConnected, address } = useAccount();
-
-  useEffect(() => {
-    // Use wallet address as user ID if connected, otherwise generate random ID
-    if (isConnected && address) {
-      setUserId(address.toLowerCase());
-      checkDailyVotes(address.toLowerCase());
-    } else {
-      let id = localStorage.getItem('noids_user_id');
-      if (!id) {
-        id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        localStorage.setItem('noids_user_id', id);
-      }
-      setUserId(id);
-      checkDailyVotes(id);
-    }
-  }, [isConnected, address]);
-
-  const checkDailyVotes = (uid) => {
-    const today = new Date().toISOString().split('T')[0];
-    const key = `votes_${uid}_${today}`;
-    const stored = localStorage.getItem(key);
-    
-    if (stored) {
-      const votes = parseInt(stored);
-      setVotesRemaining(DAILY_VOTE_LIMIT - votes);
-    } else {
-      setVotesRemaining(DAILY_VOTE_LIMIT);
-    }
-  };
-
-  const getRandomNoid = (exclude = []) => {
-    let num;
-    do {
-      num = Math.floor(Math.random() * TOTAL_NOIDS) + 1;
-    } while (exclude.includes(num));
-    return num;
-  };
-
-  const getRandomOneOfOne = (exclude = []) => {
-    const available = ONE_OF_ONE_NOIDS.filter(id => !exclude.includes(id));
-    if (available.length === 0) return getRandomNoid(exclude);
-    return available[Math.floor(Math.random() * available.length)];
-  };
-
-  // Cache for storing fetched image URLs
-  const [imageCache, setImageCache] = useState({});
-
-  const fetchNoidImageFromOpenSea = async (tokenId) => {
-    // Check cache first
-    if (imageCache[tokenId]) {
-      return imageCache[tokenId];
-    }
+  const fetchNoidImage = async (tokenId) => {
+    if (imageCache[tokenId]) return imageCache[tokenId];
 
     try {
       const response = await fetch(
         `https://api.opensea.io/api/v2/chain/ethereum/contract/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/nfts/${tokenId}`,
         {
           headers: {
-            'X-API-KEY': 'f6662070d18f4d54936bdd66b94c3f11'
+            'x-api-key': OPENSEA_API_KEY
           }
         }
       );
 
-      if (!response.ok) {
-        throw new Error(`OpenSea API error: ${response.status}`);
-      }
+      if (!response.ok) throw new Error('Failed to fetch');
 
       const data = await response.json();
-      const imageUrl = data.nft?.image_url || data.nft?.display_image_url;
+      const imageUrl = data.nft.image_url;
       
-      if (imageUrl) {
-        // Cache the URL
-        setImageCache(prev => ({ ...prev, [tokenId]: imageUrl }));
-        return imageUrl;
-      }
-
-      throw new Error('No image URL in response');
+      setImageCache(prev => ({...prev, [tokenId]: imageUrl}));
+      return imageUrl;
     } catch (error) {
       console.error(`Error fetching image for NOID #${tokenId}:`, error);
-      // Fallback to IPFS if API fails
-      return `https://gateway.pinata.cloud/ipfs/QmcXuDARMGMv59Q4ZZuoN5rjdM9GQrmp8NjLH5PDLixgAE/${tokenId}`;
-    }
-  };
-
-  const getNoidImage = async (tokenId) => {
-    return await fetchNoidImageFromOpenSea(tokenId);
-  };
-
-  const startBattle = async (mode) => {
-    // Check if wallet is connected before starting battle
-    if (!isConnected) {
-      setPendingGameMode(mode);
-      setShowWalletModal(true);
-      return;
-    }
-    
-    setGameMode(mode);
-    setView('battle');
-    setLoading(true);
-
-    try {
-      if (mode === 'rando') {
-        const id1 = getRandomNoid();
-        const id2 = getRandomNoid([id1]);
-        const [img1, img2] = await Promise.all([
-          getNoidImage(id1),
-          getNoidImage(id2)
-        ]);
-        setNoid1({ id: id1, image: img1 });
-        setNoid2({ id: id2, image: img2 });
-      } else if (mode === 'sticky') {
-        if (stickyWinner) {
-          const id2 = getRandomNoid([stickyWinner.id]);
-          const img2 = await getNoidImage(id2);
-          setNoid1(stickyWinner);
-          setNoid2({ id: id2, image: img2 });
-        } else {
-          const id1 = getRandomNoid();
-          const id2 = getRandomNoid([id1]);
-          const [img1, img2] = await Promise.all([
-            getNoidImage(id1),
-            getNoidImage(id2)
-          ]);
-          setNoid1({ id: id1, image: img1 });
-          setNoid2({ id: id2, image: img2 });
-        }
-      } else if (mode === 'oneofone') {
-        const id1 = getRandomOneOfOne();
-        const id2 = getRandomOneOfOne([id1]);
-        const [img1, img2] = await Promise.all([
-          getNoidImage(id1),
-          getNoidImage(id2)
-        ]);
-        setNoid1({ id: id1, image: img1 });
-        setNoid2({ id: id2, image: img2 });
-      } else if (mode === 'daily') {
-        await loadDailyBattle();
-      }
-    } catch (error) {
-      console.error('Error loading battle:', error);
-    }
-
-    setLoading(false);
-  };
-
-  const handleWalletConnected = () => {
-    setShowWalletModal(false);
-    if (pendingGameMode) {
-      startBattle(pendingGameMode);
-      setPendingGameMode(null);
+      return null;
     }
   };
 
   const loadDailyBattle = async () => {
-    const today = new Date().toISOString().split('T')[0];
-    
+    setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Get today's date in UTC
+      const todayUTC = new Date().toISOString().split('T')[0];
+      
+      // Query for today's pre-generated battle
+      const { data: existingBattle, error } = await supabase
         .from('daily_battles')
         .select('*')
-        .eq('battle_date', today)
+        .eq('battle_date', todayUTC)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading daily battle:', error);
-        return;
+      if (error) {
+        console.error('Error fetching daily battle:', error);
+        throw error;
       }
 
-      if (!data) {
-        // Generate new daily battle from top 1000 rarity NOIDs
-        const top1000Rarity = Array.from({ length: 1000 }, (_, i) => i + 1);
+      if (existingBattle) {
+        setDailyBattleData(existingBattle);
+        setNoid1(existingBattle.noid1_id);
+        setNoid2(existingBattle.noid2_id);
         
-        // Get previous daily battles to prevent rematches
-        const { data: previousBattles } = await supabase
-          .from('daily_battles')
-          .select('noid1_id, noid2_id')
-          .order('battle_date', { ascending: false })
-          .limit(366); // Check last year to avoid repeats
-        
-        const usedPairs = new Set();
-        previousBattles?.forEach(battle => {
-          const pair1 = `${battle.noid1_id}-${battle.noid2_id}`;
-          const pair2 = `${battle.noid2_id}-${battle.noid1_id}`;
-          usedPairs.add(pair1);
-          usedPairs.add(pair2);
-        });
-        
-        // Find unique matchup
-        let id1, id2, attempts = 0;
-        do {
-          id1 = top1000Rarity[Math.floor(Math.random() * top1000Rarity.length)];
-          id2 = top1000Rarity[Math.floor(Math.random() * top1000Rarity.length)];
-          attempts++;
-          
-          if (attempts > 100) {
-            // Fallback: just pick any two different NOIDs
-            id1 = top1000Rarity[Math.floor(Math.random() * top1000Rarity.length)];
-            id2 = top1000Rarity[Math.floor(Math.random() * top1000Rarity.length)];
-            while (id2 === id1) {
-              id2 = top1000Rarity[Math.floor(Math.random() * top1000Rarity.length)];
-            }
-            break;
-          }
-        } while (
-          id1 === id2 || 
-          usedPairs.has(`${id1}-${id2}`) || 
-          usedPairs.has(`${id2}-${id1}`)
-        );
-        
-        const { data: newBattle, error: insertError } = await supabase
-          .from('daily_battles')
-          .insert([{
-            battle_date: today,
-            noid1_id: id1,
-            noid2_id: id2,
-            noid1_votes: 0,
-            noid2_votes: 0
-          }])
-          .select()
-          .single();
-
-        if (insertError) {
-          console.error('Error creating daily battle:', insertError);
-          return;
-        }
-
-        // Fetch images from OpenSea API
-        const [img1, img2] = await Promise.all([
-          getNoidImage(id1),
-          getNoidImage(id2)
+        await Promise.all([
+          fetchNoidImage(existingBattle.noid1_id),
+          fetchNoidImage(existingBattle.noid2_id)
         ]);
-
-        setNoid1({ id: id1, image: img1 });
-        setNoid2({ id: id2, image: img2 });
-        setDailyBattleData(newBattle);
       } else {
-        // Fetch images from OpenSea API
-        const [img1, img2] = await Promise.all([
-          getNoidImage(data.noid1_id),
-          getNoidImage(data.noid2_id)
-        ]);
-
-        setNoid1({ id: data.noid1_id, image: img1 });
-        setNoid2({ id: data.noid2_id, image: img2 });
-        setDailyBattleData(data);
+        // This should never happen if we have 2 years of pre-generated battles
+        console.error('No daily battle found for today:', todayUTC);
+        alert('No daily battle available for today. Please contact support.');
       }
-
-      const voteKey = `daily_vote_${userId}_${today}`;
-      const hasVoted = localStorage.getItem(voteKey);
-      setUserDailyVoted(!!hasVoted);
-
-    } catch (err) {
-      console.error('Unexpected error:', err);
+    } catch (error) {
+      console.error('Error loading daily battle:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleVote = async (winner) => {
-    if (isVoting) return; // Prevent double-clicks
-    
-    if (gameMode === 'daily') {
-      if (userDailyVoted) return;
-      
-      setIsVoting(true);
-      setVotedFor(winner);
-      
-      const today = new Date().toISOString().split('T')[0];
-      const voteKey = `daily_vote_${userId}_${today}`;
-      
-      const winnerField = winner === 1 ? 'noid1_votes' : 'noid2_votes';
-      const winnerNoid = winner === 1 ? noid1 : noid2;
+  const loadBattle = async () => {
+    setLoading(true);
+    setWinner(null);
 
-      try {
-        const { error } = await supabase
-          .from('daily_battles')
-          .update({ [winnerField]: dailyBattleData[winnerField] + 1 })
-          .eq('battle_date', today);
+    try {
+      let noid1Id, noid2Id;
 
-        if (error) {
-          console.error('Error updating daily battle:', error);
-          setIsVoting(false);
-          setVotedFor(null);
-          return;
+      if (gameMode === 'sticky' && stickyWinner) {
+        noid1Id = stickyWinner;
+        noid2Id = getRandomNoid(noid1Id);
+      } else if (gameMode === 'oneOfOne') {
+        noid1Id = ONE_OF_ONE_NOIDS[Math.floor(Math.random() * ONE_OF_ONE_NOIDS.length)];
+        noid2Id = ONE_OF_ONE_NOIDS[Math.floor(Math.random() * ONE_OF_ONE_NOIDS.length)];
+        while (noid2Id === noid1Id) {
+          noid2Id = ONE_OF_ONE_NOIDS[Math.floor(Math.random() * ONE_OF_ONE_NOIDS.length)];
         }
-
-        // Fire and forget - record stats in background
-        recordCompleteBattle({
-          noid1Id: noid1.id,
-          noid2Id: noid2.id,
-          winnerId: winnerNoid.id,
-          gameMode: 'daily',
-          userId: userId,
-          isDailyBattle: true,
-          totalVotes: dailyBattleData.noid1_votes + dailyBattleData.noid2_votes + 1,
-          voteMargin: Math.abs(dailyBattleData.noid1_votes - dailyBattleData.noid2_votes)
-        }).catch(err => console.error('Stats recording error:', err));
-
-        localStorage.setItem(voteKey, winner.toString());
-        setUserDailyVoted(true);
-        
-        // Update the dailyBattleData with new vote count
-        setDailyBattleData({
-          ...dailyBattleData,
-          [winnerField]: dailyBattleData[winnerField] + 1
-        });
-        
-        // Don't reload - just show the "Thanks for voting" message
-        setTimeout(() => {
-          setIsVoting(false);
-          setVotedFor(null);
-        }, 800);
-      } catch (err) {
-        console.error('Error voting:', err);
-        setIsVoting(false);
-        setVotedFor(null);
+      } else {
+        noid1Id = Math.floor(Math.random() * 5555) + 1;
+        noid2Id = Math.floor(Math.random() * 5555) + 1;
+        while (noid2Id === noid1Id) {
+          noid2Id = Math.floor(Math.random() * 5555) + 1;
+        }
       }
+
+      setNoid1(noid1Id);
+      setNoid2(noid2Id);
+
+      await Promise.all([
+        fetchNoidImage(noid1Id),
+        fetchNoidImage(noid2Id)
+      ]);
+
+    } catch (error) {
+      console.error('Error loading battle:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getRandomNoid = (exclude = null) => {
+    let noidId;
+    if (gameMode === 'oneOfOne') {
+      noidId = ONE_OF_ONE_NOIDS[Math.floor(Math.random() * ONE_OF_ONE_NOIDS.length)];
+      while (noidId === exclude) {
+        noidId = ONE_OF_ONE_NOIDS[Math.floor(Math.random() * ONE_OF_ONE_NOIDS.length)];
+      }
+    } else {
+      noidId = Math.floor(Math.random() * 5555) + 1;
+      while (noidId === exclude) {
+        noidId = Math.floor(Math.random() * 5555) + 1;
+      }
+    }
+    return noidId;
+  };
+
+  const handleVote = async (selectedNoid) => {
+    if (!isConnected) {
+      setShowWalletModal(true);
       return;
     }
 
-    if (votesRemaining <= 0) return;
-    
-    // Show feedback immediately
-    setIsVoting(true);
-    setVotedFor(winner);
+    if (gameMode === 'daily') {
+      if (userDailyVoted) {
+        alert('You have already voted in today\'s Daily Battle! Come back tomorrow.');
+        return;
+      }
+    } else {
+      if (votedToday >= 55) {
+        alert('You have used all 55 votes for today! Come back tomorrow.');
+        return;
+      }
+    }
 
-    const winnerNoid = winner === 1 ? noid1 : noid2;
-    const today = new Date().toISOString().split('T')[0];
-    const key = `votes_${userId}_${today}`;
-    const currentVotes = parseInt(localStorage.getItem(key) || '0');
-    
-    localStorage.setItem(key, (currentVotes + 1).toString());
-    const newStickyWinner = gameMode === 'sticky' ? winnerNoid : stickyWinner;
+    setRecording(true);
+    setWinner(selectedNoid);
 
-    // Fire and forget - background recording
-    recordCompleteBattle({
-      noid1Id: noid1.id,
-      noid2Id: noid2.id,
-      winnerId: winnerNoid.id,
-      gameMode: gameMode,
-      userId: userId,
-      isDailyBattle: false
-    }).catch(err => console.error('Stats recording error:', err));
+    const loserId = selectedNoid === noid1 ? noid2 : noid1;
 
-    supabase
-      .from('votes')
-      .insert([{
+    try {
+      if (gameMode === 'daily') {
+        const voteField = selectedNoid === dailyBattleData.noid1_id ? 'noid1_votes' : 'noid2_votes';
+        const currentVotes = dailyBattleData[voteField];
+
+        await supabase
+          .from('daily_battles')
+          .update({ [voteField]: currentVotes + 1 })
+          .eq('id', dailyBattleData.id);
+
+        setDailyBattleData(prev => ({
+          ...prev,
+          [voteField]: currentVotes + 1
+        }));
+
+        localStorage.setItem(dailyVoteKey, 'true');
+        setUserDailyVoted(true);
+      } else {
+        localStorage.setItem(voteKey, (votedToday + 1).toString());
+        setVotedToday(votedToday + 1);
+      }
+
+      await supabase.from('votes').insert({
         user_id: userId,
-        winner_noid_id: winnerNoid.id,
-        loser_noid_id: winner === 1 ? noid2.id : noid1.id,
+        winner_noid_id: selectedNoid,
+        loser_noid_id: loserId,
         game_mode: gameMode
-      }])
-      .then(({ error }) => {
-        if (error) console.error('Error recording vote:', error);
       });
 
-    // Load next battle images in background
-    const loadNext = async () => {
-      try {
-        if (gameMode === 'rando') {
-          const id1 = getRandomNoid();
-          const id2 = getRandomNoid([id1]);
-          const [img1, img2] = await Promise.all([
-            getNoidImage(id1),
-            getNoidImage(id2)
-          ]);
-          return { noid1: { id: id1, image: img1 }, noid2: { id: id2, image: img2 } };
-        } else if (gameMode === 'sticky') {
-          if (newStickyWinner) {
-            const id2 = getRandomNoid([newStickyWinner.id]);
-            const img2 = await getNoidImage(id2);
-            return { noid1: newStickyWinner, noid2: { id: id2, image: img2 } };
-          } else {
-            const id1 = getRandomNoid();
-            const id2 = getRandomNoid([id1]);
-            const [img1, img2] = await Promise.all([
-              getNoidImage(id1),
-              getNoidImage(id2)
-            ]);
-            return { noid1: { id: id1, image: img1 }, noid2: { id: id2, image: img2 } };
-          }
-        } else if (gameMode === 'oneofone') {
-          const id1 = getRandomOneOfOne();
-          const id2 = getRandomOneOfOne([id1]);
-          const [img1, img2] = await Promise.all([
-            getNoidImage(id1),
-            getNoidImage(id2)
-          ]);
-          return { noid1: { id: id1, image: img1 }, noid2: { id: id2, image: img2 } };
-        }
-      } catch (error) {
-        console.error('Error loading next battle:', error);
-        return null;
-      }
-    };
+      const { data: winnerStats } = await supabase
+        .from('noid_stats')
+        .select('*')
+        .eq('noid_id', selectedNoid)
+        .single();
 
-    const nextBattlePromise = loadNext();
+      const { data: loserStats } = await supabase
+        .from('noid_stats')
+        .select('*')
+        .eq('noid_id', loserId)
+        .single();
 
-    // Wait 800ms for loser to fade out completely
-    setTimeout(async () => {
-      // Hide Recording Vote message
-      setVotedFor(null);
-      
-      // Wait for next battle to load
-      const nextBattle = await nextBattlePromise;
-      
-      if (nextBattle) {
-        // Update all state at once
-        setNoid1(nextBattle.noid1);
-        setNoid2(nextBattle.noid2);
-        setVotesRemaining(DAILY_VOTE_LIMIT - currentVotes - 1);
-        if (gameMode === 'sticky') {
-          setStickyWinner(newStickyWinner);
-        }
+      const winnerRank = winnerStats?.current_rank || 9999;
+      const loserRank = loserStats?.current_rank || 9999;
+      const wasUpset = winnerRank > loserRank;
+      const wasUnderdogWin = winnerRank > loserRank + 500;
+
+      await supabase.from('battle_history').insert({
+        noid1_id: noid1,
+        noid2_id: noid2,
+        winner_noid_id: selectedNoid,
+        loser_noid_id: loserId,
+        game_mode: gameMode,
+        winner_rank_before: winnerRank,
+        loser_rank_before: loserRank,
+        was_upset: wasUpset,
+        was_underdog_win: wasUnderdogWin,
+        is_daily_battle: gameMode === 'daily'
+      });
+
+      const winnerCurrentStreak = winnerStats?.current_streak || 0;
+      const newWinnerStreak = winnerCurrentStreak + 1;
+      const winnerBestStreak = winnerStats?.best_streak || 0;
+
+      await supabase.rpc('upsert_noid_stats', {
+        p_noid_id: selectedNoid,
+        p_battles_inc: 1,
+        p_wins_inc: 1,
+        p_losses_inc: 0,
+        p_new_streak: newWinnerStreak,
+        p_best_streak: Math.max(newWinnerStreak, winnerBestStreak),
+        p_underdog_wins_inc: wasUnderdogWin ? 1 : 0
+      });
+
+      await supabase.rpc('upsert_noid_stats', {
+        p_noid_id: loserId,
+        p_battles_inc: 1,
+        p_wins_inc: 0,
+        p_losses_inc: 1,
+        p_new_streak: 0,
+        p_best_streak: loserStats?.best_streak || 0,
+        p_underdog_wins_inc: 0
+      });
+
+      await supabase.rpc('update_head_to_head', {
+        p_noid1_id: noid1,
+        p_noid2_id: noid2,
+        p_winner_id: selectedNoid
+      });
+
+      await supabase.from('noid_beaten').insert({
+        winner_noid_id: selectedNoid,
+        loser_noid_id: loserId,
+        game_mode: gameMode
+      });
+
+      await supabase.rpc('upsert_gamemode_stats', {
+        p_noid_id: selectedNoid,
+        p_game_mode: gameMode,
+        p_battles_inc: 1,
+        p_wins_inc: 1
+      });
+
+      await supabase.rpc('upsert_gamemode_stats', {
+        p_noid_id: loserId,
+        p_game_mode: gameMode,
+        p_battles_inc: 1,
+        p_wins_inc: 0
+      });
+
+      setTimeout(() => {
+        setRecording(false);
         
-        // Small delay to let new images render, then remove voting state
-        setTimeout(() => {
-          setIsVoting(false);
-        }, 100);
-      } else {
-        setIsVoting(false);
-      }
-    }, 800);
+        if (gameMode === 'daily') {
+          // Don't reload for daily battles
+        } else {
+          const newStickyWinner = gameMode === 'sticky' ? selectedNoid : null;
+          setStickyWinner(newStickyWinner);
+          loadBattle();
+        }
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error recording vote:', error);
+      setRecording(false);
+      alert('Error recording vote. Please try again.');
+    }
   };
 
-  const Menu = () => (
-    <div className="menu-container">
-      <MatrixRain />
-      
-      <div className="menu-header">
-        <button 
-          className="wallet-header-btn"
-          onClick={() => setShowWalletModal(true)}
-        >
-          {isConnected ? (
-            <>
-              <span className="wallet-icon">💳</span>
-              <span className="wallet-text">{address.slice(0, 6)}...{address.slice(-4)}</span>
-            </>
-          ) : (
-            <>
-              <span className="wallet-icon">💳</span>
-              <span className="wallet-text">Connect Wallet</span>
-            </>
-          )}
-        </button>
+  const loadLeaderboard = async () => {
+    try {
+      let query = supabase.from('noid_stats').select('*');
 
-        {isConnected && (
-          <button 
-            className="my-noids-header-btn"
-            onClick={() => setView('mynoids')}
-          >
-            <span className="noids-icon">🖼️</span>
-            <span className="noids-text">My NOIDs</span>
-          </button>
-        )}
-      </div>
-      
-      <div className="logo-section">
-        <img 
-          src="/NOiDS_Battle.png" 
-          alt="NOiDS Battle Logo" 
-          className="main-logo"
-        />
-        <p className="subtitle">Which NOID reigns supreme?</p>
-      </div>
+      if (leaderboardTab === 'winRate') {
+        query = query.gte('total_battles', 3).order('win_rate', { ascending: false });
+      } else if (leaderboardTab === 'totalWins') {
+        query = query.order('total_wins', { ascending: false });
+      } else if (leaderboardTab === 'hotStreak') {
+        query = query.gte('current_streak', 3).order('current_streak', { ascending: false });
+      }
 
-      <div className="game-modes">
-        <div className="glass-panel">
-          <div className="panel-header">
-            <h3>Single Player</h3>
-            <div className="votes-badge">
-              <span className="votes-text">Votes:</span>
-              <span className="votes-number">{votesRemaining}/55</span>
-            </div>
-          </div>
-          
-          <button 
-            className="mode-btn"
-            onClick={() => startBattle('rando')}
-            disabled={votesRemaining <= 0}
-          >
-            <div className="btn-icon">🎲</div>
-            <div className="btn-content">
-              <h4>Rando Battle</h4>
-              <p>Two random NOiDS face off</p>
-            </div>
-          </button>
+      const { data } = await query.limit(50);
+      setLeaderboardData(data || []);
 
-          <button 
-            className="mode-btn"
-            onClick={() => startBattle('sticky')}
-            disabled={votesRemaining <= 0}
-          >
-            <div className="btn-icon">🏆</div>
-            <div className="btn-content">
-              <h4>Sticky Winner</h4>
-              <p>Winner stays, challenger appears</p>
-            </div>
-          </button>
+      if (data) {
+        data.forEach(noid => {
+          if (!imageCache[noid.noid_id]) {
+            fetchNoidImage(noid.noid_id);
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error loading leaderboard:', error);
+    }
+  };
 
-          <button 
-            className="mode-btn"
-            onClick={() => startBattle('oneofone')}
-            disabled={votesRemaining <= 0}
-          >
-            <div className="btn-icon">👑</div>
-            <div className="btn-content">
-              <h4>One of One Championship</h4>
-              <p>Battle of the rarest</p>
-            </div>
-          </button>
+  useEffect(() => {
+    if (view === 'leaderboard') {
+      loadLeaderboard();
+    }
+  }, [leaderboardTab]);
+
+  const handleConnectWallet = () => {
+    connect({ connector: injected() });
+    setShowWalletModal(false);
+  };
+
+  const resetVotes = () => {
+    localStorage.removeItem(voteKey);
+    localStorage.removeItem(dailyVoteKey);
+    setVotedToday(0);
+    setUserDailyVoted(false);
+    alert('Votes reset! This is a beta feature for testing.');
+  };
+
+  const viewProfile = (noidId) => {
+    setProfileNoid(noidId);
+    setProfileTab('overview');
+    setView('profile');
+  };
+
+  if (view === 'myNoids') {
+    return (
+      <div className="app">
+        <div className="matrix-bg"></div>
+        <div className="app-content">
+          <MyNoids 
+            onBack={() => setView('battle')} 
+            imageCache={imageCache}
+            fetchNoidImage={fetchNoidImage}
+            onViewProfile={viewProfile}
+            onResetVotes={resetVotes}
+          />
         </div>
-
-        <div className="glass-panel community-panel">
-          <div className="panel-header">
-            <h3>Community Mode</h3>
-          </div>
-          
-          <button 
-            className="mode-btn community-btn"
-            onClick={() => startBattle('daily')}
-          >
-            <div className="btn-icon">⭐</div>
-            <div className="btn-content">
-              <h4>Daily Battle</h4>
-              <p>One battle, one vote, 24 hours</p>
-              {userDailyVoted && <span className="voted-badge">✓ Voted</span>}
-            </div>
-          </button>
-        </div>
-
-        {votesRemaining <= 0 && (
-          <div className="limit-notice glass-panel">
-            <span className="notice-icon">⏰</span>
-            <p>You've used all your daily votes!<br/>Come back tomorrow.</p>
-          </div>
-        )}
-
-        <button 
-          className="stats-btn glass-panel"
-          onClick={() => setView('leaderboard')}
-        >
-          📊 View Stats & Leaderboard
-        </button>
+        <footer className="app-footer">
+          <span className="footer-version">v0.11 (Beta)</span>
+          <span className="footer-credits">NOiDS Battle built and hosted by @NoCredits</span>
+        </footer>
       </div>
-    </div>
-  );
+    );
+  }
 
-  const Battle = () => (
-    <div className="battle-container">
-      <MatrixRain />
-      
-      <div className="battle-header glass-panel">
-        <button className="back-btn" onClick={() => setView('menu')}>
-          <span className="back-arrow">←</span>
-          Back to Menu
-        </button>
-        <div className="mode-title">
-          {gameMode === 'rando' && <><span className="mode-icon">🎲</span> Rando Battle</>}
-          {gameMode === 'sticky' && <><span className="mode-icon">🏆</span> Sticky Winner</>}
-          {gameMode === 'oneofone' && <><span className="mode-icon">👑</span> One of One</>}
-          {gameMode === 'daily' && <><span className="mode-icon">⭐</span> Daily Battle</>}
-        </div>
-        {gameMode !== 'daily' && (
-          <div className="votes-badge">
-            <span className="votes-text">Votes:</span>
-            <span className="votes-number">{votesRemaining}/55</span>
-          </div>
-        )}
-      </div>
-
-      {loading ? (
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
-          <p>Loading NOiDS...</p>
-        </div>
-      ) : (
-        <>
-          {isVoting && (
-            <div className="voting-overlay">
-              <div className="voting-message">Recording Vote...</div>
+  if (view === 'profile' && profileNoid) {
+    return (
+      <div className="app">
+        <div className="matrix-bg"></div>
+        <div className="app-content">
+          <div className="profile-view">
+            <div className="profile-header">
+              <button className="back-button" onClick={() => setView('battle')}>
+                ← Back to Battle
+              </button>
+              <h1 className="profile-title">NOID #{profileNoid}</h1>
             </div>
-          )}
-          <div className="battle-arena">
-            <div 
-              className={`noid-card glass-card ${
-                userDailyVoted && gameMode === 'daily' ? 'disabled' : ''
-              } ${
-                isVoting && votedFor === 1 ? 'voted-winner' : ''
-              } ${
-                isVoting && votedFor === 2 ? 'voted-loser' : ''
-              } ${
-                isVoting ? 'voting' : ''
-              }`}
-              onClick={() => !userDailyVoted && !isVoting && handleVote(1)}
-            >
-              <div className="card-glow"></div>
-              <div className="image-container">
-                <img src={noid1?.image} alt={`NOID #${noid1?.id}`} />
+
+            <div className="profile-main">
+              <div className="profile-image-container">
+                <img 
+                  src={imageCache[profileNoid] || 'https://via.placeholder.com/300x300?text=Loading...'} 
+                  alt={`NOID #${profileNoid}`}
+                  className="profile-image"
+                />
               </div>
-              <div className="noid-info">
-                <h3>NOID #{noid1?.id}</h3>
+
+              <div className="profile-info">
+                <h2>NOID #{profileNoid}</h2>
                 <a 
-                  href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid1?.id}`}
+                  href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${profileNoid}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="opensea-link-external"
-                  onClick={(e) => e.stopPropagation()}
+                  className="opensea-link-profile"
                 >
-                  <img src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" alt="OpenSea" />
+                  <img 
+                    src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" 
+                    alt="OpenSea"
+                    className="opensea-icon"
+                  />
                 </a>
-                {gameMode === 'daily' && dailyBattleData && userDailyVoted && (
-                  <div className="vote-count">
-                    <span className="vote-label">Votes:</span>
-                    <span className="vote-number">{dailyBattleData.noid1_votes}</span>
-                  </div>
+
+                {profileStats && (
+                  <>
+                    {profileStats.current_streak > 0 && (
+                      <div className="streak-badge">
+                        🔥 {profileStats.current_streak} Streak
+                      </div>
+                    )}
+
+                    <div className="profile-stats-grid">
+                      <div className="profile-stat">
+                        <div className="profile-stat-value">{profileStats.win_rate?.toFixed(2) || '0.00'}%</div>
+                        <div className="profile-stat-label">WIN RATE</div>
+                      </div>
+                      <div className="profile-stat">
+                        <div className="profile-stat-value">{profileStats.total_wins || 0}</div>
+                        <div className="profile-stat-label">TOTAL WINS</div>
+                      </div>
+                      <div className="profile-stat">
+                        <div className="profile-stat-value">{profileStats.total_battles || 0}</div>
+                        <div className="profile-stat-label">BATTLES</div>
+                      </div>
+                    </div>
+
+                    <div className="profile-record">
+                      Record: {profileStats.total_wins || 0}W - {profileStats.total_losses || 0}L
+                    </div>
+                    {profileStats.best_streak > 0 && (
+                      <div className="profile-best-streak">
+                        Best Streak: {profileStats.best_streak}
+                      </div>
+                    )}
+                    {profileStats.current_rank && (
+                      <div className="profile-rank">
+                        Current Rank: #{profileStats.current_rank}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
-          </div>
-
-          <div className="vs-divider">
-            <div className="vs-circle">
-              <span>VS</span>
             </div>
-          </div>
 
-          <div 
-            className={`noid-card glass-card ${
-              userDailyVoted && gameMode === 'daily' ? 'disabled' : ''
-            } ${
-              isVoting && votedFor === 2 ? 'voted-winner' : ''
-            } ${
-              isVoting && votedFor === 1 ? 'voted-loser' : ''
-            } ${
-              isVoting ? 'voting' : ''
-            }`}
-            onClick={() => !userDailyVoted && !isVoting && handleVote(2)}
-          >
-            <div className="card-glow"></div>
-            <div className="image-container">
-              <img src={noid2?.image} alt={`NOID #${noid2?.id}`} />
-            </div>
-            <div className="noid-info">
-              <h3>NOID #{noid2?.id}</h3>
-              <a 
-                href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid2?.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="opensea-link-external"
-                onClick={(e) => e.stopPropagation()}
+            <div className="profile-tabs">
+              <button 
+                className={`profile-tab ${profileTab === 'overview' ? 'active' : ''}`}
+                onClick={() => setProfileTab('overview')}
               >
-                <img src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" alt="OpenSea" />
-              </a>
-              {gameMode === 'daily' && dailyBattleData && userDailyVoted && (
-                <div className="vote-count">
-                  <span className="vote-label">Votes:</span>
-                  <span className="vote-number">{dailyBattleData.noid2_votes}</span>
+                Overview
+              </button>
+              <button 
+                className={`profile-tab ${profileTab === 'headToHead' ? 'active' : ''}`}
+                onClick={() => setProfileTab('headToHead')}
+              >
+                Head-to-Head
+              </button>
+              <button 
+                className={`profile-tab ${profileTab === 'achievements' ? 'active' : ''}`}
+                onClick={() => setProfileTab('achievements')}
+              >
+                Achievements
+              </button>
+            </div>
+
+            <div className="profile-content">
+              {profileTab === 'overview' && (
+                <div className="profile-overview">
+                  <h3>Career Statistics</h3>
+                  {profileStats && (
+                    <div className="stats-list">
+                      <div className="stat-row">
+                        <span>Total Battles:</span>
+                        <span>{profileStats.total_battles || 0}</span>
+                      </div>
+                      <div className="stat-row">
+                        <span>Total Wins:</span>
+                        <span>{profileStats.total_wins || 0}</span>
+                      </div>
+                      <div className="stat-row">
+                        <span>Total Losses:</span>
+                        <span>{profileStats.total_losses || 0}</span>
+                      </div>
+                      <div className="stat-row">
+                        <span>Win Rate:</span>
+                        <span>{profileStats.win_rate?.toFixed(2) || '0.00'}%</span>
+                      </div>
+                      <div className="stat-row">
+                        <span>Current Streak:</span>
+                        <span>{profileStats.current_streak || 0}</span>
+                      </div>
+                      <div className="stat-row">
+                        <span>Best Streak:</span>
+                        <span>{profileStats.best_streak || 0}</span>
+                      </div>
+                      <div className="stat-row">
+                        <span>Underdog Wins:</span>
+                        <span>{profileStats.underdog_wins || 0}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {profileTab === 'headToHead' && (
+                <div className="profile-head-to-head">
+                  <h3>MOST BATTLED OPPONENTS</h3>
+                  {headToHeadData.length > 0 ? (
+                    <div className="h2h-list">
+                      {headToHeadData.map((record, index) => (
+                        <div key={index} className="h2h-row">
+                          <div className="h2h-opponent">
+                            <img 
+                              src={imageCache[record.opponent_id] || 'https://via.placeholder.com/50x50?text=Loading'} 
+                              alt={`NOID #${record.opponent_id}`}
+                              className="h2h-thumbnail"
+                              onClick={() => viewProfile(record.opponent_id)}
+                              style={{ cursor: 'pointer' }}
+                            />
+                            <span 
+                              className="h2h-opponent-link"
+                              onClick={() => viewProfile(record.opponent_id)}
+                            >
+                              NOID #{record.opponent_id}
+                            </span>
+                          </div>
+                          <div className="h2h-battles">{record.battles} battles</div>
+                          <div className="h2h-record">{record.wins}W - {record.losses}L</div>
+                          <div className="h2h-winrate">{record.win_rate}%</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p>No head-to-head data available yet.</p>
+                  )}
+                </div>
+              )}
+
+              {profileTab === 'achievements' && (
+                <div className="profile-achievements">
+                  <h3>Achievements</h3>
+                  <p>Achievement system coming soon...</p>
                 </div>
               )}
             </div>
           </div>
         </div>
-        </>
-      )}
+        <footer className="app-footer">
+          <span className="footer-version">v0.11 (Beta)</span>
+          <span className="footer-credits">NOiDS Battle built and hosted by @NoCredits</span>
+        </footer>
+      </div>
+    );
+  }
 
-      {gameMode === 'daily' && userDailyVoted && (
-        <div className="daily-voted-message glass-panel">
-          <span className="check-icon">✓</span>
-          <p>Thanks for voting! Come back tomorrow for the next battle.</p>
+  if (view === 'leaderboard') {
+    return (
+      <div className="app">
+        <div className="matrix-bg"></div>
+        <div className="app-content">
+          <div className="leaderboard-view">
+            <div className="leaderboard-header">
+              <button className="back-button" onClick={() => setView('battle')}>
+                ← Back to Battle
+              </button>
+              <h1 className="leaderboard-title">LEADERBOARD</h1>
+            </div>
+
+            <div className="leaderboard-tabs">
+              <button 
+                className={`leaderboard-tab ${leaderboardTab === 'winRate' ? 'active' : ''}`}
+                onClick={() => setLeaderboardTab('winRate')}
+              >
+                Win Rate
+              </button>
+              <button 
+                className={`leaderboard-tab ${leaderboardTab === 'totalWins' ? 'active' : ''}`}
+                onClick={() => setLeaderboardTab('totalWins')}
+              >
+                Total Wins
+              </button>
+              <button 
+                className={`leaderboard-tab ${leaderboardTab === 'hotStreak' ? 'active' : ''}`}
+                onClick={() => setLeaderboardTab('hotStreak')}
+              >
+                Hot Streak
+              </button>
+            </div>
+
+            <div className="leaderboard-list">
+              {leaderboardData.map((noid, index) => (
+                <div key={noid.noid_id} className="leaderboard-item" onClick={() => viewProfile(noid.noid_id)}>
+                  <div className="leaderboard-rank">#{index + 1}</div>
+                  <img 
+                    src={imageCache[noid.noid_id] || 'https://via.placeholder.com/60x60?text=Loading...'} 
+                    alt={`NOID #${noid.noid_id}`}
+                    className="leaderboard-image"
+                  />
+                  <div className="leaderboard-info">
+                    <div className="leaderboard-noid-name">NOID #{noid.noid_id}</div>
+                    <div className="leaderboard-stats">
+                      {leaderboardTab === 'winRate' && (
+                        <>
+                          <span>{noid.win_rate.toFixed(2)}% Win Rate</span>
+                          <span className="stat-separator">•</span>
+                          <span>{noid.total_battles} battles</span>
+                        </>
+                      )}
+                      {leaderboardTab === 'totalWins' && (
+                        <>
+                          <span>{noid.total_wins} Wins</span>
+                          <span className="stat-separator">•</span>
+                          <span>{noid.total_battles} battles</span>
+                        </>
+                      )}
+                      {leaderboardTab === 'hotStreak' && (
+                        <>
+                          <span>🔥 {noid.current_streak} Win Streak</span>
+                          <span className="stat-separator">•</span>
+                          <span>Best: {noid.best_streak}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <a 
+                    href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid.noid_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="opensea-link-leaderboard"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <img 
+                      src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" 
+                      alt="OpenSea"
+                      className="opensea-icon"
+                    />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      )}
-    </div>
-  );
+        <footer className="app-footer">
+          <span className="footer-version">v0.11 (Beta)</span>
+          <span className="footer-credits">NOiDS Battle built and hosted by @NoCredits</span>
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
-      {view === 'menu' && <Menu />}
-      {view === 'battle' && <Battle />}
-      {view === 'mynoids' && (
-        <MyNoids
-          walletAddress={address}
-          onClose={() => setView('menu')}
-          onViewNoid={(noidId) => {
-            setSelectedNoidId(noidId);
-            setView('profile');
-          }}
-          getNoidImage={getNoidImage}
-        />
-      )}
-      {view === 'leaderboard' && (
-        <Leaderboard 
-          onClose={() => setView('menu')}
-          onViewNoid={(noidId) => {
-            setSelectedNoidId(noidId);
-            setView('profile');
-          }}
-        />
-      )}
-      {view === 'profile' && (
-        <NoidProfile
-          noidId={selectedNoidId}
-          onClose={() => {
-            // Go back to mynoids if we came from there, otherwise leaderboard
-            const previousView = view === 'mynoids' ? 'mynoids' : 'leaderboard';
-            setView(previousView);
-          }}
-          getNoidImage={getNoidImage}
-        />
-      )}
+      <div className="matrix-bg"></div>
       
-      <ConnectWalletModal
-        isOpen={showWalletModal}
-        onClose={() => {
-          setShowWalletModal(false);
-          setPendingGameMode(null);
-        }}
-        onConnect={handleWalletConnected}
-      />
+      <div className="app-content">
+        <header className="app-header">
+          <h1 className="app-title">NOiDS BATTLE</h1>
+          <div className="header-controls">
+            {isConnected ? (
+              <>
+                <button className="my-noids-button" onClick={() => setView('myNoids')}>
+                  My NOIDs
+                </button>
+                <button className="wallet-button connected" onClick={() => disconnect()}>
+                  {address?.slice(0, 6)}...{address?.slice(-4)}
+                </button>
+              </>
+            ) : (
+              <button className="wallet-button" onClick={() => setShowWalletModal(true)}>
+                Connect Wallet
+              </button>
+            )}
+          </div>
+        </header>
+
+        <div className="mode-selector">
+          <button 
+            className={`mode-button ${gameMode === 'rando' ? 'active' : ''}`}
+            onClick={() => {
+              setGameMode('rando');
+              setStickyWinner(null);
+            }}
+          >
+            🎲 Rando Battle
+          </button>
+          <button 
+            className={`mode-button ${gameMode === 'sticky' ? 'active' : ''}`}
+            onClick={() => {
+              setGameMode('sticky');
+              setStickyWinner(null);
+            }}
+          >
+            🏆 Sticky Winner
+          </button>
+          <button 
+            className={`mode-button ${gameMode === 'oneOfOne' ? 'active' : ''}`}
+            onClick={() => {
+              setGameMode('oneOfOne');
+              setStickyWinner(null);
+            }}
+          >
+            👑 One of One Championship
+          </button>
+          <button 
+            className={`mode-button ${gameMode === 'daily' ? 'active' : ''}`}
+            onClick={() => {
+              setGameMode('daily');
+              setStickyWinner(null);
+            }}
+          >
+            ⭐ Daily Battle
+          </button>
+        </div>
+
+        <div className="vote-counter">
+          {gameMode === 'daily' ? (
+            userDailyVoted ? (
+              <span className="votes-used">✓ Voted Today</span>
+            ) : (
+              <span>1 vote available today</span>
+            )
+          ) : (
+            <>
+              <span>{votedToday} / 55 votes used today</span>
+              {votedToday >= 55 && <span className="votes-maxed"> - Come back tomorrow!</span>}
+            </>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="loading">Loading battle...</div>
+        ) : (
+          <div className="battle-container">
+            <div 
+              className={`battle-card ${winner === noid1 ? 'winner' : winner === noid2 ? 'loser' : ''}`}
+              onClick={() => !recording && !userDailyVoted && handleVote(noid1)}
+            >
+              <img 
+                src={imageCache[noid1] || 'https://via.placeholder.com/300x300?text=Loading...'} 
+                alt={`NOID #${noid1}`}
+                className="noid-image"
+              />
+              <div className="noid-info">
+                <h2>NOID #{noid1}</h2>
+                <a 
+                  href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid1}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="opensea-link-battle"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <img 
+                    src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" 
+                    alt="OpenSea"
+                    className="opensea-icon"
+                  />
+                </a>
+              </div>
+              {gameMode === 'daily' && dailyBattleData && userDailyVoted && (
+                <div className="vote-count">
+                  {dailyBattleData.noid1_votes} votes
+                </div>
+              )}
+            </div>
+
+            <div className="vs-divider">VS</div>
+
+            <div 
+              className={`battle-card ${winner === noid2 ? 'winner' : winner === noid1 ? 'loser' : ''}`}
+              onClick={() => !recording && !userDailyVoted && handleVote(noid2)}
+            >
+              <img 
+                src={imageCache[noid2] || 'https://via.placeholder.com/300x300?text=Loading...'} 
+                alt={`NOID #${noid2}`}
+                className="noid-image"
+              />
+              <div className="noid-info">
+                <h2>NOID #{noid2}</h2>
+                <a 
+                  href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid2}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="opensea-link-battle"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <img 
+                    src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" 
+                    alt="OpenSea"
+                    className="opensea-icon"
+                  />
+                </a>
+              </div>
+              {gameMode === 'daily' && dailyBattleData && userDailyVoted && (
+                <div className="vote-count">
+                  {dailyBattleData.noid2_votes} votes
+                </div>
+              )}
+            </div>
+
+            {recording && (
+              <div className="recording-overlay">
+                {gameMode === 'daily' ? (
+                  <>
+                    <div className="recording-text">Thanks for voting!</div>
+                    <div className="recording-subtext">Come back tomorrow for the next Daily Battle</div>
+                  </>
+                ) : (
+                  <div className="recording-text">Recording Vote...</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="leaderboard-link">
+          <button onClick={() => setView('leaderboard')}>
+            View Leaderboard →
+          </button>
+        </div>
+      </div>
 
       <footer className="app-footer">
-        <div className="footer-content">
-          <span className="footer-version">v0.11 (Beta)</span>
-          <span className="footer-divider">•</span>
-          <span className="footer-credits">NOiDS Battle built and hosted by @NoCredits</span>
-        </div>
+        <span className="footer-version">v0.11 (Beta)</span>
+        <span className="footer-credits">NOiDS Battle built and hosted by @NoCredits</span>
       </footer>
+
+      {showWalletModal && (
+        <ConnectWalletModal 
+          onConnect={handleConnectWallet}
+          onClose={() => setShowWalletModal(false)}
+        />
+      )}
     </div>
   );
 }
