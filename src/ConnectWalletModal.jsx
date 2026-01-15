@@ -7,6 +7,11 @@ function ConnectWalletModal({ isOpen, onClose, onConnect }) {
   const { disconnect } = useDisconnect();
 
   const handleConnect = (connector) => {
+    // Close modal first if WalletConnect so QR code can show
+    if (connector.id === 'walletConnect') {
+      onClose();
+    }
+    
     connect({ connector }, {
       onSuccess: () => {
         onConnect();
