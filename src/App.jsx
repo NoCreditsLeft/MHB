@@ -727,18 +727,18 @@ const NoidProfile = ({ noidId, onClose, getNoidImage }) => {
         <div className="profile-hero glass-panel">
           <div className="hero-image">
             {imageUrl && <img src={imageUrl} alt={`NOID #${noidId}`} />}
-            <a 
-              href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noidId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="opensea-link opensea-link-profile"
-            >
-              <img src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" alt="OpenSea" />
-            </a>
           </div>
           <div className="hero-stats">
             <div className="hero-title">
               <h1>NOID #{noidId}</h1>
+              <a 
+                href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noidId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="opensea-link-external opensea-link-profile-external"
+              >
+                <img src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" alt="OpenSea" />
+              </a>
               {noidData.current_streak !== 0 && (
                 <div className="streak-badge">
                   {getStreakEmoji(noidData.current_streak)}
@@ -1591,18 +1591,18 @@ function App() {
               <div className="card-glow"></div>
               <div className="image-container">
                 <img src={noid1?.image} alt={`NOID #${noid1?.id}`} />
+              </div>
+              <div className="noid-info">
+                <h3>NOID #{noid1?.id}</h3>
                 <a 
                   href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid1?.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="opensea-link"
+                  className="opensea-link-external"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <img src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" alt="OpenSea" />
                 </a>
-              </div>
-              <div className="noid-info">
-                <h3>NOID #{noid1?.id}</h3>
                 {gameMode === 'daily' && dailyBattleData && userDailyVoted && (
                   <div className="vote-count">
                     <span className="vote-label">Votes:</span>
@@ -1633,18 +1633,18 @@ function App() {
             <div className="card-glow"></div>
             <div className="image-container">
               <img src={noid2?.image} alt={`NOID #${noid2?.id}`} />
+            </div>
+            <div className="noid-info">
+              <h3>NOID #{noid2?.id}</h3>
               <a 
                 href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid2?.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="opensea-link"
+                className="opensea-link-external"
                 onClick={(e) => e.stopPropagation()}
               >
                 <img src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" alt="OpenSea" />
               </a>
-            </div>
-            <div className="noid-info">
-              <h3>NOID #{noid2?.id}</h3>
               {gameMode === 'daily' && dailyBattleData && userDailyVoted && (
                 <div className="vote-count">
                   <span className="vote-label">Votes:</span>
