@@ -984,14 +984,20 @@ function App() {
   const { isConnected, address } = useAccount();
 
   useEffect(() => {
-    let id = localStorage.getItem('noids_user_id');
-    if (!id) {
-      id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem('noids_user_id', id);
+    // Use wallet address as user ID if connected, otherwise generate random ID
+    if (isConnected && address) {
+      setUserId(address.toLowerCase());
+      checkDailyVotes(address.toLowerCase());
+    } else {
+      let id = localStorage.getItem('noids_user_id');
+      if (!id) {
+        id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem('noids_user_id', id);
+      }
+      setUserId(id);
+      checkDailyVotes(id);
     }
-    setUserId(id);
-    checkDailyVotes(id);
-  }, []);
+  }, [isConnected, address]);
 
   const checkDailyVotes = (uid) => {
     const today = new Date().toISOString().split('T')[0];
@@ -1469,6 +1475,20 @@ function App() {
           onClick={() => setView('leaderboard')}
         >
           📊 View Stats & Leaderboard
+        </button>
+
+        {/* Dev Reset Button */}
+        <button 
+          className="dev-reset-btn"
+          onClick={() => {
+            const today = new Date().toISOString().split('T')[0];
+            const uid = isConnected ? address.toLowerCase() : localStorage.getItem('noids_user_id');
+            localStorage.removeItem(`votes_${uid}_${today}`);
+            window.location.reload();
+          }}
+          title="Reset daily votes (dev mode)"
+        >
+          🔄 Reset Votes
         </button>
       </div>
     </div>
