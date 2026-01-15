@@ -1637,38 +1637,35 @@ body {
     display: none;
   }
 }
-/* OpenSea Logo Links - External to image */
+/* OpenSea Logo Links - No background, just the logo */
 .opensea-link-external {
   position: absolute;
   bottom: 12px;
   right: 12px;
-  width: 36px;
-  height: 36px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 50%;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
   text-decoration: none;
   transition: all 0.3s ease;
   z-index: 10;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .opensea-link-external img {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .opensea-link-external:hover {
-  background: rgba(255, 255, 255, 1);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   transform: scale(1.15);
+}
+
+.opensea-link-external:hover img {
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.5));
 }
 
 /* Profile page OpenSea link */
@@ -1678,9 +1675,8 @@ body {
   bottom: auto;
   right: auto;
   margin-left: 16px;
-  width: 42px;
-  height: 42px;
-  padding: 9px;
+  width: 38px;
+  height: 38px;
 }
 
 /* Battle card noid-info positioning */
@@ -1697,27 +1693,26 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
-  padding: 6px;
+  width: 24px;
+  height: 24px;
   text-decoration: none;
   transition: all 0.3s ease;
   margin-left: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .opensea-link-leaderboard img {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
 }
 
 .opensea-link-leaderboard:hover {
-  background: rgba(255, 255, 255, 1);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
   transform: scale(1.15);
+}
+
+.opensea-link-leaderboard:hover img {
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 
 .noid-preview {
