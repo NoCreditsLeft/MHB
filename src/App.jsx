@@ -1016,6 +1016,116 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
 // MAIN APP COMPONENT
 // ============================================
 
+// Isolated Scroller Component - manages its own state, never causes parent re-renders
+const TopNoidsScroller = React.memo(({ onNoidClick }) => {
+  const [noids, setNoids] = useState([]);
+  const [images, setImages] = useState({});
+  const [isReady, setIsReady] = useState(false);
+  const scrollerRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  useEffect(() => {
+    loadNoidsAndImages();
+  }, []);
+
+  const loadNoidsAndImages = async () => {
+    try {
+      const { data } = await supabase
+        .from('noid_stats')
+        .select('*')
+        .gte('total_battles', 5)
+        .order('total_wins', { ascending: false })
+        .limit(15);
+
+      if (!data || data.length === 0) return;
+
+      // Load ALL images before showing anything
+      const imagePromises = data.map(noid => 
+        fetch(`https://api.opensea.io/api/v2/chain/ethereum/contract/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/nfts/${noid.noid_id}`, {
+          headers: { 'x-api-key': 'f6662070d18f4d54936bdd66b94c3f11' }
+        })
+        .then(r => r.json())
+        .then(d => ({ id: noid.noid_id, url: d.nft.image_url }))
+        .catch(() => ({ id: noid.noid_id, url: null }))
+      );
+
+      const loadedImages = await Promise.all(imagePromises);
+      const imageMap = {};
+      loadedImages.forEach(img => {
+        if (img.url) imageMap[img.id] = img.url;
+      });
+
+      // ONE state update with everything ready
+      setNoids(data);
+      setImages(imageMap);
+      setIsReady(true);
+    } catch (error) {
+      console.error('Error loading scroller:', error);
+    }
+  };
+
+  const handleMouseDown = (e) => {
+    if (!scrollerRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - scrollerRef.current.offsetLeft);
+    setScrollLeft(scrollerRef.current.scrollLeft);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging || !scrollerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollerRef.current.offsetLeft;
+    const walk = (x - startX) * 2;
+    scrollerRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+  const handleMouseLeave = () => setIsDragging(false);
+
+  if (!isReady || noids.length === 0) return null;
+
+  return (
+    <div 
+      className="top-noids-scroller"
+      ref={scrollerRef}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+    >
+      <div className="scroller-track">
+        {[...noids, ...noids].map((noid, index) => {
+          const rank = (index % noids.length) + 1;
+          const winRate = noid.total_battles > 0 ? Math.round((noid.total_wins / noid.total_battles) * 100) : 0;
+          return (
+            <div 
+              key={`${noid.noid_id}-${index}`}
+              className="scroller-item"
+              onClick={() => onNoidClick(noid.noid_id)}
+            >
+              <div className="scroller-rank">#{rank}</div>
+              <img 
+                src={images[noid.noid_id] || 'https://via.placeholder.com/100x100'} 
+                alt={`NOID #${noid.noid_id}`}
+                className="scroller-image"
+              />
+              <div className="scroller-info">
+                <div className="scroller-noid-name">#{noid.noid_id}</div>
+                <div className="scroller-stats">
+                  {winRate}% • {noid.total_wins}W
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+
 function App() {
   const [gameMode, setGameMode] = useState('menu');
   const [view, setView] = useState('menu'); // menu, battle, leaderboard, profile
@@ -1032,7 +1142,6 @@ function App() {
   const [pendingGameMode, setPendingGameMode] = useState(null);
   const [isVoting, setIsVoting] = useState(false);
   const [votedFor, setVotedFor] = useState(null);
-  const [topNoids, setTopNoids] = useState([]);
   const [imageCache, setImageCache] = useState({});
   
   // Get wallet connection status and address
@@ -1053,11 +1162,6 @@ function App() {
       checkDailyVotes(id);
     }
   }, [isConnected, address]);
-
-  useEffect(() => {
-    // Load top NOIDs for scroller when component mounts
-    loadTopNoids();
-  }, []);
 
   const checkDailyVotes = (uid) => {
     const today = new Date().toISOString().split('T')[0];
@@ -1153,29 +1257,6 @@ function App() {
     }
   }, [imageCache]);
 
-  const loadTopNoids = async () => {
-    try {
-      // Always use totalWins to ensure consistent, meaningful results
-      const { data } = await supabase
-        .from('noid_stats')
-        .select('*')
-        .gte('total_battles', 5)
-        .order('total_wins', { ascending: false })
-        .limit(15);
-      
-      if (data && data.length > 0) {
-        setTopNoids(data);
-        // Preload images
-        data.forEach(noid => {
-          if (!imageCache[noid.noid_id]) {
-            fetchNoidImage(noid.noid_id);
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error loading top NOIDs:', error);
-    }
-  };
 
   const startBattle = async (mode) => {
     // Check if wallet is connected before starting battle
@@ -1452,36 +1533,7 @@ function App() {
     }, 800);
   };
 
-  const Menu = () => {
-    const scrollerRef = React.useRef(null);
-    const [isDragging, setIsDragging] = React.useState(false);
-    const [startX, setStartX] = React.useState(0);
-    const [scrollLeft, setScrollLeft] = React.useState(0);
-
-    const handleMouseDown = (e) => {
-      if (!scrollerRef.current) return;
-      setIsDragging(true);
-      setStartX(e.pageX - scrollerRef.current.offsetLeft);
-      setScrollLeft(scrollerRef.current.scrollLeft);
-    };
-
-    const handleMouseMove = (e) => {
-      if (!isDragging || !scrollerRef.current) return;
-      e.preventDefault();
-      const x = e.pageX - scrollerRef.current.offsetLeft;
-      const walk = (x - startX) * 2; // Scroll speed multiplier
-      scrollerRef.current.scrollLeft = scrollLeft - walk;
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    const handleMouseLeave = () => {
-      setIsDragging(false);
-    };
-
-    return (
+  const Menu = () => (
     <div className="menu-container">
       <MatrixRain />
       
@@ -1523,46 +1575,12 @@ function App() {
         <p className="subtitle">Which NOID reigns supreme?</p>
       </div>
 
-      {topNoids.length > 0 && (
-        <div 
-          className="top-noids-scroller"
-          ref={scrollerRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-        >
-          <div className="scroller-track">
-            {[...topNoids, ...topNoids].map((noid, index) => {
-              const rank = (index % topNoids.length) + 1;
-              return (
-                <div 
-                  key={`${noid.noid_id}-${index}`}
-                  className="scroller-item"
-                  onClick={() => {
-                    setSelectedNoidId(noid.noid_id);
-                    setView('profile');
-                  }}
-                >
-                  <div className="scroller-rank">#{rank}</div>
-                  <img 
-                    src={imageCache[noid.noid_id] || 'https://via.placeholder.com/100x100?text=Loading'} 
-                    alt={`NOID #${noid.noid_id}`}
-                    className="scroller-image"
-                  />
-                  <div className="scroller-info">
-                    <div className="scroller-noid-name">#{noid.noid_id}</div>
-                    <div className="scroller-stats">
-                      {Math.round(noid.win_rate > 1 ? noid.win_rate : noid.win_rate * 100)}% • {noid.total_wins}W
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <TopNoidsScroller 
+        onNoidClick={(noidId) => {
+          setSelectedNoidId(noidId);
+          setView('profile');
+        }}
+      />
 
       <div className="game-modes">
         <div className="glass-panel">
@@ -1644,8 +1662,7 @@ function App() {
         </button>
       </div>
     </div>
-    );
-  };
+  );
 
   const Battle = () => (
     <div className="battle-container">
