@@ -1,0 +1,68 @@
+/* Menu Header Layout */
+.menu-header {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 12px;
+  z-index: 10;
+}
+
+/* My NOIDs Header Button */
+.my-noids-header-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  border-radius: 12px;
+  color: #00ff41;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.5px;
+}
+
+.my-noids-header-btn:hover {
+  background: rgba(0, 255, 65, 0.1);
+  border-color: #00ff41;
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+  transform: translateY(-2px);
+}
+
+.my-noids-header-btn .noids-icon {
+  font-size: 18px;
+}
+
+.my-noids-header-btn .noids-text {
+  font-weight: 700;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .menu-header {
+    top: 10px;
+    right: 10px;
+    gap: 8px;
+  }
+
+  .wallet-header-btn,
+  .my-noids-header-btn {
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+
+  .wallet-header-btn .wallet-text,
+  .my-noids-header-btn .noids-text {
+    display: none;
+  }
+
+  .wallet-header-btn .wallet-icon,
+  .my-noids-header-btn .noids-icon {
+    font-size: 20px;
+  }
+}

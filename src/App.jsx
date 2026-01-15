@@ -1354,22 +1354,34 @@ function App() {
     <div className="menu-container">
       <MatrixRain />
       
-      <button 
-        className="wallet-header-btn"
-        onClick={() => setShowWalletModal(true)}
-      >
-        {isConnected ? (
-          <>
-            <span className="wallet-icon">💳</span>
-            <span className="wallet-text">{address.slice(0, 6)}...{address.slice(-4)}</span>
-          </>
-        ) : (
-          <>
-            <span className="wallet-icon">💳</span>
-            <span className="wallet-text">Connect Wallet</span>
-          </>
+      <div className="menu-header">
+        <button 
+          className="wallet-header-btn"
+          onClick={() => setShowWalletModal(true)}
+        >
+          {isConnected ? (
+            <>
+              <span className="wallet-icon">💳</span>
+              <span className="wallet-text">{address.slice(0, 6)}...{address.slice(-4)}</span>
+            </>
+          ) : (
+            <>
+              <span className="wallet-icon">💳</span>
+              <span className="wallet-text">Connect Wallet</span>
+            </>
+          )}
+        </button>
+
+        {isConnected && (
+          <button 
+            className="my-noids-header-btn"
+            onClick={() => setView('mynoids')}
+          >
+            <span className="noids-icon">🖼️</span>
+            <span className="noids-text">My NOIDs</span>
+          </button>
         )}
-      </button>
+      </div>
       
       <div className="logo-section">
         <img 
@@ -1457,19 +1469,6 @@ function App() {
           onClick={() => setView('leaderboard')}
         >
           📊 View Stats & Leaderboard
-        </button>
-
-        <button 
-          className="stats-btn glass-panel"
-          onClick={() => {
-            if (isConnected) {
-              setView('mynoids');
-            } else {
-              setShowWalletModal(true);
-            }
-          }}
-        >
-          🖼️ My NOIDs
         </button>
       </div>
     </div>
