@@ -13,6 +13,14 @@
     "viem": "^2.44.2",
     "wagmi": "^3.3.2"
   },
+  "peerDependenciesMeta": {
+    "@coinbase/wallet-sdk": { "optional": true },
+    "@metamask/sdk": { "optional": true },
+    "@safe-global/safe-apps-sdk": { "optional": true },
+    "@safe-global/safe-apps-provider": { "optional": true },
+    "@gemini-wallet/core": { "optional": true },
+    "porto": { "optional": true }
+  }
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
