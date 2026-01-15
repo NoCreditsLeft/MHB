@@ -7,7 +7,7 @@ import './App.css';
 
 // Supabase configuration
 const supabaseUrl = 'https://jvmddbqxhfaicyctmmvt.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bWRkYnF4aGZhaWN5Y3RtbXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyOTg4MDYsImV4cCI6MjA4Mzg3NDgwNn0.SD37h5vkKVQwODXavoRkej6yFsAYhT8nLmxIxs3AoZg';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bWRkYnF4aGZhaWN5Y3RtbXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4MDc5NjYsImV4cCI6MjA1MjM4Mzk2Nn0.59rhWuZ3r93r5YBxhcKYVGaNgy6NykDFqIpJbSCWbBo';
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 const TOTAL_NOIDS = 5555;
@@ -521,6 +521,15 @@ const Leaderboard = ({ onClose, onViewNoid }) => {
 
                 <div className="noid-preview">
                   <div className="noid-id">NOID #{noid.noid_id}</div>
+                  <a 
+                    href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid.noid_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="opensea-link-leaderboard"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    👁️
+                  </a>
                   {noid.current_streak !== 0 && (
                     <div className="streak-indicator">
                       {getStreakEmoji(noid.current_streak)}
@@ -718,6 +727,14 @@ const NoidProfile = ({ noidId, onClose, getNoidImage }) => {
         <div className="profile-hero glass-panel">
           <div className="hero-image">
             {imageUrl && <img src={imageUrl} alt={`NOID #${noidId}`} />}
+            <a 
+              href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noidId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="opensea-link opensea-link-profile"
+            >
+              👁️
+            </a>
           </div>
           <div className="hero-stats">
             <div className="hero-title">
@@ -1574,6 +1591,15 @@ function App() {
               <div className="card-glow"></div>
               <div className="image-container">
                 <img src={noid1?.image} alt={`NOID #${noid1?.id}`} />
+                <a 
+                  href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid1?.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="opensea-link"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  👁️
+                </a>
               </div>
               <div className="noid-info">
                 <h3>NOID #{noid1?.id}</h3>
@@ -1607,6 +1633,15 @@ function App() {
             <div className="card-glow"></div>
             <div className="image-container">
               <img src={noid2?.image} alt={`NOID #${noid2?.id}`} />
+              <a 
+                href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid2?.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="opensea-link"
+                onClick={(e) => e.stopPropagation()}
+              >
+                👁️
+              </a>
             </div>
             <div className="noid-info">
               <h3>NOID #{noid2?.id}</h3>
