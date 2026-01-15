@@ -1236,7 +1236,7 @@ function App() {
           await loadDailyBattle();
           setIsVoting(false);
           setVotedFor(null);
-        }, 600);
+        }, 800);
       } catch (err) {
         console.error('Error voting:', err);
         setIsVoting(false);
@@ -1285,12 +1285,59 @@ function App() {
         if (error) console.error('Error recording vote:', error);
       });
 
-    // Short delay for visual feedback, then load next battle
-    setTimeout(() => {
-      startBattle(gameMode);
+    // Load next battle in background while showing feedback
+    const loadNext = async () => {
+      try {
+        if (gameMode === 'rando') {
+          const id1 = getRandomNoid();
+          const id2 = getRandomNoid([id1]);
+          const [img1, img2] = await Promise.all([
+            getNoidImage(id1),
+            getNoidImage(id2)
+          ]);
+          return { noid1: { id: id1, image: img1 }, noid2: { id: id2, image: img2 } };
+        } else if (gameMode === 'sticky') {
+          if (stickyWinner) {
+            const id2 = getRandomNoid([stickyWinner.id]);
+            const img2 = await getNoidImage(id2);
+            return { noid1: stickyWinner, noid2: { id: id2, image: img2 } };
+          } else {
+            const id1 = getRandomNoid();
+            const id2 = getRandomNoid([id1]);
+            const [img1, img2] = await Promise.all([
+              getNoidImage(id1),
+              getNoidImage(id2)
+            ]);
+            return { noid1: { id: id1, image: img1 }, noid2: { id: id2, image: img2 } };
+          }
+        } else if (gameMode === 'oneofone') {
+          const id1 = getRandomNoid();
+          const id2 = getRandomNoid([id1]);
+          const [img1, img2] = await Promise.all([
+            getNoidImage(id1),
+            getNoidImage(id2)
+          ]);
+          return { noid1: { id: id1, image: img1 }, noid2: { id: id2, image: img2 } };
+        }
+      } catch (error) {
+        console.error('Error loading next battle:', error);
+        return null;
+      }
+    };
+
+    // Start loading next battle immediately
+    const nextBattlePromise = loadNext();
+
+    // Wait for visual feedback, then show next battle
+    setTimeout(async () => {
+      const nextBattle = await nextBattlePromise;
+      if (nextBattle) {
+        setNoid1(nextBattle.noid1);
+        setNoid2(nextBattle.noid2);
+      }
       setIsVoting(false);
       setVotedFor(null);
-    }, 600);
+    }, 800);
   };
 
   const Menu = () => (
