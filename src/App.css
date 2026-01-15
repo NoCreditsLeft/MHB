@@ -1057,45 +1057,8 @@ body {
 
 .h2h-opponent {
   display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.h2h-thumbnail {
-  width: 50px;
-  height: 50px;
-  border-radius: 8px;
-  object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-}
-
-.h2h-thumbnail:hover {
-  border-color: rgba(0, 255, 65, 0.5);
-  transform: scale(1.05);
-}
-
-.h2h-opponent-link {
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.h2h-opponent-link:hover {
-  color: #00ff41;
-}
-
-.h2h-battles {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.h2h-winrate {
-  font-size: 16px;
-  font-weight: 700;
-  color: #00ff41;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .opponent-label {
@@ -1768,9 +1731,10 @@ body {
 /* ===== TOP NOIDS SCROLLER ===== */
 .top-noids-scroller {
   width: 100%;
+  max-width: 1200px;
   height: 120px;
   overflow: hidden;
-  margin: 20px 0;
+  margin: 30px auto;
   position: relative;
   background: rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(10px);
@@ -1849,10 +1813,35 @@ body {
   font-weight: 500;
 }
 
+/* ===== H2H THUMBNAILS ===== */
+.h2h-thumbnail {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.h2h-thumbnail:hover {
+  border-color: rgba(0, 255, 65, 0.5);
+  transform: scale(1.05);
+}
+
+.h2h-opponent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.opponent-label:hover {
+  color: #00ff41;
+}
+
 @media (max-width: 768px) {
   .top-noids-scroller {
     height: 100px;
-    margin: 15px 0;
+    margin: 20px auto;
   }
 
   .scroller-item {
@@ -1872,5 +1861,9 @@ body {
   .scroller-stats {
     font-size: 12px;
   }
+  
+  .h2h-thumbnail {
+    width: 40px;
+    height: 40px;
+  }
 }
-
