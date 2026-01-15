@@ -7,7 +7,7 @@ import './App.css';
 
 // Supabase configuration
 const supabaseUrl = 'https://jvmddbqxhfaicyctmmvt.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bWRkYnF4aGZhaWN5Y3RtbXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyOTg4MDYsImV4cCI6MjA4Mzg3NDgwNn0.SD37h5vkKVQwODXavoRkej6yFsAYhT8nLmxIxs3AoZg';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bWRkYnF4aGZhaWN5Y3RtbXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4MDc5NjYsImV4cCI6MjA1MjM4Mzk2Nn0.59rhWuZ3r93r5YBxhcKYVGaNgy6NykDFqIpJbSCWbBo';
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 const TOTAL_NOIDS = 5555;
@@ -432,7 +432,7 @@ const Leaderboard = ({ onClose, onViewNoid }) => {
       
       switch (view) {
         case 'winrate':
-          query = query.gte('total_battles', 10).order('win_rate', { ascending: false }).limit(50);
+          query = query.gte('total_battles', 3).order('win_rate', { ascending: false }).limit(50);
           break;
         case 'totalwins':
           query = query.order('total_wins', { ascending: false }).limit(50);
