@@ -11,6 +11,13 @@
   align-items: center;
   margin-bottom: 40px;
   padding: 20px 30px;
+  gap: 20px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .my-noids-title {
@@ -22,6 +29,8 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  flex: 1;
+  text-align: center;
 }
 
 .wallet-address {
@@ -32,6 +41,25 @@
   background: rgba(0, 255, 65, 0.1);
   border: 1px solid rgba(0, 255, 65, 0.3);
   border-radius: 8px;
+}
+
+.reset-votes-btn {
+  padding: 8px 16px;
+  background: rgba(255, 100, 100, 0.1);
+  border: 1px solid rgba(255, 100, 100, 0.4);
+  border-radius: 8px;
+  color: #ff6464;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.reset-votes-btn:hover {
+  background: rgba(255, 100, 100, 0.2);
+  border-color: #ff6464;
+  box-shadow: 0 0 15px rgba(255, 100, 100, 0.3);
 }
 
 /* Summary Stats */

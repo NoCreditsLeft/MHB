@@ -1476,20 +1476,6 @@ function App() {
         >
           📊 View Stats & Leaderboard
         </button>
-
-        {/* Dev Reset Button */}
-        <button 
-          className="dev-reset-btn"
-          onClick={() => {
-            const today = new Date().toISOString().split('T')[0];
-            const uid = isConnected ? address.toLowerCase() : localStorage.getItem('noids_user_id');
-            localStorage.removeItem(`votes_${uid}_${today}`);
-            window.location.reload();
-          }}
-          title="Reset daily votes (dev mode)"
-        >
-          🔄 Reset Votes
-        </button>
       </div>
     </div>
   );
@@ -1646,6 +1632,14 @@ function App() {
         }}
         onConnect={handleWalletConnected}
       />
+
+      <footer className="app-footer">
+        <div className="footer-content">
+          <span className="footer-version">v0.11 (Beta)</span>
+          <span className="footer-divider">•</span>
+          <span className="footer-credits">NOiDS Battle built and hosted by @NoCredits</span>
+        </div>
+      </footer>
     </div>
   );
 }

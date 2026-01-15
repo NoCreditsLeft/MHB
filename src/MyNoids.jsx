@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './App';
+import { useAccount } from 'wagmi';
 import './MyNoids.css';
 
 const NOIDS_CONTRACT = '0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902';
@@ -9,6 +10,7 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
   const [noids, setNoids] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { address } = useAccount();
 
   useEffect(() => {
     if (walletAddress) {
@@ -106,8 +108,22 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
           Back to Menu
         </button>
         <h1 className="my-noids-title">My NOIDs</h1>
-        <div className="wallet-address">
-          {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+        <div className="header-right">
+          <div className="wallet-address">
+            {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+          </div>
+          <button 
+            className="reset-votes-btn"
+            onClick={() => {
+              const today = new Date().toISOString().split('T')[0];
+              const uid = address.toLowerCase();
+              localStorage.removeItem(`votes_${uid}_${today}`);
+              window.location.reload();
+            }}
+            title="Reset daily votes (Beta Mode only)"
+          >
+            🔄 Reset Votes (Beta)
+          </button>
         </div>
       </div>
 
