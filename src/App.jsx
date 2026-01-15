@@ -7,7 +7,7 @@ import './App.css';
 
 // Supabase configuration
 const supabaseUrl = 'https://jvmddbqxhfaicyctmmvt.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bWRkYnF4aGZhaWN5Y3RtbXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyOTg4MDYsImV4cCI6MjA4Mzg3NDgwNn0.SD37h5vkKVQwODXavoRkej6yFsAYhT8nLmxIxs3AoZg';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bWRkYnF4aGZhaWN5Y3RtbXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4MDc5NjYsImV4cCI6MjA1MjM4Mzk2Nn0.59rhWuZ3r93r5YBxhcKYVGaNgy6NykDFqIpJbSCWbBo';
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 const TOTAL_NOIDS = 5555;
@@ -1145,8 +1145,45 @@ function App() {
       }
 
       if (!data) {
-        const id1 = getRandomNoid();
-        const id2 = getRandomNoid([id1]);
+        // Generate new daily battle from top 1000 rarity NOIDs
+        const top1000Rarity = Array.from({ length: 1000 }, (_, i) => i + 1);
+        
+        // Get previous daily battles to prevent rematches
+        const { data: previousBattles } = await supabase
+          .from('daily_battles')
+          .select('noid1_id, noid2_id')
+          .order('battle_date', { ascending: false })
+          .limit(366); // Check last year to avoid repeats
+        
+        const usedPairs = new Set();
+        previousBattles?.forEach(battle => {
+          const pair1 = `${battle.noid1_id}-${battle.noid2_id}`;
+          const pair2 = `${battle.noid2_id}-${battle.noid1_id}`;
+          usedPairs.add(pair1);
+          usedPairs.add(pair2);
+        });
+        
+        // Find unique matchup
+        let id1, id2, attempts = 0;
+        do {
+          id1 = top1000Rarity[Math.floor(Math.random() * top1000Rarity.length)];
+          id2 = top1000Rarity[Math.floor(Math.random() * top1000Rarity.length)];
+          attempts++;
+          
+          if (attempts > 100) {
+            // Fallback: just pick any two different NOIDs
+            id1 = top1000Rarity[Math.floor(Math.random() * top1000Rarity.length)];
+            id2 = top1000Rarity[Math.floor(Math.random() * top1000Rarity.length)];
+            while (id2 === id1) {
+              id2 = top1000Rarity[Math.floor(Math.random() * top1000Rarity.length)];
+            }
+            break;
+          }
+        } while (
+          id1 === id2 || 
+          usedPairs.has(`${id1}-${id2}`) || 
+          usedPairs.has(`${id2}-${id1}`)
+        );
         
         const { data: newBattle, error: insertError } = await supabase
           .from('daily_battles')
@@ -1237,6 +1274,12 @@ function App() {
 
         localStorage.setItem(voteKey, winner.toString());
         setUserDailyVoted(true);
+        
+        // Update the dailyBattleData with new vote count
+        setDailyBattleData({
+          ...dailyBattleData,
+          [winnerField]: dailyBattleData[winnerField] + 1
+        });
         
         // Don't reload - just show the "Thanks for voting" message
         setTimeout(() => {
@@ -1534,13 +1577,13 @@ function App() {
               </div>
               <div className="noid-info">
                 <h3>NOID #{noid1?.id}</h3>
-                {gameMode === 'daily' && dailyBattleData && (
+                {gameMode === 'daily' && dailyBattleData && userDailyVoted && (
                   <div className="vote-count">
                     <span className="vote-label">Votes:</span>
-                  <span className="vote-number">{dailyBattleData.noid1_votes}</span>
-                </div>
-              )}
-            </div>
+                    <span className="vote-number">{dailyBattleData.noid1_votes}</span>
+                  </div>
+                )}
+              </div>
           </div>
 
           <div className="vs-divider">
@@ -1567,7 +1610,7 @@ function App() {
             </div>
             <div className="noid-info">
               <h3>NOID #{noid2?.id}</h3>
-              {gameMode === 'daily' && dailyBattleData && (
+              {gameMode === 'daily' && dailyBattleData && userDailyVoted && (
                 <div className="vote-count">
                   <span className="vote-label">Votes:</span>
                   <span className="vote-number">{dailyBattleData.noid2_votes}</span>
