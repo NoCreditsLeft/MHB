@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useAccount } from 'wagmi';
 import ConnectWalletModal from './ConnectWalletModal';
+import MyNoids from './MyNoids';
 import './App.css';
 
 // Supabase configuration
@@ -1457,6 +1458,19 @@ function App() {
         >
           📊 View Stats & Leaderboard
         </button>
+
+        <button 
+          className="stats-btn glass-panel"
+          onClick={() => {
+            if (isConnected) {
+              setView('mynoids');
+            } else {
+              setShowWalletModal(true);
+            }
+          }}
+        >
+          🖼️ My NOIDs
+        </button>
       </div>
     </div>
   );
@@ -1573,6 +1587,17 @@ function App() {
     <div className="app">
       {view === 'menu' && <Menu />}
       {view === 'battle' && <Battle />}
+      {view === 'mynoids' && (
+        <MyNoids
+          walletAddress={address}
+          onClose={() => setView('menu')}
+          onViewNoid={(noidId) => {
+            setSelectedNoidId(noidId);
+            setView('profile');
+          }}
+          getNoidImage={getNoidImage}
+        />
+      )}
       {view === 'leaderboard' && (
         <Leaderboard 
           onClose={() => setView('menu')}
@@ -1585,7 +1610,11 @@ function App() {
       {view === 'profile' && (
         <NoidProfile
           noidId={selectedNoidId}
-          onClose={() => setView('leaderboard')}
+          onClose={() => {
+            // Go back to mynoids if we came from there, otherwise leaderboard
+            const previousView = view === 'mynoids' ? 'mynoids' : 'leaderboard';
+            setView(previousView);
+          }}
           getNoidImage={getNoidImage}
         />
       )}
