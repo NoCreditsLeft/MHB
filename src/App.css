@@ -1441,3 +1441,64 @@ body {
     font-size: 24px;
   }
 }
+/* Add this to the end of your App.css */
+
+/* Voting Feedback Styles */
+.voting-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.voting-message {
+  background: rgba(0, 255, 65, 0.95);
+  color: #000;
+  padding: 20px 40px;
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: bold;
+  box-shadow: 0 0 30px rgba(0, 255, 65, 0.6);
+  animation: pulse 0.6s ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Voting Card States */
+.noid-card.voting {
+  pointer-events: none;
+}
+
+.noid-card.voted-winner {
+  transform: scale(1.05);
+  border-color: #00ff41 !important;
+  box-shadow: 0 0 40px rgba(0, 255, 65, 0.6) !important;
+  transition: all 0.3s ease;
+}
+
+.noid-card.voted-winner .card-glow {
+  background: radial-gradient(circle at center, rgba(0, 255, 65, 0.4), transparent);
+}
+
+.noid-card.voted-loser {
+  opacity: 0.3;
+  transform: scale(0.95);
+  filter: grayscale(100%);
+  transition: all 0.3s ease;
+}
+
+/* Smooth transition for next battle */
+.battle-arena.transitioning {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+

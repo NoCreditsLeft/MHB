@@ -6,7 +6,7 @@ import './App.css';
 
 // Supabase configuration
 const supabaseUrl = 'https://jvmddbqxhfaicyctmmvt.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bWRkYnF4aGZhaWN5Y3RtbXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyOTg4MDYsImV4cCI6MjA4Mzg3NDgwNn0.SD37h5vkKVQwODXavoRkej6yFsAYhT8nLmxIxs3AoZg';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bWRkYnF4aGZhaWN5Y3RtbXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4MDc5NjYsImV4cCI6MjA1MjM4Mzk2Nn0.59rhWuZ3r93r5YBxhcKYVGaNgy6NykDFqIpJbSCWbBo';
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 const TOTAL_NOIDS = 5555;
@@ -976,6 +976,8 @@ function App() {
   const [userId, setUserId] = useState(null);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [pendingGameMode, setPendingGameMode] = useState(null);
+  const [isVoting, setIsVoting] = useState(false);
+  const [votedFor, setVotedFor] = useState(null);
   
   // Get wallet connection status and address
   const { isConnected, address } = useAccount();
@@ -1187,8 +1189,13 @@ function App() {
   };
 
   const handleVote = async (winner) => {
+    if (isVoting) return; // Prevent double-clicks
+    
     if (gameMode === 'daily') {
       if (userDailyVoted) return;
+      
+      setIsVoting(true);
+      setVotedFor(winner);
       
       const today = new Date().toISOString().split('T')[0];
       const voteKey = `daily_vote_${userId}_${today}`;
@@ -1204,11 +1211,13 @@ function App() {
 
         if (error) {
           console.error('Error updating daily battle:', error);
+          setIsVoting(false);
+          setVotedFor(null);
           return;
         }
 
-        // Record complete battle with all stats
-        await recordCompleteBattle({
+        // Fire and forget - record stats in background
+        recordCompleteBattle({
           noid1Id: noid1.id,
           noid2Id: noid2.id,
           winnerId: winnerNoid.id,
@@ -1217,47 +1226,33 @@ function App() {
           isDailyBattle: true,
           totalVotes: dailyBattleData.noid1_votes + dailyBattleData.noid2_votes + 1,
           voteMargin: Math.abs(dailyBattleData.noid1_votes - dailyBattleData.noid2_votes)
-        });
+        }).catch(err => console.error('Stats recording error:', err));
 
         localStorage.setItem(voteKey, winner.toString());
         setUserDailyVoted(true);
         
-        await loadDailyBattle();
+        // Short delay for visual feedback, then load next battle
+        setTimeout(async () => {
+          await loadDailyBattle();
+          setIsVoting(false);
+          setVotedFor(null);
+        }, 600);
       } catch (err) {
         console.error('Error voting:', err);
+        setIsVoting(false);
+        setVotedFor(null);
       }
       return;
     }
 
     if (votesRemaining <= 0) return;
+    
+    setIsVoting(true);
+    setVotedFor(winner);
 
     const winnerNoid = winner === 1 ? noid1 : noid2;
 
-    try {
-      // Record complete battle with all stats
-      await recordCompleteBattle({
-        noid1Id: noid1.id,
-        noid2Id: noid2.id,
-        winnerId: winnerNoid.id,
-        gameMode: gameMode,
-        userId: userId,
-        isDailyBattle: false
-      });
-
-      const { error: voteError } = await supabase
-        .from('votes')
-        .insert([{
-          user_id: userId,
-          winner_noid_id: winnerNoid.id,
-          loser_noid_id: winner === 1 ? noid2.id : noid1.id,
-          game_mode: gameMode
-        }]);
-
-      if (voteError) console.error('Error recording vote:', voteError);
-    } catch (err) {
-      console.error('Error in vote handling:', err);
-    }
-
+    // Update vote count immediately for instant feedback
     const today = new Date().toISOString().split('T')[0];
     const key = `votes_${userId}_${today}`;
     const currentVotes = parseInt(localStorage.getItem(key) || '0');
@@ -1268,7 +1263,34 @@ function App() {
       setStickyWinner(winnerNoid);
     }
 
-    setTimeout(() => startBattle(gameMode), 1000);
+    // Fire and forget - record everything in background (don't wait)
+    recordCompleteBattle({
+      noid1Id: noid1.id,
+      noid2Id: noid2.id,
+      winnerId: winnerNoid.id,
+      gameMode: gameMode,
+      userId: userId,
+      isDailyBattle: false
+    }).catch(err => console.error('Stats recording error:', err));
+
+    supabase
+      .from('votes')
+      .insert([{
+        user_id: userId,
+        winner_noid_id: winnerNoid.id,
+        loser_noid_id: winner === 1 ? noid2.id : noid1.id,
+        game_mode: gameMode
+      }])
+      .then(({ error }) => {
+        if (error) console.error('Error recording vote:', error);
+      });
+
+    // Short delay for visual feedback, then load next battle
+    setTimeout(() => {
+      startBattle(gameMode);
+      setIsVoting(false);
+      setVotedFor(null);
+    }, 600);
   };
 
   const Menu = () => (
@@ -1412,20 +1434,34 @@ function App() {
           <p>Loading NOiDS...</p>
         </div>
       ) : (
-        <div className="battle-arena">
-          <div 
-            className={`noid-card glass-card ${userDailyVoted && gameMode === 'daily' ? 'disabled' : ''}`}
-            onClick={() => !userDailyVoted && handleVote(1)}
-          >
-            <div className="card-glow"></div>
-            <div className="image-container">
-              <img src={noid1?.image} alt={`NOID #${noid1?.id}`} />
+        <>
+          {isVoting && (
+            <div className="voting-overlay">
+              <div className="voting-message">Recording Vote...</div>
             </div>
-            <div className="noid-info">
-              <h3>NOID #{noid1?.id}</h3>
-              {gameMode === 'daily' && dailyBattleData && (
-                <div className="vote-count">
-                  <span className="vote-label">Votes:</span>
+          )}
+          <div className="battle-arena">
+            <div 
+              className={`noid-card glass-card ${
+                userDailyVoted && gameMode === 'daily' ? 'disabled' : ''
+              } ${
+                isVoting && votedFor === 1 ? 'voted-winner' : ''
+              } ${
+                isVoting && votedFor === 2 ? 'voted-loser' : ''
+              } ${
+                isVoting ? 'voting' : ''
+              }`}
+              onClick={() => !userDailyVoted && !isVoting && handleVote(1)}
+            >
+              <div className="card-glow"></div>
+              <div className="image-container">
+                <img src={noid1?.image} alt={`NOID #${noid1?.id}`} />
+              </div>
+              <div className="noid-info">
+                <h3>NOID #{noid1?.id}</h3>
+                {gameMode === 'daily' && dailyBattleData && (
+                  <div className="vote-count">
+                    <span className="vote-label">Votes:</span>
                   <span className="vote-number">{dailyBattleData.noid1_votes}</span>
                 </div>
               )}
@@ -1439,8 +1475,16 @@ function App() {
           </div>
 
           <div 
-            className={`noid-card glass-card ${userDailyVoted && gameMode === 'daily' ? 'disabled' : ''}`}
-            onClick={() => !userDailyVoted && handleVote(2)}
+            className={`noid-card glass-card ${
+              userDailyVoted && gameMode === 'daily' ? 'disabled' : ''
+            } ${
+              isVoting && votedFor === 2 ? 'voted-winner' : ''
+            } ${
+              isVoting && votedFor === 1 ? 'voted-loser' : ''
+            } ${
+              isVoting ? 'voting' : ''
+            }`}
+            onClick={() => !userDailyVoted && !isVoting && handleVote(2)}
           >
             <div className="card-glow"></div>
             <div className="image-container">
@@ -1457,6 +1501,7 @@ function App() {
             </div>
           </div>
         </div>
+        </>
       )}
 
       {gameMode === 'daily' && userDailyVoted && (
