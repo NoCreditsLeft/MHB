@@ -1760,13 +1760,9 @@ body {
 .scroller-track {
   display: flex;
   gap: 16px;
-  animation: scroll 30s linear infinite;
   padding: 16px;
   height: 100%;
-}
-
-.scroller-track:hover {
-  animation-play-state: paused;
+  animation: scroll 45s linear infinite;
 }
 
 @keyframes scroll {

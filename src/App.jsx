@@ -1541,9 +1541,8 @@ function App() {
           onMouseLeave={handleMouseLeave}
           style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
         >
-          <div className="scroller-track" style={{ animation: isDragging ? 'none' : undefined }}>
+          <div className="scroller-track">
             {[...topNoids, ...topNoids].map((noid, index) => {
-              // Calculate actual rank (1-10, repeating for duplicates)
               const rank = (index % topNoids.length) + 1;
               return (
                 <div 
