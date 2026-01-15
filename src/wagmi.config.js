@@ -4,7 +4,7 @@ import { injected, walletConnect, metaMask } from 'wagmi/connectors'
 
 // Free WalletConnect Project ID for testing
 // Get your own at: https://cloud.walletconnect.com
-const projectId = 'a01e2f3b4c5d6e7f8g9h0i1j2k3l4m5n' // We'll use a placeholder for now
+const projectId = '8924daf855ff2ba79e6fce8264c5fa59' // https://dashboard.reown.com/
 
 export const config = createConfig({
   chains: [mainnet],
