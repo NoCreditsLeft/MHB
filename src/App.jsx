@@ -528,7 +528,7 @@ const Leaderboard = ({ onClose, onViewNoid }) => {
                     className="opensea-link-leaderboard"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    👁️
+                    <img src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" alt="OpenSea" />
                   </a>
                   {noid.current_streak !== 0 && (
                     <div className="streak-indicator">
@@ -733,7 +733,7 @@ const NoidProfile = ({ noidId, onClose, getNoidImage }) => {
               rel="noopener noreferrer"
               className="opensea-link opensea-link-profile"
             >
-              👁️
+              <img src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" alt="OpenSea" />
             </a>
           </div>
           <div className="hero-stats">
@@ -1598,7 +1598,7 @@ function App() {
                   className="opensea-link"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  👁️
+                  <img src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" alt="OpenSea" />
                 </a>
               </div>
               <div className="noid-info">
@@ -1640,7 +1640,7 @@ function App() {
                 className="opensea-link"
                 onClick={(e) => e.stopPropagation()}
               >
-                👁️
+                <img src="https://static.seadn.io/logos/Logomark-Transparent%20White.png" alt="OpenSea" />
               </a>
             </div>
             <div className="noid-info">
