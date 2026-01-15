@@ -1169,7 +1169,7 @@ function App() {
         query = query.gte('current_streak', 3).order('current_streak', { ascending: false });
       }
 
-      const { data } = await query.limit(10);
+      const { data } = await query.limit(15);
       
       if (data) {
         setTopNoids(data);
@@ -1460,7 +1460,36 @@ function App() {
     }, 800);
   };
 
-  const Menu = () => (
+  const Menu = () => {
+    const scrollerRef = React.useRef(null);
+    const [isDragging, setIsDragging] = React.useState(false);
+    const [startX, setStartX] = React.useState(0);
+    const [scrollLeft, setScrollLeft] = React.useState(0);
+
+    const handleMouseDown = (e) => {
+      if (!scrollerRef.current) return;
+      setIsDragging(true);
+      setStartX(e.pageX - scrollerRef.current.offsetLeft);
+      setScrollLeft(scrollerRef.current.scrollLeft);
+    };
+
+    const handleMouseMove = (e) => {
+      if (!isDragging || !scrollerRef.current) return;
+      e.preventDefault();
+      const x = e.pageX - scrollerRef.current.offsetLeft;
+      const walk = (x - startX) * 2; // Scroll speed multiplier
+      scrollerRef.current.scrollLeft = scrollLeft - walk;
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    const handleMouseLeave = () => {
+      setIsDragging(false);
+    };
+
+    return (
     <div className="menu-container">
       <MatrixRain />
       
@@ -1503,8 +1532,16 @@ function App() {
       </div>
 
       {topNoids.length > 0 && (
-        <div className="top-noids-scroller">
-          <div className="scroller-track">
+        <div 
+          className="top-noids-scroller"
+          ref={scrollerRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        >
+          <div className="scroller-track" style={{ animation: isDragging ? 'none' : undefined }}>
             {[...topNoids, ...topNoids].map((noid, index) => {
               // Calculate actual rank (1-10, repeating for duplicates)
               const rank = (index % topNoids.length) + 1;
@@ -1616,7 +1653,8 @@ function App() {
         </button>
       </div>
     </div>
-  );
+    );
+  };
 
   const Battle = () => (
     <div className="battle-container">
