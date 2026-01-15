@@ -1127,7 +1127,7 @@ function App() {
     return await fetchNoidImageFromOpenSea(tokenId);
   };
 
-  const fetchNoidImage = async (tokenId) => {
+  const fetchNoidImage = React.useCallback(async (tokenId) => {
     if (imageCache[tokenId]) return imageCache[tokenId];
 
     try {
@@ -1151,27 +1151,19 @@ function App() {
       console.error(`Error fetching image for NOID #${tokenId}:`, error);
       return null;
     }
-  };
+  }, [imageCache]);
 
   const loadTopNoids = async () => {
     try {
-      // Randomly pick a leaderboard type for variety
-      const leaderboardTypes = ['winRate', 'totalWins', 'hotStreak'];
-      const randomType = leaderboardTypes[Math.floor(Math.random() * leaderboardTypes.length)];
-
-      let query = supabase.from('noid_stats').select('*').gte('total_battles', 3);
-
-      if (randomType === 'winRate') {
-        query = query.order('win_rate', { ascending: false });
-      } else if (randomType === 'totalWins') {
-        query = query.order('total_wins', { ascending: false });
-      } else if (randomType === 'hotStreak') {
-        query = query.gte('current_streak', 3).order('current_streak', { ascending: false });
-      }
-
-      const { data } = await query.limit(15);
+      // Always use totalWins to ensure consistent, meaningful results
+      const { data } = await supabase
+        .from('noid_stats')
+        .select('*')
+        .gte('total_battles', 5)
+        .order('total_wins', { ascending: false })
+        .limit(15);
       
-      if (data) {
+      if (data && data.length > 0) {
         setTopNoids(data);
         // Preload images
         data.forEach(noid => {
@@ -1562,7 +1554,7 @@ function App() {
                   <div className="scroller-info">
                     <div className="scroller-noid-name">#{noid.noid_id}</div>
                     <div className="scroller-stats">
-                      {Math.round(noid.win_rate)}% • {noid.total_wins}W
+                      {Math.round(noid.win_rate > 1 ? noid.win_rate : noid.win_rate * 100)}% • {noid.total_wins}W
                     </div>
                   </div>
                 </div>
