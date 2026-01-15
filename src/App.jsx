@@ -13,6 +13,15 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 const TOTAL_NOIDS = 5555;
 const DAILY_VOTE_LIMIT = 55;
 
+// 1-of-1 NOIDs with unique traits
+const ONE_OF_ONE_NOIDS = [
+  3399, 4550, 46, 3421, 5521, 4200, 814, 1587, 4234, 1601,
+  2480, 1046, 4999, 2290, 1401, 2148, 3921, 4900, 4699, 1187,
+  2225, 948, 2214, 1448, 3321, 4221, 4111, 2281, 2231, 2014,
+  2187, 4800, 4890, 1748, 4601, 1948, 4400, 4981, 412, 4651,
+  3390, 601
+];
+
 // ============================================
 // STATS TRACKING FUNCTIONS (Inline)
 // ============================================
@@ -1037,6 +1046,12 @@ function App() {
     return num;
   };
 
+  const getRandomOneOfOne = (exclude = []) => {
+    const available = ONE_OF_ONE_NOIDS.filter(id => !exclude.includes(id));
+    if (available.length === 0) return getRandomNoid(exclude);
+    return available[Math.floor(Math.random() * available.length)];
+  };
+
   // Cache for storing fetched image URLs
   const [imageCache, setImageCache] = useState({});
 
@@ -1120,8 +1135,8 @@ function App() {
           setNoid2({ id: id2, image: img2 });
         }
       } else if (mode === 'oneofone') {
-        const id1 = getRandomNoid();
-        const id2 = getRandomNoid([id1]);
+        const id1 = getRandomOneOfOne();
+        const id2 = getRandomOneOfOne([id1]);
         const [img1, img2] = await Promise.all([
           getNoidImage(id1),
           getNoidImage(id2)
@@ -1373,8 +1388,8 @@ function App() {
             return { noid1: { id: id1, image: img1 }, noid2: { id: id2, image: img2 } };
           }
         } else if (gameMode === 'oneofone') {
-          const id1 = getRandomNoid();
-          const id2 = getRandomNoid([id1]);
+          const id1 = getRandomOneOfOne();
+          const id2 = getRandomOneOfOne([id1]);
           const [img1, img2] = await Promise.all([
             getNoidImage(id1),
             getNoidImage(id2)
