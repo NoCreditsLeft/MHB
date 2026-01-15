@@ -1505,28 +1505,33 @@ function App() {
       {topNoids.length > 0 && (
         <div className="top-noids-scroller">
           <div className="scroller-track">
-            {[...topNoids, ...topNoids].map((noid, index) => (
-              <div 
-                key={`${noid.noid_id}-${index}`}
-                className="scroller-item"
-                onClick={() => {
-                  setSelectedNoidId(noid.noid_id);
-                  setView('profile');
-                }}
-              >
-                <img 
-                  src={imageCache[noid.noid_id] || 'https://via.placeholder.com/100x100?text=Loading'} 
-                  alt={`NOID #${noid.noid_id}`}
-                  className="scroller-image"
-                />
-                <div className="scroller-info">
-                  <div className="scroller-noid-name">#{noid.noid_id}</div>
-                  <div className="scroller-stats">
-                    {noid.win_rate?.toFixed(1)}% • {noid.total_wins}W
+            {[...topNoids, ...topNoids].map((noid, index) => {
+              // Calculate actual rank (1-10, repeating for duplicates)
+              const rank = (index % topNoids.length) + 1;
+              return (
+                <div 
+                  key={`${noid.noid_id}-${index}`}
+                  className="scroller-item"
+                  onClick={() => {
+                    setSelectedNoidId(noid.noid_id);
+                    setView('profile');
+                  }}
+                >
+                  <div className="scroller-rank">#{rank}</div>
+                  <img 
+                    src={imageCache[noid.noid_id] || 'https://via.placeholder.com/100x100?text=Loading'} 
+                    alt={`NOID #${noid.noid_id}`}
+                    className="scroller-image"
+                  />
+                  <div className="scroller-info">
+                    <div className="scroller-noid-name">#{noid.noid_id}</div>
+                    <div className="scroller-stats">
+                      {noid.win_rate?.toFixed(1)}% • {noid.total_wins}W
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
