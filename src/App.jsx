@@ -1159,10 +1159,10 @@ function App() {
       const leaderboardTypes = ['winRate', 'totalWins', 'hotStreak'];
       const randomType = leaderboardTypes[Math.floor(Math.random() * leaderboardTypes.length)];
 
-      let query = supabase.from('noid_stats').select('*');
+      let query = supabase.from('noid_stats').select('*').gte('total_battles', 3);
 
       if (randomType === 'winRate') {
-        query = query.gte('total_battles', 3).order('win_rate', { ascending: false });
+        query = query.order('win_rate', { ascending: false });
       } else if (randomType === 'totalWins') {
         query = query.order('total_wins', { ascending: false });
       } else if (randomType === 'hotStreak') {
@@ -1562,7 +1562,7 @@ function App() {
                   <div className="scroller-info">
                     <div className="scroller-noid-name">#{noid.noid_id}</div>
                     <div className="scroller-stats">
-                      {noid.win_rate?.toFixed(1)}% • {noid.total_wins}W
+                      {Math.round(noid.win_rate)}% • {noid.total_wins}W
                     </div>
                   </div>
                 </div>
