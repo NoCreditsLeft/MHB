@@ -1441,7 +1441,6 @@ body {
     font-size: 24px;
   }
 }
-/* Add this to the end of your App.css */
 
 /* Voting Feedback Styles */
 .voting-overlay {
@@ -1490,15 +1489,27 @@ body {
 }
 
 .noid-card.voted-loser {
-  opacity: 0.3;
-  transform: scale(0.95);
+  opacity: 0;
+  transform: scale(0.9);
   filter: grayscale(100%);
-  transition: all 0.3s ease;
+  transition: all 0.4s ease;
+  pointer-events: none;
 }
 
-/* Smooth transition for next battle */
-.battle-arena.transitioning {
-  opacity: 0;
+/* Smooth image crossfade */
+.noid-card img {
   transition: opacity 0.3s ease;
 }
 
+.noid-card.voting img {
+  opacity: 1;
+}
+
+/* Battle arena smooth transition */
+.battle-arena {
+  transition: opacity 0.2s ease;
+}
+
+.battle-arena.fade-out {
+  opacity: 0;
+}

@@ -1236,7 +1236,7 @@ function App() {
           await loadDailyBattle();
           setIsVoting(false);
           setVotedFor(null);
-        }, 800);
+        }, 1000);
       } catch (err) {
         console.error('Error voting:', err);
         setIsVoting(false);
@@ -1247,23 +1247,19 @@ function App() {
 
     if (votesRemaining <= 0) return;
     
-    setIsVoting(true);
-    setVotedFor(winner);
-
+    // BATCH ALL STATE UPDATES INTO ONE
     const winnerNoid = winner === 1 ? noid1 : noid2;
-
-    // Update vote count immediately for instant feedback
     const today = new Date().toISOString().split('T')[0];
     const key = `votes_${userId}_${today}`;
     const currentVotes = parseInt(localStorage.getItem(key) || '0');
+    
+    // Update localStorage
     localStorage.setItem(key, (currentVotes + 1).toString());
-    setVotesRemaining(DAILY_VOTE_LIMIT - currentVotes - 1);
+    
+    // Calculate new sticky winner if needed
+    const newStickyWinner = gameMode === 'sticky' ? winnerNoid : stickyWinner;
 
-    if (gameMode === 'sticky') {
-      setStickyWinner(winnerNoid);
-    }
-
-    // Fire and forget - record everything in background (don't wait)
+    // Fire and forget - record everything in background
     recordCompleteBattle({
       noid1Id: noid1.id,
       noid2Id: noid2.id,
@@ -1285,7 +1281,7 @@ function App() {
         if (error) console.error('Error recording vote:', error);
       });
 
-    // Load next battle in background while showing feedback
+    // Start loading next battle images immediately
     const loadNext = async () => {
       try {
         if (gameMode === 'rando') {
@@ -1297,10 +1293,10 @@ function App() {
           ]);
           return { noid1: { id: id1, image: img1 }, noid2: { id: id2, image: img2 } };
         } else if (gameMode === 'sticky') {
-          if (stickyWinner) {
-            const id2 = getRandomNoid([stickyWinner.id]);
+          if (newStickyWinner) {
+            const id2 = getRandomNoid([newStickyWinner.id]);
             const img2 = await getNoidImage(id2);
-            return { noid1: stickyWinner, noid2: { id: id2, image: img2 } };
+            return { noid1: newStickyWinner, noid2: { id: id2, image: img2 } };
           } else {
             const id1 = getRandomNoid();
             const id2 = getRandomNoid([id1]);
@@ -1325,19 +1321,30 @@ function App() {
       }
     };
 
-    // Start loading next battle immediately
     const nextBattlePromise = loadNext();
 
-    // Wait for visual feedback, then show next battle
+    // SINGLE STATE UPDATE with visual feedback
+    setIsVoting(true);
+    setVotedFor(winner);
+
+    // Wait for images to load and visual feedback to show
     setTimeout(async () => {
       const nextBattle = await nextBattlePromise;
       if (nextBattle) {
+        // BATCH ALL UPDATES INTO ONE setState
         setNoid1(nextBattle.noid1);
         setNoid2(nextBattle.noid2);
+        setVotesRemaining(DAILY_VOTE_LIMIT - currentVotes - 1);
+        if (gameMode === 'sticky') {
+          setStickyWinner(newStickyWinner);
+        }
+        setIsVoting(false);
+        setVotedFor(null);
+      } else {
+        setIsVoting(false);
+        setVotedFor(null);
       }
-      setIsVoting(false);
-      setVotedFor(null);
-    }, 800);
+    }, 1000);
   };
 
   const Menu = () => (
