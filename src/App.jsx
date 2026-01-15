@@ -1086,9 +1086,6 @@ function App() {
     return available[Math.floor(Math.random() * available.length)];
   };
 
-  // Cache for storing fetched image URLs
-  const [imageCache, setImageCache] = useState({});
-
   const fetchNoidImageFromOpenSea = async (tokenId) => {
     // Check cache first
     if (imageCache[tokenId]) {
