@@ -170,20 +170,13 @@ function App() {
   const loadDailyBattle = async () => {
     setLoading(true);
     try {
-      // Get today's date in UTC
-      const todayUTC = new Date().toISOString().split('T')[0];
+      const todayDate = new Date().toISOString().split('T')[0];
       
-      // Query for today's pre-generated battle
-      const { data: existingBattle, error } = await supabase
+      const { data: existingBattle } = await supabase
         .from('daily_battles')
         .select('*')
-        .eq('battle_date', todayUTC)
+        .eq('battle_date', todayDate)
         .single();
-
-      if (error) {
-        console.error('Error fetching daily battle:', error);
-        throw error;
-      }
 
       if (existingBattle) {
         setDailyBattleData(existingBattle);
@@ -195,9 +188,56 @@ function App() {
           fetchNoidImage(existingBattle.noid2_id)
         ]);
       } else {
-        // This should never happen if we have 2 years of pre-generated battles
-        console.error('No daily battle found for today:', todayUTC);
-        alert('No daily battle available for today. Please contact support.');
+        const { data: recentBattles } = await supabase
+          .from('daily_battles')
+          .select('noid1_id, noid2_id')
+          .gte('battle_date', new Date(Date.now() - 366 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+
+        const recentMatchups = new Set(
+          recentBattles?.map(b => [b.noid1_id, b.noid2_id].sort().join('-')) || []
+        );
+
+        let noid1Id, noid2Id;
+        let attempts = 0;
+        const maxAttempts = 100;
+
+        do {
+          noid1Id = Math.floor(Math.random() * 1000) + 1;
+          noid2Id = Math.floor(Math.random() * 1000) + 1;
+          
+          while (noid2Id === noid1Id) {
+            noid2Id = Math.floor(Math.random() * 1000) + 1;
+          }
+
+          const matchupKey = [noid1Id, noid2Id].sort().join('-');
+          if (!recentMatchups.has(matchupKey)) {
+            break;
+          }
+          attempts++;
+        } while (attempts < maxAttempts);
+
+        const { data: newBattle, error } = await supabase
+          .from('daily_battles')
+          .insert({
+            battle_date: todayDate,
+            noid1_id: noid1Id,
+            noid2_id: noid2Id,
+            noid1_votes: 0,
+            noid2_votes: 0
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        setDailyBattleData(newBattle);
+        setNoid1(noid1Id);
+        setNoid2(noid2Id);
+        
+        await Promise.all([
+          fetchNoidImage(noid1Id),
+          fetchNoidImage(noid2Id)
+        ]);
       }
     } catch (error) {
       console.error('Error loading daily battle:', error);
