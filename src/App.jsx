@@ -1231,7 +1231,6 @@ function App() {
         localStorage.setItem(voteKey, winner.toString());
         setUserDailyVoted(true);
         
-        // Short delay for visual feedback, then load next battle
         setTimeout(async () => {
           await loadDailyBattle();
           setIsVoting(false);
@@ -1247,19 +1246,19 @@ function App() {
 
     if (votesRemaining <= 0) return;
     
-    // BATCH ALL STATE UPDATES INTO ONE
+    // Show feedback immediately
+    setIsVoting(true);
+    setVotedFor(winner);
+
     const winnerNoid = winner === 1 ? noid1 : noid2;
     const today = new Date().toISOString().split('T')[0];
     const key = `votes_${userId}_${today}`;
     const currentVotes = parseInt(localStorage.getItem(key) || '0');
     
-    // Update localStorage
     localStorage.setItem(key, (currentVotes + 1).toString());
-    
-    // Calculate new sticky winner if needed
     const newStickyWinner = gameMode === 'sticky' ? winnerNoid : stickyWinner;
 
-    // Fire and forget - record everything in background
+    // Fire and forget - background recording
     recordCompleteBattle({
       noid1Id: noid1.id,
       noid2Id: noid2.id,
@@ -1281,7 +1280,7 @@ function App() {
         if (error) console.error('Error recording vote:', error);
       });
 
-    // Start loading next battle images immediately
+    // Load next battle images in background
     const loadNext = async () => {
       try {
         if (gameMode === 'rando') {
@@ -1323,28 +1322,31 @@ function App() {
 
     const nextBattlePromise = loadNext();
 
-    // SINGLE STATE UPDATE with visual feedback
-    setIsVoting(true);
-    setVotedFor(winner);
-
-    // Wait for images to load and visual feedback to show
+    // Wait 800ms for loser to fade out completely
     setTimeout(async () => {
+      // Hide Recording Vote message
+      setVotedFor(null);
+      
+      // Wait for next battle to load
       const nextBattle = await nextBattlePromise;
+      
       if (nextBattle) {
-        // BATCH ALL UPDATES INTO ONE setState
+        // Update all state at once
         setNoid1(nextBattle.noid1);
         setNoid2(nextBattle.noid2);
         setVotesRemaining(DAILY_VOTE_LIMIT - currentVotes - 1);
         if (gameMode === 'sticky') {
           setStickyWinner(newStickyWinner);
         }
-        setIsVoting(false);
-        setVotedFor(null);
+        
+        // Small delay to let new images render, then remove voting state
+        setTimeout(() => {
+          setIsVoting(false);
+        }, 100);
       } else {
         setIsVoting(false);
-        setVotedFor(null);
       }
-    }, 1000);
+    }, 800);
   };
 
   const Menu = () => (
