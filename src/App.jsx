@@ -98,11 +98,11 @@ async function recordCompleteBattle({
       updateGameModeStats(noid2Id, gameMode, winnerId === noid2Id)
     ]);
     
-    console.log('✅ Battle recorded successfully');
+    console.log('âœ… Battle recorded successfully');
     return { success: true };
     
   } catch (error) {
-    console.error('❌ Error recording battle:', error);
+    console.error('âŒ Error recording battle:', error);
     return { success: false, error };
   }
 }
@@ -342,7 +342,7 @@ const MatrixRain = () => {
     canvas.height = window.innerHeight;
 
     // Matrix characters - katakana, numbers, and symbols
-    const chars = 'アィイゥウェエォオカガキギクグケゲコゴサザシジスズセゼソゾタダチヂッツヅテデトドナニヌネノハバパヒビピフブプヘベペホボポマミムメモャヤュユョヨラリルレロヮワヰヱヲンヴヵヶ01234567890';
+    const chars = 'ã‚¢ã‚£ã‚¤ã‚¥ã‚¦ã‚§ã‚¨ã‚©ã‚ªã‚«ã‚¬ã‚­ã‚®ã‚¯ã‚°ã‚±ã‚²ã‚³ã‚´ã‚µã‚¶ã‚·ã‚¸ã‚¹ã‚ºã‚»ã‚¼ã‚½ã‚¾ã‚¿ãƒ€ãƒãƒ‚ãƒƒãƒ„ãƒ…ãƒ†ãƒ‡ãƒˆãƒ‰ãƒŠãƒ‹ãƒŒãƒãƒŽãƒãƒãƒ‘ãƒ’ãƒ“ãƒ”ãƒ•ãƒ–ãƒ—ãƒ˜ãƒ™ãƒšãƒ›ãƒœãƒãƒžãƒŸãƒ ãƒ¡ãƒ¢ãƒ£ãƒ¤ãƒ¥ãƒ¦ãƒ§ãƒ¨ãƒ©ãƒªãƒ«ãƒ¬ãƒ­ãƒ®ãƒ¯ãƒ°ãƒ±ãƒ²ãƒ³ãƒ´ãƒµãƒ¶01234567890';
     const fontSize = 14;
     const columns = canvas.width / fontSize;
     
@@ -463,10 +463,10 @@ const Leaderboard = ({ onClose, onViewNoid }) => {
   };
 
   const getStreakEmoji = (streak) => {
-    if (streak >= 10) return '🔥';
-    if (streak >= 5) return '⚡';
-    if (streak >= 3) return '✨';
-    if (streak <= -3) return '❄️';
+    if (streak >= 10) return 'ðŸ”¥';
+    if (streak >= 5) return 'âš¡';
+    if (streak >= 3) return 'âœ¨';
+    if (streak <= -3) return 'â„ï¸';
     return '';
   };
 
@@ -476,7 +476,7 @@ const Leaderboard = ({ onClose, onViewNoid }) => {
       
       <div className="leaderboard-header glass-panel">
         <button className="back-btn" onClick={onClose}>
-          <span className="back-arrow">←</span>
+          <span className="back-arrow">â†</span>
           Back to Menu
         </button>
         <h2 className="leaderboard-title">Leaderboard</h2>
@@ -488,21 +488,21 @@ const Leaderboard = ({ onClose, onViewNoid }) => {
           className={`tab-btn ${view === 'winrate' ? 'active' : ''}`}
           onClick={() => setView('winrate')}
         >
-          <span className="tab-icon">🏆</span>
+          <span className="tab-icon">ðŸ†</span>
           Win Rate
         </button>
         <button 
           className={`tab-btn ${view === 'totalwins' ? 'active' : ''}`}
           onClick={() => setView('totalwins')}
         >
-          <span className="tab-icon">👑</span>
+          <span className="tab-icon">ðŸ‘‘</span>
           Total Wins
         </button>
         <button 
           className={`tab-btn ${view === 'hotstreak' ? 'active' : ''}`}
           onClick={() => setView('hotstreak')}
         >
-          <span className="tab-icon">🔥</span>
+          <span className="tab-icon">ðŸ”¥</span>
           Hot Streak
         </button>
       </div>
@@ -522,9 +522,9 @@ const Leaderboard = ({ onClose, onViewNoid }) => {
                 onClick={() => onViewNoid(noid.noid_id)}
               >
                 <div className="rank-badge">
-                  {index === 0 && '🥇'}
-                  {index === 1 && '🥈'}
-                  {index === 2 && '🥉'}
+                  {index === 0 && 'ðŸ¥‡'}
+                  {index === 1 && 'ðŸ¥ˆ'}
+                  {index === 2 && 'ðŸ¥‰'}
                   {index > 2 && `#${index + 1}`}
                 </div>
 
@@ -569,7 +569,7 @@ const Leaderboard = ({ onClose, onViewNoid }) => {
                 </div>
 
                 <div className="view-profile-btn">
-                  <span>View Profile →</span>
+                  <span>View Profile â†’</span>
                 </div>
               </div>
             ))}
@@ -669,29 +669,29 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
 
   const getStreakEmoji = (streak) => {
     if (!streak) return '';
-    if (streak >= 10) return '🔥';
-    if (streak >= 5) return '⚡';
-    if (streak >= 3) return '✨';
-    if (streak <= -3) return '❄️';
+    if (streak >= 10) return 'ðŸ”¥';
+    if (streak >= 5) return 'âš¡';
+    if (streak >= 3) return 'âœ¨';
+    if (streak <= -3) return 'â„ï¸';
     return '';
   };
 
   const getGameModeIcon = (mode) => {
     switch (mode) {
-      case 'rando': return '🎲';
-      case 'sticky': return '🏆';
-      case 'oneofone': return '👑';
-      case 'daily': return '⭐';
-      default: return '🎮';
+      case 'rando': return 'ðŸŽ²';
+      case 'sticky': return 'ðŸ†';
+      case 'oneofone': return 'ðŸ‘‘';
+      case 'daily': return 'â­';
+      default: return 'ðŸŽ®';
     }
   };
 
   const getAchievementIcon = (type) => {
-    if (type.includes('win_streak')) return '🔥';
-    if (type.includes('wins_')) return '🏆';
-    if (type.includes('win_rate')) return '👑';
-    if (type === 'first_win') return '⭐';
-    return '🎖️';
+    if (type.includes('win_streak')) return 'ðŸ”¥';
+    if (type.includes('wins_')) return 'ðŸ†';
+    if (type.includes('win_rate')) return 'ðŸ‘‘';
+    if (type === 'first_win') return 'â­';
+    return 'ðŸŽ–ï¸';
   };
 
   if (loading) {
@@ -725,7 +725,7 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
       
       <div className="profile-header glass-panel">
         <button className="back-btn" onClick={onClose}>
-          <span className="back-arrow">←</span>
+          <span className="back-arrow">â†</span>
           Back
         </button>
         <h2 className="profile-title">NOID #{noidId}</h2>
@@ -802,28 +802,28 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
               <h3 className="section-title">Core Stats</h3>
               <div className="stats-grid">
                 <div className="stat-box">
-                  <div className="stat-icon">🏆</div>
+                  <div className="stat-icon">ðŸ†</div>
                   <div className="stat-info">
                     <div className="stat-label">Total Wins</div>
                     <div className="stat-value wins">{noidData.total_wins}</div>
                   </div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-icon">💔</div>
+                  <div className="stat-icon">ðŸ’”</div>
                   <div className="stat-info">
                     <div className="stat-label">Total Losses</div>
                     <div className="stat-value losses">{noidData.total_losses}</div>
                   </div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-icon">⚔️</div>
+                  <div className="stat-icon">âš”ï¸</div>
                   <div className="stat-info">
                     <div className="stat-label">Total Battles</div>
                     <div className="stat-value">{noidData.total_battles}</div>
                   </div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-icon">📊</div>
+                  <div className="stat-icon">ðŸ“Š</div>
                   <div className="stat-info">
                     <div className="stat-label">Win Rate</div>
                     <div className="stat-value">{noidData.win_rate}%</div>
@@ -836,7 +836,7 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
               <h3 className="section-title">Streaks</h3>
               <div className="stats-grid">
                 <div className="stat-box">
-                  <div className="stat-icon">{getStreakEmoji(noidData.current_streak) || '📈'}</div>
+                  <div className="stat-icon">{getStreakEmoji(noidData.current_streak) || 'ðŸ“ˆ'}</div>
                   <div className="stat-info">
                     <div className="stat-label">Current Streak</div>
                     <div className={`stat-value ${noidData.current_streak > 0 ? 'positive' : noidData.current_streak < 0 ? 'negative' : ''}`}>
@@ -845,14 +845,14 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
                   </div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-icon">🔥</div>
+                  <div className="stat-icon">ðŸ”¥</div>
                   <div className="stat-info">
                     <div className="stat-label">Best Streak</div>
                     <div className="stat-value streak">{noidData.best_streak || 0}</div>
                   </div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-icon">🎯</div>
+                  <div className="stat-icon">ðŸŽ¯</div>
                   <div className="stat-info">
                     <div className="stat-label">Underdog Wins</div>
                     <div className="stat-value">{noidData.underdog_wins || 0}</div>
@@ -944,7 +944,7 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
 
             {beaten.length > 0 && (
               <div className="stats-section glass-panel">
-                <h3 className="section-title">💪 Most Beaten Opponents</h3>
+                <h3 className="section-title">ðŸ’ª Most Beaten Opponents</h3>
                 <div className="beaten-list">
                   {beaten.map(b => (
                     <div key={b.beaten_id} className="beaten-item">
@@ -958,7 +958,7 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
 
             {beatenBy.length > 0 && (
               <div className="stats-section glass-panel">
-                <h3 className="section-title">😤 Beaten By</h3>
+                <h3 className="section-title">ðŸ˜¤ Beaten By</h3>
                 <div className="beaten-list">
                   {beatenBy.map(b => (
                     <div key={b.beaten_by_id} className="beaten-item nemesis">
@@ -1115,7 +1115,7 @@ const TopNoidsScroller = React.memo(({ onNoidClick }) => {
               <div className="scroller-info">
                 <div className="scroller-noid-name">#{noid.noid_id}</div>
                 <div className="scroller-stats">
-                  {winRate}% • {noid.total_wins}W
+                  {winRate}% â€¢ {noid.total_wins}W
                 </div>
               </div>
             </div>
@@ -1163,15 +1163,37 @@ function App() {
     }
   }, [isConnected, address]);
 
-  const checkDailyVotes = (uid) => {
+  const checkDailyVotes = async (uid) => {
+    if (!uid) {
+      setVotesRemaining(DAILY_VOTE_LIMIT);
+      return;
+    }
+
     const today = new Date().toISOString().split('T')[0];
-    const key = `votes_${uid}_${today}`;
-    const stored = localStorage.getItem(key);
+    const todayStart = `${today}T00:00:00`;
+    const todayEnd = `${today}T23:59:59`;
     
-    if (stored) {
-      const votes = parseInt(stored);
-      setVotesRemaining(DAILY_VOTE_LIMIT - votes);
-    } else {
+    try {
+      // Query database for today's votes (excluding daily battles)
+      const { data, error } = await supabase
+        .from('votes')
+        .select('id')
+        .eq('user_id', uid)
+        .gte('created_at', todayStart)
+        .lte('created_at', todayEnd)
+        .neq('game_mode', 'daily'); // Don't count daily battle votes
+
+      if (error) {
+        console.error('Error checking votes:', error);
+        setVotesRemaining(DAILY_VOTE_LIMIT);
+        return;
+      }
+
+      const voteCount = data ? data.length : 0;
+      setVotesRemaining(Math.max(0, DAILY_VOTE_LIMIT - voteCount));
+      console.log(`✓ Votes today: ${voteCount}/${DAILY_VOTE_LIMIT}`);
+    } catch (err) {
+      console.error('Error fetching vote count:', err);
       setVotesRemaining(DAILY_VOTE_LIMIT);
     }
   };
@@ -1435,11 +1457,6 @@ function App() {
     setVotedFor(winner);
 
     const winnerNoid = winner === 1 ? noid1 : noid2;
-    const today = new Date().toISOString().split('T')[0];
-    const key = `votes_${userId}_${today}`;
-    const currentVotes = parseInt(localStorage.getItem(key) || '0');
-    
-    localStorage.setItem(key, (currentVotes + 1).toString());
     const newStickyWinner = gameMode === 'sticky' ? winnerNoid : stickyWinner;
 
     // Fire and forget - background recording
@@ -1452,6 +1469,7 @@ function App() {
       isDailyBattle: false
     }).catch(err => console.error('Stats recording error:', err));
 
+    // Record vote in database
     supabase
       .from('votes')
       .insert([{
@@ -1462,6 +1480,8 @@ function App() {
       }])
       .then(({ error }) => {
         if (error) console.error('Error recording vote:', error);
+        // Refresh vote count from database after recording
+        checkDailyVotes(userId);
       });
 
     // Load next battle images in background
@@ -1518,7 +1538,7 @@ function App() {
         // Update all state at once
         setNoid1(nextBattle.noid1);
         setNoid2(nextBattle.noid2);
-        setVotesRemaining(DAILY_VOTE_LIMIT - currentVotes - 1);
+        // Vote count already updated by checkDailyVotes call
         if (gameMode === 'sticky') {
           setStickyWinner(newStickyWinner);
         }
@@ -1544,12 +1564,12 @@ function App() {
         >
           {isConnected ? (
             <>
-              <span className="wallet-icon">💳</span>
+              <span className="wallet-icon">ðŸ’³</span>
               <span className="wallet-text">{address.slice(0, 6)}...{address.slice(-4)}</span>
             </>
           ) : (
             <>
-              <span className="wallet-icon">💳</span>
+              <span className="wallet-icon">ðŸ’³</span>
               <span className="wallet-text">Connect Wallet</span>
             </>
           )}
@@ -1560,7 +1580,7 @@ function App() {
             className="my-noids-header-btn"
             onClick={() => setView('mynoids')}
           >
-            <span className="noids-icon">🖼️</span>
+            <span className="noids-icon">ðŸ–¼ï¸</span>
             <span className="noids-text">My NOIDs</span>
           </button>
         )}
@@ -1597,7 +1617,7 @@ function App() {
             onClick={() => startBattle('rando')}
             disabled={votesRemaining <= 0}
           >
-            <div className="btn-icon">🎲</div>
+            <div className="btn-icon">ðŸŽ²</div>
             <div className="btn-content">
               <h4>Rando Battle</h4>
               <p>Two random NOiDS face off</p>
@@ -1609,7 +1629,7 @@ function App() {
             onClick={() => startBattle('sticky')}
             disabled={votesRemaining <= 0}
           >
-            <div className="btn-icon">🏆</div>
+            <div className="btn-icon">ðŸ†</div>
             <div className="btn-content">
               <h4>Sticky Winner</h4>
               <p>Winner stays, challenger appears</p>
@@ -1621,7 +1641,7 @@ function App() {
             onClick={() => startBattle('oneofone')}
             disabled={votesRemaining <= 0}
           >
-            <div className="btn-icon">👑</div>
+            <div className="btn-icon">ðŸ‘‘</div>
             <div className="btn-content">
               <h4>One of One Championship</h4>
               <p>Battle of the rarest</p>
@@ -1638,18 +1658,18 @@ function App() {
             className="mode-btn community-btn"
             onClick={() => startBattle('daily')}
           >
-            <div className="btn-icon">⭐</div>
+            <div className="btn-icon">â­</div>
             <div className="btn-content">
               <h4>Daily Battle</h4>
               <p>One battle, one vote, 24 hours</p>
-              {userDailyVoted && <span className="voted-badge">✓ Voted</span>}
+              {userDailyVoted && <span className="voted-badge">âœ“ Voted</span>}
             </div>
           </button>
         </div>
 
         {votesRemaining <= 0 && (
           <div className="limit-notice glass-panel">
-            <span className="notice-icon">⏰</span>
+            <span className="notice-icon">â°</span>
             <p>You've used all your daily votes!<br/>Come back tomorrow.</p>
           </div>
         )}
@@ -1658,7 +1678,7 @@ function App() {
           className="stats-btn glass-panel"
           onClick={() => setView('leaderboard')}
         >
-          📊 View Stats & Leaderboard
+          ðŸ“Š View Stats & Leaderboard
         </button>
       </div>
     </div>
@@ -1670,14 +1690,14 @@ function App() {
       
       <div className="battle-header glass-panel">
         <button className="back-btn" onClick={() => setView('menu')}>
-          <span className="back-arrow">←</span>
+          <span className="back-arrow">â†</span>
           Back to Menu
         </button>
         <div className="mode-title">
-          {gameMode === 'rando' && <><span className="mode-icon">🎲</span> Rando Battle</>}
-          {gameMode === 'sticky' && <><span className="mode-icon">🏆</span> Sticky Winner</>}
-          {gameMode === 'oneofone' && <><span className="mode-icon">👑</span> One of One</>}
-          {gameMode === 'daily' && <><span className="mode-icon">⭐</span> Daily Battle</>}
+          {gameMode === 'rando' && <><span className="mode-icon">ðŸŽ²</span> Rando Battle</>}
+          {gameMode === 'sticky' && <><span className="mode-icon">ðŸ†</span> Sticky Winner</>}
+          {gameMode === 'oneofone' && <><span className="mode-icon">ðŸ‘‘</span> One of One</>}
+          {gameMode === 'daily' && <><span className="mode-icon">â­</span> Daily Battle</>}
         </div>
         {gameMode !== 'daily' && (
           <div className="votes-badge">
@@ -1783,7 +1803,7 @@ function App() {
 
       {gameMode === 'daily' && userDailyVoted && (
         <div className="daily-voted-message glass-panel">
-          <span className="check-icon">✓</span>
+          <span className="check-icon">âœ“</span>
           <p>Thanks for voting! Come back tomorrow for the next battle.</p>
         </div>
       )}
@@ -1842,7 +1862,7 @@ function App() {
       <footer className="app-footer">
         <div className="footer-content">
           <span className="footer-version">v0.11 (Beta)</span>
-          <span className="footer-divider">•</span>
+          <span className="footer-divider">â€¢</span>
           <span className="footer-credits">NOiDS Battle built and hosted by @NoCredits</span>
         </div>
       </footer>
