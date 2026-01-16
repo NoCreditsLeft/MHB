@@ -4,7 +4,7 @@ import { injected, walletConnect } from 'wagmi/connectors'
 
 // WalletConnect Project ID
 // Get your own at: https://cloud.walletconnect.com
-const projectId = 'a01e2f3b4c5d6e7f8g9h0i1j2k3l4m5n' // Replace with your real project ID
+const projectId = '8924daf855ff2ba79e6fce8264c5fa59'
 
 export const config = createConfig({
   chains: [mainnet],
