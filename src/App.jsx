@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useAccount } from 'wagmi';
 import ConnectWalletModal from './ConnectWalletModal';
@@ -98,7 +98,7 @@ async function recordCompleteBattle({
       updateGameModeStats(noid2Id, gameMode, winnerId === noid2Id)
     ]);
     
-    console.log('âœ… Battle recorded successfully');
+    console.log('✅ Battle recorded successfully');
     return { success: true };
     
   } catch (error) {
@@ -463,9 +463,9 @@ const Leaderboard = ({ onClose, onViewNoid }) => {
   };
 
   const getStreakEmoji = (streak) => {
-    if (streak >= 10) return 'ðŸ”¥';
-    if (streak >= 5) return 'âš¡';
-    if (streak >= 3) return 'âœ¨';
+    if (streak >= 10) return 'ð🔥';
+    if (streak >= 5) return '⚡';
+    if (streak >= 3) return '✨';
     if (streak <= -3) return 'â„ï¸';
     return '';
   };
@@ -495,14 +495,14 @@ const Leaderboard = ({ onClose, onViewNoid }) => {
           className={`tab-btn ${view === 'totalwins' ? 'active' : ''}`}
           onClick={() => setView('totalwins')}
         >
-          <span className="tab-icon">ðŸ‘‘</span>
+          <span className="tab-icon">ð👑</span>
           Total Wins
         </button>
         <button 
           className={`tab-btn ${view === 'hotstreak' ? 'active' : ''}`}
           onClick={() => setView('hotstreak')}
         >
-          <span className="tab-icon">ðŸ”¥</span>
+          <span className="tab-icon">ð🔥</span>
           Hot Streak
         </button>
       </div>
@@ -522,9 +522,9 @@ const Leaderboard = ({ onClose, onViewNoid }) => {
                 onClick={() => onViewNoid(noid.noid_id)}
               >
                 <div className="rank-badge">
-                  {index === 0 && 'ðŸ¥‡'}
-                  {index === 1 && 'ðŸ¥ˆ'}
-                  {index === 2 && 'ðŸ¥‰'}
+                  {index === 0 && 'ð🥇'}
+                  {index === 1 && 'ð🥈'}
+                  {index === 2 && 'ð🥉'}
                   {index > 2 && `#${index + 1}`}
                 </div>
 
@@ -569,7 +569,7 @@ const Leaderboard = ({ onClose, onViewNoid }) => {
                 </div>
 
                 <div className="view-profile-btn">
-                  <span>View Profile â†’</span>
+                  <span>View Profile ←</span>
                 </div>
               </div>
             ))}
@@ -669,29 +669,29 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
 
   const getStreakEmoji = (streak) => {
     if (!streak) return '';
-    if (streak >= 10) return 'ðŸ”¥';
-    if (streak >= 5) return 'âš¡';
-    if (streak >= 3) return 'âœ¨';
+    if (streak >= 10) return 'ð🔥';
+    if (streak >= 5) return '⚡';
+    if (streak >= 3) return '✨';
     if (streak <= -3) return 'â„ï¸';
     return '';
   };
 
   const getGameModeIcon = (mode) => {
     switch (mode) {
-      case 'rando': return 'ðŸŽ²';
+      case 'rando': return 'ð🎲';
       case 'sticky': return 'ðŸ†';
-      case 'oneofone': return 'ðŸ‘‘';
+      case 'oneofone': return 'ð👑';
       case 'daily': return '⭐';
-      default: return 'ðŸŽ®';
+      default: return 'ð🎮';
     }
   };
 
   const getAchievementIcon = (type) => {
-    if (type.includes('win_streak')) return 'ðŸ”¥';
+    if (type.includes('win_streak')) return 'ð🔥';
     if (type.includes('wins_')) return 'ðŸ†';
-    if (type.includes('win_rate')) return 'ðŸ‘‘';
+    if (type.includes('win_rate')) return 'ð👑';
     if (type === 'first_win') return '⭐';
-    return 'ðŸŽ–ï¸';
+    return 'ð🎖️';
   };
 
   if (loading) {
@@ -809,21 +809,21 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
                   </div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-icon">ðŸ’”</div>
+                  <div className="stat-icon">ð💔</div>
                   <div className="stat-info">
                     <div className="stat-label">Total Losses</div>
                     <div className="stat-value losses">{noidData.total_losses}</div>
                   </div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-icon">âš”ï¸</div>
+                  <div className="stat-icon">⚔️</div>
                   <div className="stat-info">
                     <div className="stat-label">Total Battles</div>
                     <div className="stat-value">{noidData.total_battles}</div>
                   </div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-icon">ðŸ“Š</div>
+                  <div className="stat-icon">ð📊</div>
                   <div className="stat-info">
                     <div className="stat-label">Win Rate</div>
                     <div className="stat-value">{noidData.win_rate}%</div>
@@ -836,7 +836,7 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
               <h3 className="section-title">Streaks</h3>
               <div className="stats-grid">
                 <div className="stat-box">
-                  <div className="stat-icon">{getStreakEmoji(noidData.current_streak) || 'ðŸ“ˆ'}</div>
+                  <div className="stat-icon">{getStreakEmoji(noidData.current_streak) || 'ð📈'}</div>
                   <div className="stat-info">
                     <div className="stat-label">Current Streak</div>
                     <div className={`stat-value ${noidData.current_streak > 0 ? 'positive' : noidData.current_streak < 0 ? 'negative' : ''}`}>
@@ -845,14 +845,14 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
                   </div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-icon">ðŸ”¥</div>
+                  <div className="stat-icon">ð🔥</div>
                   <div className="stat-info">
                     <div className="stat-label">Best Streak</div>
                     <div className="stat-value streak">{noidData.best_streak || 0}</div>
                   </div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-icon">ðŸŽ¯</div>
+                  <div className="stat-icon">ð🎯</div>
                   <div className="stat-info">
                     <div className="stat-label">Underdog Wins</div>
                     <div className="stat-value">{noidData.underdog_wins || 0}</div>
@@ -944,7 +944,7 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
 
             {beaten.length > 0 && (
               <div className="stats-section glass-panel">
-                <h3 className="section-title">ðŸ’ª Most Beaten Opponents</h3>
+                <h3 className="section-title">ð💪 Most Beaten Opponents</h3>
                 <div className="beaten-list">
                   {beaten.map(b => (
                     <div key={b.beaten_id} className="beaten-item">
@@ -958,7 +958,7 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
 
             {beatenBy.length > 0 && (
               <div className="stats-section glass-panel">
-                <h3 className="section-title">ðŸ˜¤ Beaten By</h3>
+                <h3 className="section-title">ð😤 Beaten By</h3>
                 <div className="beaten-list">
                   {beatenBy.map(b => (
                     <div key={b.beaten_by_id} className="beaten-item nemesis">
@@ -1115,7 +1115,7 @@ const TopNoidsScroller = React.memo(({ onNoidClick }) => {
               <div className="scroller-info">
                 <div className="scroller-noid-name">#{noid.noid_id}</div>
                 <div className="scroller-stats">
-                  {winRate}% â€¢ {noid.total_wins}W
+                  {winRate}% • {noid.total_wins}W
                 </div>
               </div>
             </div>
@@ -1564,12 +1564,12 @@ function App() {
         >
           {isConnected ? (
             <>
-              <span className="wallet-icon">ðŸ’³</span>
+              <span className="wallet-icon">ð💳</span>
               <span className="wallet-text">{address.slice(0, 6)}...{address.slice(-4)}</span>
             </>
           ) : (
             <>
-              <span className="wallet-icon">ðŸ’³</span>
+              <span className="wallet-icon">ð💳</span>
               <span className="wallet-text">Connect Wallet</span>
             </>
           )}
@@ -1580,7 +1580,7 @@ function App() {
             className="my-noids-header-btn"
             onClick={() => setView('mynoids')}
           >
-            <span className="noids-icon">ðŸ–¼ï¸</span>
+            <span className="noids-icon">ð🖼️</span>
             <span className="noids-text">My NOIDs</span>
           </button>
         )}
@@ -1617,7 +1617,7 @@ function App() {
             onClick={() => startBattle('rando')}
             disabled={votesRemaining <= 0}
           >
-            <div className="btn-icon">ðŸŽ²</div>
+            <div className="btn-icon">ð🎲</div>
             <div className="btn-content">
               <h4>Rando Battle</h4>
               <p>Two random NOiDS face off</p>
@@ -1641,7 +1641,7 @@ function App() {
             onClick={() => startBattle('oneofone')}
             disabled={votesRemaining <= 0}
           >
-            <div className="btn-icon">ðŸ‘‘</div>
+            <div className="btn-icon">ð👑</div>
             <div className="btn-content">
               <h4>One of One Championship</h4>
               <p>Battle of the rarest</p>
@@ -1678,7 +1678,7 @@ function App() {
           className="stats-btn glass-panel"
           onClick={() => setView('leaderboard')}
         >
-          ðŸ“Š View Stats & Leaderboard
+          ð📊 View Stats & Leaderboard
         </button>
       </div>
     </div>
@@ -1694,9 +1694,9 @@ function App() {
           Back to Menu
         </button>
         <div className="mode-title">
-          {gameMode === 'rando' && <><span className="mode-icon">ðŸŽ²</span> Rando Battle</>}
+          {gameMode === 'rando' && <><span className="mode-icon">ð🎲</span> Rando Battle</>}
           {gameMode === 'sticky' && <><span className="mode-icon">ðŸ†</span> Sticky Winner</>}
-          {gameMode === 'oneofone' && <><span className="mode-icon">ðŸ‘‘</span> One of One</>}
+          {gameMode === 'oneofone' && <><span className="mode-icon">ð👑</span> One of One</>}
           {gameMode === 'daily' && <><span className="mode-icon">⭐</span> Daily Battle</>}
         </div>
         {gameMode !== 'daily' && (
@@ -1862,7 +1862,7 @@ function App() {
       <footer className="app-footer">
         <div className="footer-content">
           <span className="footer-version">v0.11 (Beta)</span>
-          <span className="footer-divider">â€¢</span>
+          <span className="footer-divider">•</span>
           <span className="footer-credits">NOiDS Battle built and hosted by @NoCredits</span>
         </div>
       </footer>
