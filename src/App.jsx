@@ -342,7 +342,7 @@ const MatrixRain = () => {
     canvas.height = window.innerHeight;
 
     // Matrix characters - katakana, numbers, and symbols
-    const chars = 'ã‚¢ã‚£ã‚¤ã‚¥ã‚¦ã‚§ã‚¨ã‚©ã‚ªã‚«ã‚¬ã‚­ã‚®ã‚¯ã‚°ã‚±ã‚²ã‚³ã‚´ã‚µã‚¶ã‚·ã‚¸ã‚¹ã‚ºã‚»ã‚¼ã‚½ã‚¾ã‚¿ãƒ€ãƒãƒ‚ãƒƒãƒ„ãƒ…ãƒ†ãƒ‡ãƒˆãƒ‰ãƒŠãƒ‹ãƒŒãƒãƒŽãƒãƒãƒ‘ãƒ’ãƒ“ãƒ”ãƒ•ãƒ–ãƒ—ãƒ˜ãƒ™ãƒšãƒ›ãƒœãƒãƒžãƒŸãƒ ãƒ¡ãƒ¢ãƒ£ãƒ¤ãƒ¥ãƒ¦ãƒ§ãƒ¨ãƒ©ãƒªãƒ«ãƒ¬ãƒ­ãƒ®ãƒ¯ãƒ°ãƒ±ãƒ²ãƒ³ãƒ´ãƒµãƒ¶01234567890';
+    const chars = 'アィイゥウェエォオカガキギクグケゲコゴサザシジスズセゼソゾタダチヂッツヅテデトドナニヌネハバパヒビピフブプヘベペホボポマミムメモャヤュユョヨラリルレロヮワヰヱヲンヴヵヶ01234567890';
     const fontSize = 14;
     const columns = canvas.width / fontSize;
     
@@ -1594,12 +1594,12 @@ function App() {
         >
           {isConnected ? (
             <>
-              <span className="wallet-icon">ð💳</span>
+              <span className="wallet-icon">💳</span>
               <span className="wallet-text">{address.slice(0, 6)}...{address.slice(-4)}</span>
             </>
           ) : (
             <>
-              <span className="wallet-icon">ð💳</span>
+              <span className="wallet-icon">💳</span>
               <span className="wallet-text">Connect Wallet</span>
             </>
           )}
@@ -1610,7 +1610,7 @@ function App() {
             className="my-noids-header-btn"
             onClick={() => setView('mynoids')}
           >
-            <span className="noids-icon">ð🖼️</span>
+            <span className="noids-icon">🖼️</span>
             <span className="noids-text">My NOIDs</span>
           </button>
         )}
@@ -1647,7 +1647,7 @@ function App() {
             onClick={() => startBattle('rando')}
             disabled={votesRemaining <= 0}
           >
-            <div className="btn-icon">ð🎲</div>
+            <div className="btn-icon">🎲</div>
             <div className="btn-content">
               <h4>Rando Battle</h4>
               <p>Two random NOiDS face off</p>
@@ -1659,7 +1659,7 @@ function App() {
             onClick={() => startBattle('sticky')}
             disabled={votesRemaining <= 0}
           >
-            <div className="btn-icon">ð🏆</div>
+            <div className="btn-icon">🏆</div>
             <div className="btn-content">
               <h4>Sticky Winner</h4>
               <p>Winner stays, challenger appears</p>
@@ -1671,7 +1671,7 @@ function App() {
             onClick={() => startBattle('oneofone')}
             disabled={votesRemaining <= 0}
           >
-            <div className="btn-icon">ð👑</div>
+            <div className="btn-icon">👑</div>
             <div className="btn-content">
               <h4>One of One Championship</h4>
               <p>Battle of the rarest</p>
@@ -1688,7 +1688,7 @@ function App() {
             className="mode-btn community-btn"
             onClick={() => startBattle('daily')}
           >
-            <div className="btn-icon">⭐</div>
+            <div className="btn-icon">⭐</div>
             <div className="btn-content">
               <h4>Daily Battle</h4>
               <p>One battle, one vote, 24 hours</p>
@@ -1724,10 +1724,10 @@ function App() {
           Back to Menu
         </button>
         <div className="mode-title">
-          {gameMode === 'rando' && <><span className="mode-icon">ð🎲</span> Rando Battle</>}
-          {gameMode === 'sticky' && <><span className="mode-icon">ð🏆</span> Sticky Winner</>}
-          {gameMode === 'oneofone' && <><span className="mode-icon">ð👑</span> One of One</>}
-          {gameMode === 'daily' && <><span className="mode-icon">⭐</span> Daily Battle</>}
+          {gameMode === 'rando' && <><span className="mode-icon">🎲</span> Rando Battle</>}
+          {gameMode === 'sticky' && <><span className="mode-icon">🏆</span> Sticky Winner</>}
+          {gameMode === 'oneofone' && <><span className="mode-icon">👑</span> One of One</>}
+          {gameMode === 'daily' && <><span className="mode-icon">⭐</span> Daily Battle</>}
         </div>
         {gameMode !== 'daily' && (
           <div className="votes-badge">
