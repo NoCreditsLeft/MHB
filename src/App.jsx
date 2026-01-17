@@ -118,20 +118,32 @@ async function updateNoidStats(noidId, won, wasUnderdogWin = false) {
     const now = new Date().toISOString();
     
     if (!currentStats) {
+      // New NOiD - first battle
+      const initialWins = won ? 1 : 0;
+      const initialBattles = 1;
+      const initialWinRate = initialBattles > 0 ? (initialWins / initialBattles) : 0.0;
+      
       await supabase.from('noid_stats').insert([{
         noid_id: noidId,
-        total_battles: 1,
-        total_wins: won ? 1 : 0,
+        total_battles: initialBattles,
+        total_wins: initialWins,
         total_losses: won ? 0 : 1,
+        win_rate: initialWinRate,               // ← ADDED
         current_streak: won ? 1 : -1,
         best_streak: won ? 1 : 0,
         first_battle_date: now,
         last_battle_date: now,
         last_win_date: won ? now : null,
         last_loss_date: won ? null : now,
-        underdog_wins: wasUnderdogWin ? 1 : 0
+        underdog_wins: wasUnderdogWin ? 1 : 0,
+        updated_at: now
       }]);
     } else {
+      // Existing NOiD - update stats
+      const newBattles = currentStats.total_battles + 1;
+      const newWins = currentStats.total_wins + (won ? 1 : 0);
+      const newWinRate = newBattles > 0 ? (newWins / newBattles) : 0.0;  // ← ADDED (floating point division)
+      
       const newStreak = won 
         ? Math.max(currentStats.current_streak, 0) + 1 
         : Math.min(currentStats.current_streak, 0) - 1;
@@ -143,9 +155,10 @@ async function updateNoidStats(noidId, won, wasUnderdogWin = false) {
       await supabase
         .from('noid_stats')
         .update({
-          total_battles: currentStats.total_battles + 1,
-          total_wins: currentStats.total_wins + (won ? 1 : 0),
+          total_battles: newBattles,
+          total_wins: newWins,
           total_losses: currentStats.total_losses + (won ? 0 : 1),
+          win_rate: newWinRate,                                 // ← ADDED HERE
           current_streak: newStreak,
           best_streak: newBestStreak,
           last_battle_date: now,
@@ -157,10 +170,9 @@ async function updateNoidStats(noidId, won, wasUnderdogWin = false) {
         .eq('noid_id', noidId);
     }
   } catch (error) {
-    console.error('Error updating noid stats:', error);
+    console.error(`Error updating stats for NOiD #${noidId}:`, error);
   }
 }
-
 async function updateHeadToHead(winnerId, loserId) {
   try {
     const now = new Date().toISOString();
