@@ -219,9 +219,12 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
                       <div className="stat-row">
                         <span className="stat-label">Win Rate:</span>
                         <span className={`stat-value ${
-                          noid.win_rate >= 60 ? 'high' : 
-                          noid.win_rate >= 40 ? 'medium' : 'low'
+                          (noid.win_rate * 100) >= 60 ? 'high' : 
+                          (noid.win_rate * 100) >= 40 ? 'medium' : 'low'
                         }`}>
+                          {noid.win_rate ? ((noid.win_rate * 100).toFixed(2)) : '0.00'}%
+                        </span>
+                      </div>
                           {noid.win_rate}%
                         </span>
                       </div>
