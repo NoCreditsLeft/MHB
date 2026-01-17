@@ -190,14 +190,12 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
             <div className="summary-stat">
               <span className="stat-label">Avg Win Rate</span>
               <span className="stat-value">
-                {noids.length > 0
+                {(() => {
                   const battlingNoids = noids.filter(n => n.total_battles > 0);
-                  const avgWinRate = battlingNoids.length > 0 
-                  ? (battlingNoids.reduce((sum, n) => sum + (n.win_rate || 0), 0) / battlingNoids.length * 100).toFixed(1)
-                  : 0;
-
-<span className="stat-value">{avgWinRate}%</span>
-                  : 0}%
+                  return battlingNoids.length > 0
+                    ? (battlingNoids.reduce((sum, n) => sum + (n.win_rate || 0), 0) / battlingNoids.length * 100).toFixed(1)
+                    : '0.0';
+                })()}%
               </span>
             </div>
           </div>
@@ -228,9 +226,6 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
                           (noid.win_rate * 100) >= 40 ? 'medium' : 'low'
                         }`}>
                           {noid.win_rate ? ((noid.win_rate * 100).toFixed(2)) : '0.00'}%
-                        </span>
-                      </div>
-                          {noid.win_rate}%
                         </span>
                       </div>
                       <div className="stat-row">
