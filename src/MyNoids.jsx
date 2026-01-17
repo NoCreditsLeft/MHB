@@ -114,13 +114,29 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
           </div>
           <button 
             className="reset-votes-btn"
-            onClick={() => {
-              const today = new Date().toISOString().split('T')[0];
+            onClick={async () => {
               const uid = address.toLowerCase();
-              localStorage.removeItem(`votes_${uid}_${today}`);
-              window.location.reload();
+              const today = new Date().toISOString().split('T')[0];
+              
+              // Reset daily_votes_remaining to 55 in database
+              const { error } = await supabase
+                .from('user_stats')
+                .upsert({
+                  user_id: uid,
+                  daily_votes_remaining: 55,
+                  last_vote_reset_date: today,
+                  last_active: new Date().toISOString()
+                }, { onConflict: 'user_id' });
+              
+              if (error) {
+                console.error('Error resetting votes:', error);
+                alert('Failed to reset votes. Check console for errors.');
+              } else {
+                alert('Votes reset to 55! Refreshing...');
+                window.location.reload();
+              }
             }}
-            title="Reset daily votes (Beta Mode only)"
+            title="Reset daily votes to 55 (Beta Mode only)"
           >
             🔄 Reset Votes (Beta)
           </button>

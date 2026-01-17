@@ -1170,28 +1170,45 @@ function App() {
     }
 
     const today = new Date().toISOString().split('T')[0];
-    const todayStart = `${today}T00:00:00`;
-    const todayEnd = `${today}T23:59:59`;
     
     try {
-      // Query database for today's votes (excluding daily battles)
-      const { data, error } = await supabase
-        .from('votes')
-        .select('id')
+      // Get or create user_stats record
+      let { data: userStats, error } = await supabase
+        .from('user_stats')
+        .select('daily_votes_remaining, last_vote_reset_date')
         .eq('user_id', uid)
-        .gte('created_at', todayStart)
-        .lte('created_at', todayEnd)
-        .neq('game_mode', 'daily'); // Don't count daily battle votes
+        .single();
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('Error checking votes:', error);
         setVotesRemaining(DAILY_VOTE_LIMIT);
         return;
       }
 
-      const voteCount = data ? data.length : 0;
-      setVotesRemaining(Math.max(0, DAILY_VOTE_LIMIT - voteCount));
-      console.log(`✓ Votes today: ${voteCount}/${DAILY_VOTE_LIMIT}`);
+      // If user doesn't exist or it's a new day, reset votes
+      if (!userStats || userStats.last_vote_reset_date !== today) {
+        const { data: updated, error: updateError } = await supabase
+          .from('user_stats')
+          .upsert({
+            user_id: uid,
+            daily_votes_remaining: DAILY_VOTE_LIMIT,
+            last_vote_reset_date: today,
+            last_active: new Date().toISOString()
+          }, { onConflict: 'user_id' })
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('Error resetting votes:', updateError);
+          setVotesRemaining(DAILY_VOTE_LIMIT);
+          return;
+        }
+
+        userStats = updated;
+      }
+
+      setVotesRemaining(Math.max(0, userStats.daily_votes_remaining || 0));
+      console.log(`✓ Votes remaining: ${userStats.daily_votes_remaining}/${DAILY_VOTE_LIMIT}`);
     } catch (err) {
       console.error('Error fetching vote count:', err);
       setVotesRemaining(DAILY_VOTE_LIMIT);
@@ -1469,7 +1486,7 @@ function App() {
       isDailyBattle: false
     }).catch(err => console.error('Stats recording error:', err));
 
-    // Record vote in database
+    // Record vote in database AND decrement votes_remaining
     supabase
       .from('votes')
       .insert([{
@@ -1478,9 +1495,22 @@ function App() {
         loser_noid_id: winner === 1 ? noid2.id : noid1.id,
         game_mode: gameMode
       }])
-      .then(({ error }) => {
-        if (error) console.error('Error recording vote:', error);
-        // Refresh vote count from database after recording
+      .then(async ({ error }) => {
+        if (error) {
+          console.error('Error recording vote:', error);
+          return;
+        }
+        
+        // Decrement daily_votes_remaining
+        const { error: updateError } = await supabase.rpc('decrement_daily_votes', {
+          wallet_address: userId
+        });
+        
+        if (updateError) {
+          console.error('Error decrementing votes:', updateError);
+        }
+        
+        // Refresh vote count
         checkDailyVotes(userId);
       });
 
