@@ -1708,7 +1708,7 @@ function App() {
           className="stats-btn glass-panel"
           onClick={() => setView('leaderboard')}
         >
-          ð📊 View Stats & Leaderboard
+          📊 View Stats & Leaderboard
         </button>
       </div>
     </div>
