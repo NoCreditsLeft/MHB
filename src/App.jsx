@@ -969,7 +969,10 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
             )}
 
             {beatenBy.length > 0 && (
-              <div className="stats-section glass-panel">
+              <div 
+                className="stats-section glass-panel"
+                style={{ marginBottom: '80px' }}
+              >
                 <h3 className="section-title">😤 Beaten By</h3>
                 <div className="beaten-list">
                   {beatenBy.map(b => (
