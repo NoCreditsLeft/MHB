@@ -681,7 +681,7 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
       case 'rando': return 'ðŸŽ²';
       case 'sticky': return 'ðŸ†';
       case 'oneofone': return 'ðŸ‘‘';
-      case 'daily': return 'â­';
+      case 'daily': return '⭐';
       default: return 'ðŸŽ®';
     }
   };
@@ -690,7 +690,7 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
     if (type.includes('win_streak')) return 'ðŸ”¥';
     if (type.includes('wins_')) return 'ðŸ†';
     if (type.includes('win_rate')) return 'ðŸ‘‘';
-    if (type === 'first_win') return 'â­';
+    if (type === 'first_win') return '⭐';
     return 'ðŸŽ–ï¸';
   };
 
@@ -1658,7 +1658,7 @@ function App() {
             className="mode-btn community-btn"
             onClick={() => startBattle('daily')}
           >
-            <div className="btn-icon">â­</div>
+            <div className="btn-icon">⭐</div>
             <div className="btn-content">
               <h4>Daily Battle</h4>
               <p>One battle, one vote, 24 hours</p>
@@ -1669,7 +1669,7 @@ function App() {
 
         {votesRemaining <= 0 && (
           <div className="limit-notice glass-panel">
-            <span className="notice-icon">â°</span>
+            <span className="notice-icon">⏰</span>
             <p>You've used all your daily votes!<br/>Come back tomorrow.</p>
           </div>
         )}
@@ -1697,7 +1697,7 @@ function App() {
           {gameMode === 'rando' && <><span className="mode-icon">ðŸŽ²</span> Rando Battle</>}
           {gameMode === 'sticky' && <><span className="mode-icon">ðŸ†</span> Sticky Winner</>}
           {gameMode === 'oneofone' && <><span className="mode-icon">ðŸ‘‘</span> One of One</>}
-          {gameMode === 'daily' && <><span className="mode-icon">â­</span> Daily Battle</>}
+          {gameMode === 'daily' && <><span className="mode-icon">⭐</span> Daily Battle</>}
         </div>
         {gameMode !== 'daily' && (
           <div className="votes-badge">
