@@ -1711,6 +1711,8 @@ function App() {
           📊 View Stats & Leaderboard
         </button>
       </div>
+      <div>
+      </div>
     </div>
   );
 
