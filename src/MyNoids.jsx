@@ -191,7 +191,12 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
               <span className="stat-label">Avg Win Rate</span>
               <span className="stat-value">
                 {noids.length > 0
-                  ? (noids.filter(n => n.total_battles > 0).reduce((sum, n) => sum + parseFloat(n.win_rate || 0), 0) / noids.filter(n => n.total_battles > 0).length).toFixed(1)
+                  const battlingNoids = noids.filter(n => n.total_battles > 0);
+                  const avgWinRate = battlingNoids.length > 0 
+                  ? (battlingNoids.reduce((sum, n) => sum + (n.win_rate || 0), 0) / battlingNoids.length * 100).toFixed(1)
+                  : 0;
+
+<span className="stat-value">{avgWinRate}%</span>
                   : 0}%
               </span>
             </div>
