@@ -1738,7 +1738,7 @@ function App() {
       
       <div className="battle-header glass-panel">
         <button className="back-btn" onClick={() => setView('menu')}>
-          <span className="back-arrow">â†</span>
+          <span className="back-arrow">←</span>
           Back to Menu
         </button>
         <div className="mode-title">
