@@ -178,7 +178,9 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
             <div className="summary-stat">
               <span className="stat-label">In Battles</span>
               <span className="stat-value">
-                {noids.filter(n => n.total_battles > 0).length}
+                {noids.filter(n => n.total_battles > 0).length > 0
+                  ? (noids.filter(n => n.total_battles > 0).reduce((sum, n) => sum + parseFloat(n.win_rate || 0), 0) / noids.filter(n => n.total_battles > 0).length).toFixed(1)
+                  : 0}%
               </span>
             </div>
             <div className="summary-stat">
