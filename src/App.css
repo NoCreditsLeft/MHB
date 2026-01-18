@@ -2090,3 +2090,128 @@ body {
   }
 }
 
+/* ===== SEARCH BUTTON IN HEADER ===== */
+.search-header-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: rgba(0, 255, 65, 0.1);
+  border: 1px solid #00ff41;
+  border-radius: 8px;
+  color: #00ff41;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.search-header-btn:hover {
+  background: rgba(0, 255, 65, 0.2);
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+  transform: translateY(-2px);
+}
+
+.search-header-btn .search-icon {
+  font-size: 20px;
+}
+
+/* ===== SEARCH MODAL ===== */
+.search-modal {
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid #00ff41;
+  border-radius: 12px;
+  padding: 40px;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+  box-shadow: 0 0 40px rgba(0, 255, 65, 0.3);
+}
+
+.search-modal h2 {
+  color: #00ff41;
+  margin-bottom: 24px;
+  font-size: 28px;
+  text-align: center;
+}
+
+.search-modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 16px;
+  background: rgba(0, 255, 65, 0.05);
+  border: 2px solid rgba(0, 255, 65, 0.3);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 20px;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #00ff41;
+  background: rgba(0, 255, 65, 0.1);
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+}
+
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 400;
+}
+
+.search-error {
+  color: #ff4444;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px;
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  border-radius: 8px;
+}
+
+.search-submit-btn {
+  width: 100%;
+  padding: 16px;
+  background: rgba(0, 255, 65, 0.1);
+  border: 1px solid #00ff41;
+  border-radius: 8px;
+  color: #00ff41;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.search-submit-btn:hover {
+  background: rgba(0, 255, 65, 0.2);
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .search-modal {
+    padding: 30px 20px;
+  }
+
+  .search-modal h2 {
+    font-size: 24px;
+  }
+
+  .search-input {
+    font-size: 18px;
+    padding: 14px;
+  }
+}

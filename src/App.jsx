@@ -642,6 +642,10 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
 };
 
 // ============================================
+// NOID PROFILE COMPONENT
+// ============================================
+
+// ============================================
 // HELP COMPONENT
 // ============================================
 
@@ -662,18 +666,23 @@ const Help = ({ onClose }) => {
       <div className="help-content">
         <div className="help-section glass-panel">
           <h3>🎮 Game Modes</h3>
+          
           <div className="help-mode">
-            <p className="help-limit">Votes across all games are limited to 55 votes per day</p>
+            <h4>🎲 Rando Battle</h4>
+            <p>Two completely random NOIDs face off. Vote for your favorite! Simple, fast, and unpredictable.</p>
+            <p className="help-limit">Limit: 55 votes per day</p>
           </div>
 
           <div className="help-mode">
             <h4>🏆 Sticky Winner</h4>
             <p>The winner stays to fight the next challenger. See how long your favorite NOID can maintain their winning streak!</p>
+            <p className="help-limit">Limit: 55 votes per day</p>
           </div>
 
           <div className="help-mode">
             <h4>👑 One of One Championship</h4>
             <p>Only the 42 rarest NOIDs with unique 1-of-1 traits compete. This is the elite league where legends are made.</p>
+            <p className="help-limit">Limit: 55 votes per day</p>
           </div>
 
           <div className="help-mode">
@@ -1332,6 +1341,80 @@ const TopNoidsScroller = React.memo(({ onNoidClick }) => {
   );
 });
 
+// ============================================
+// SEARCH MODAL COMPONENT
+// ============================================
+
+const SearchModal = ({ isOpen, onClose, onSearch }) => {
+  const [searchInput, setSearchInput] = useState('');
+  const [error, setError] = useState('');
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const noidId = parseInt(searchInput);
+    
+    if (!searchInput || isNaN(noidId)) {
+      setError('Please enter a NOID number');
+      return;
+    }
+    
+    if (noidId < 1 || noidId > 5555) {
+      setError('That NOID lives only in your imagination!');
+      return;
+    }
+    
+    // Valid NOID - open profile
+    onSearch(noidId);
+    setSearchInput('');
+    setError('');
+  };
+
+  const handleInputChange = (e) => {
+    // Only allow numbers
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    setSearchInput(value);
+    setError('');
+  };
+
+  const handleClose = () => {
+    setSearchInput('');
+    setError('');
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay" onClick={handleClose}>
+      <div className="search-modal glass-panel" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={handleClose}>×</button>
+        
+        <h2>Search for a NOID</h2>
+        
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            placeholder="Enter NOID # (1-5555)"
+            value={searchInput}
+            onChange={handleInputChange}
+            maxLength="4"
+            className="search-input"
+            autoFocus
+          />
+          
+          {error && <div className="search-error">{error}</div>}
+          
+          <button type="submit" className="search-submit-btn">
+            Go to NOID
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const [gameMode, setGameMode] = useState('menu');
   const [view, setView] = useState('menu'); // menu, battle, leaderboard, profile
@@ -1349,6 +1432,7 @@ function App() {
   const [isVoting, setIsVoting] = useState(false);
   const [votedFor, setVotedFor] = useState(null);
   const [imageCache, setImageCache] = useState({});
+  const [showSearchModal, setShowSearchModal] = useState(false);
   
   // Get wallet connection status and address
   const { isConnected, address } = useAccount();
@@ -1802,6 +1886,14 @@ function App() {
           <span className="help-icon">❓</span>
         </button>
 
+        <button 
+          className="search-header-btn"
+          onClick={() => setShowSearchModal(true)}
+          title="Search for a NOID"
+        >
+          <span className="search-icon">🔍</span>
+        </button>
+
         <div className="header-spacer"></div>
 
         <button 
@@ -1908,7 +2000,7 @@ function App() {
             <div className="btn-content">
               <h4>Daily Battle</h4>
               <p>One battle, one vote, 24 hours</p>
-              {userDailyVoted && <span className="voted-badge">✓ Voted</span>}
+              {userDailyVoted && <span className="voted-badge">âœ“ Voted</span>}
             </div>
           </button>
         </div>
@@ -2052,7 +2144,7 @@ function App() {
 
       {gameMode === 'daily' && userDailyVoted && (
         <div className="daily-voted-message glass-panel">
-          <span className="check-icon">✓</span>
+          <span className="check-icon">âœ“</span>
           <p>Thanks for voting! Come back tomorrow for the next battle.</p>
         </div>
       )}
@@ -2108,6 +2200,16 @@ function App() {
           setPendingGameMode(null);
         }}
         onConnect={handleWalletConnected}
+      />
+
+      <SearchModal
+        isOpen={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+        onSearch={(noidId) => {
+          setSelectedNoidId(noidId);
+          setView('profile');
+          setShowSearchModal(false);
+        }}
       />
 
       <footer className="app-footer">
