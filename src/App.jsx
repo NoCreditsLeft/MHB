@@ -443,9 +443,11 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
     try {
       let query = supabase.from('noid_stats').select('*');
       
+      // For win rate tab, get all NOIDs with at least 3 battles, then sort by Wilson Score
+      // For other tabs, use existing logic
       switch (view) {
         case 'winrate':
-          query = query.gte('total_battles', 3).order('win_rate', { ascending: false }).limit(50);
+          query = query.gte('total_battles', 3);
           break;
         case 'totalwins':
           query = query.order('total_wins', { ascending: false }).limit(50);
@@ -454,24 +456,45 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
           query = query.gte('current_streak', 3).order('current_streak', { ascending: false }).limit(50);
           break;
         default:
-          query = query.order('win_rate', { ascending: false }).limit(50);
+          query = query.gte('total_battles', 3);
       }
 
       const { data, error } = await query;
       
       if (error) throw error;
       
-      const processedData = (data || []).map(noid => ({
-        ...noid,
-        win_rate: noid.total_battles > 0 
-          ? ((noid.total_wins / noid.total_battles) * 100).toFixed(2)
-          : 0
-      }));
+      const processedData = (data || []).map(noid => {
+        const wins = noid.total_wins;
+        const battles = noid.total_battles;
+        const winRate = battles > 0 ? ((wins / battles) * 100).toFixed(2) : 0;
+        
+        // Wilson Score - lower bound of confidence interval for win rate
+        // This weighs both win rate AND number of battles
+        // More battles = more confidence in the true win rate
+        const z = 1.96; // 95% confidence interval
+        const p = battles > 0 ? wins / battles : 0;
+        const wilsonScore = battles > 0 
+          ? ((p + z*z/(2*battles) - z * Math.sqrt((p*(1-p)+z*z/(4*battles))/battles))/(1+z*z/battles)) * 100
+          : 0;
+        
+        return {
+          ...noid,
+          win_rate: winRate,
+          wilson_score: wilsonScore
+        };
+      });
       
-      setLeaderboardData(processedData);
+      // Sort by Wilson Score for win rate tab, otherwise use default sorting
+      if (view === 'winrate') {
+        processedData.sort((a, b) => b.wilson_score - a.wilson_score);
+        // Take top 50 after sorting
+        setLeaderboardData(processedData.slice(0, 50));
+      } else {
+        setLeaderboardData(processedData);
+      }
       
       // Fetch images for all NOIDs
-      const imagePromises = processedData.map(noid => 
+      const imagePromises = processedData.slice(0, 50).map(noid => 
         getNoidImage(noid.noid_id).then(img => ({ id: noid.noid_id, img }))
       );
       
