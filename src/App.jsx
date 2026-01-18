@@ -645,6 +645,145 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
 // NOID PROFILE COMPONENT
 // ============================================
 
+// ============================================
+// HELP COMPONENT
+// ============================================
+
+const Help = ({ onClose }) => {
+  return (
+    <div className="help-container">
+      <MatrixRain />
+      
+      <div className="help-header glass-panel">
+        <button className="back-btn" onClick={onClose}>
+          <span className="back-arrow">←</span>
+          Back to Menu
+        </button>
+        <h2 className="help-title">How to Play</h2>
+        <div className="spacer"></div>
+      </div>
+
+      <div className="help-content">
+        <div className="help-section glass-panel">
+          <h3>🎮 Game Modes</h3>
+          
+          <div className="help-mode">
+            <h4>🎲 Rando Battle</h4>
+            <p>Two completely random NOIDs face off. Vote for your favorite! Simple, fast, and unpredictable.</p>
+            <p className="help-limit">Limit: 55 votes per day</p>
+          </div>
+
+          <div className="help-mode">
+            <h4>🏆 Sticky Winner</h4>
+            <p>The winner stays to fight the next challenger. See how long your favorite NOID can maintain their winning streak!</p>
+            <p className="help-limit">Limit: 55 votes per day</p>
+          </div>
+
+          <div className="help-mode">
+            <h4>👑 One of One Championship</h4>
+            <p>Only the 42 rarest NOIDs with unique 1-of-1 traits compete. This is the elite league where legends are made.</p>
+            <p className="help-limit">Limit: 55 votes per day</p>
+          </div>
+
+          <div className="help-mode">
+            <h4>⭐ Daily Battle</h4>
+            <p>One matchup, shared by everyone, refreshes at midnight UTC. The entire community votes on the same battle. Come back tomorrow for a new challenge!</p>
+            <p className="help-limit">Limit: 1 vote per day</p>
+          </div>
+        </div>
+
+        <div className="help-section glass-panel">
+          <h3>📊 Smart Leaderboard</h3>
+          <p>Our leaderboard uses the <strong>Wilson Score</strong> ranking system - the same algorithm used by Reddit and major review sites.</p>
+          
+          <div className="help-detail">
+            <h4>Why Wilson Score?</h4>
+            <p>A NOID with 1 win in 1 battle (100% win rate) shouldn't rank above a NOID with 50 wins in 51 battles (98% win rate). Wilson Score solves this by weighing both:</p>
+            <ul>
+              <li><strong>Win Rate</strong> - Your percentage of victories</li>
+              <li><strong>Battle Volume</strong> - How many times you've proven it</li>
+            </ul>
+            <p>The more battles a NOID wins, the more confident we are in their true skill. This prevents lucky streaks from dominating the leaderboard.</p>
+          </div>
+
+          <div className="help-detail">
+            <h4>Leaderboard Tabs</h4>
+            <ul>
+              <li><strong>Win Rate</strong> - Ranked by Wilson Score (min 3 battles)</li>
+              <li><strong>Total Wins</strong> - Pure win count, no minimum</li>
+              <li><strong>Hot Streak</strong> - Current win streaks (min 3 streak)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="help-section glass-panel">
+          <h3>💳 Wallet Connection</h3>
+          <p>Connect your wallet to:</p>
+          <ul>
+            <li>Vote on battles (required)</li>
+            <li>Track your voting history</li>
+            <li>View your owned NOIDs with battle stats</li>
+            <li>Prevent vote manipulation</li>
+          </ul>
+          <p>Your vote limits are tied to your wallet address, not your browser. This means you can't bypass limits by switching browsers or clearing cookies.</p>
+        </div>
+
+        <div className="help-section glass-panel">
+          <h3>🔒 Fair Play</h3>
+          <p>NOIDs Battle uses database-enforced vote limits to ensure fair competition:</p>
+          <ul>
+            <li>55 votes per day for Rando, Sticky Winner, and One of One</li>
+            <li>1 vote per day for Daily Battle</li>
+            <li>Limits reset at midnight UTC</li>
+            <li>No bypassing via browser switching or private mode</li>
+          </ul>
+        </div>
+
+        <div className="help-section glass-panel">
+          <h3>📈 Statistics Tracking</h3>
+          <p>Every vote is recorded and contributes to:</p>
+          <ul>
+            <li><strong>Total Battles</strong> - How many times a NOID has been voted on</li>
+            <li><strong>Wins & Losses</strong> - Complete battle record</li>
+            <li><strong>Win Rate</strong> - Percentage calculated from all battles</li>
+            <li><strong>Current Streak</strong> - Consecutive wins or losses</li>
+            <li><strong>Best Streak</strong> - Highest win streak achieved</li>
+            <li><strong>Underdog Wins</strong> - Victories when ranked 50+ places below opponent</li>
+            <li><strong>Head-to-Head Records</strong> - History against specific opponents</li>
+          </ul>
+        </div>
+
+        <div className="help-section glass-panel">
+          <h3>🖼️ My NOIDs</h3>
+          <p>If you own NOIDs, connect your wallet to see:</p>
+          <ul>
+            <li>All NOIDs in your wallet</li>
+            <li>Battle statistics for each NOID</li>
+            <li>Win rates and records</li>
+            <li>Current rankings</li>
+          </ul>
+          <p>Click any NOID to view their complete battle history and profile.</p>
+        </div>
+
+        <div className="help-section glass-panel">
+          <h3>🌐 OpenSea Integration</h3>
+          <p>Click the OpenSea logo on any NOID to view them on OpenSea, check their traits, rarity, and marketplace listings.</p>
+        </div>
+
+        <div className="help-section glass-panel">
+          <h3>❓ Questions?</h3>
+          <p>NOIDs Battle is a community-driven platform built for the NOIDs collection. All battles, votes, and statistics are transparent and verifiable.</p>
+          <p className="help-footer">Built by @NoCredits | Version 0.11 (Beta)</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// NOID PROFILE COMPONENT
+// ============================================
+
 const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage, setSelectedNoidId, setView }) => {
   const [noidData, setNoidData] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
@@ -1093,19 +1232,37 @@ const TopNoidsScroller = React.memo(({ onNoidClick }) => {
       const { data } = await supabase
         .from('noid_stats')
         .select('*')
-        .gte('total_battles', 5)
-        .order('total_wins', { ascending: false })
-        .limit(15);
+        .gte('total_battles', 5);
 
       if (!data || data.length === 0) return;
 
+      // Calculate Wilson Score for each NOID
+      const processedData = data.map(noid => {
+        const wins = noid.total_wins;
+        const battles = noid.total_battles;
+        const z = 1.96;
+        const p = battles > 0 ? wins / battles : 0;
+        const wilsonScore = battles > 0 
+          ? ((p + z*z/(2*battles) - z * Math.sqrt((p*(1-p)+z*z/(4*battles))/battles))/(1+z*z/battles))
+          : 0;
+        
+        return {
+          ...noid,
+          wilson_score: wilsonScore
+        };
+      });
+
+      // Sort by Wilson Score and take top 15
+      processedData.sort((a, b) => b.wilson_score - a.wilson_score);
+      const top15 = processedData.slice(0, 15);
+
       // Load ALL images before showing anything
-      const imagePromises = data.map(noid => 
+      const imagePromises = top15.map(noid => 
         fetch(`https://api.opensea.io/api/v2/chain/ethereum/contract/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/nfts/${noid.noid_id}`, {
           headers: { 'x-api-key': 'f6662070d18f4d54936bdd66b94c3f11' }
         })
         .then(r => r.json())
-        .then(d => ({ id: noid.noid_id, url: d.nft.image_url }))
+        .then(d => ({ id: noid.noid_id, url: d.nft?.image_url || null }))
         .catch(() => ({ id: noid.noid_id, url: null }))
       );
 
@@ -1116,7 +1273,7 @@ const TopNoidsScroller = React.memo(({ onNoidClick }) => {
       });
 
       // ONE state update with everything ready
-      setNoids(data);
+      setNoids(top15);
       setImages(imageMap);
       setIsReady(true);
     } catch (error) {
@@ -1647,6 +1804,17 @@ function App() {
       
       <div className="menu-header">
         <button 
+          className="help-header-btn"
+          onClick={() => setView('help')}
+          title="How to Play"
+        >
+          <span className="help-icon">❓</span>
+          <span className="help-text">Help</span>
+        </button>
+
+        <div className="header-spacer"></div>
+
+        <button 
           className="wallet-header-btn"
           onClick={() => setShowWalletModal(true)}
         >
@@ -1905,6 +2073,7 @@ function App() {
     <div className="app">
       {view === 'menu' && <Menu />}
       {view === 'battle' && <Battle />}
+      {view === 'help' && <Help onClose={() => setView('menu')} />}
       {view === 'mynoids' && (
         <MyNoids
           walletAddress={address}
