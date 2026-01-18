@@ -819,6 +819,21 @@ body {
   opacity: 1;
 }
 
+.leaderboard-noid-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.leaderboard-item:hover .leaderboard-noid-image {
+  border-color: rgba(0, 255, 65, 0.5);
+  transform: scale(1.05);
+}
+
 .empty-state {
   text-align: center;
   padding: 60px 20px;

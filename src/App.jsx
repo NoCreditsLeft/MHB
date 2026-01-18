@@ -428,10 +428,11 @@ const MatrixRain = () => {
 // LEADERBOARD COMPONENT
 // ============================================
 
-const Leaderboard = ({ onClose, onViewNoid }) => {
+const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
   const [view, setView] = useState('winrate');
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [images, setImages] = useState({});
 
   useEffect(() => {
     loadLeaderboard();
@@ -468,6 +469,19 @@ const Leaderboard = ({ onClose, onViewNoid }) => {
       }));
       
       setLeaderboardData(processedData);
+      
+      // Fetch images for all NOIDs
+      const imagePromises = processedData.map(noid => 
+        getNoidImage(noid.noid_id).then(img => ({ id: noid.noid_id, img }))
+      );
+      
+      Promise.all(imagePromises).then(results => {
+        const imageMap = {};
+        results.forEach(({ id, img }) => {
+          imageMap[id] = img;
+        });
+        setImages(imageMap);
+      });
     } catch (error) {
       console.error('Error loading leaderboard:', error);
     }
@@ -533,6 +547,12 @@ const Leaderboard = ({ onClose, onViewNoid }) => {
                 className="leaderboard-item glass-panel"
                 onClick={() => onViewNoid(noid.noid_id)}
               >
+                <img 
+                  src={images[noid.noid_id] || 'https://via.placeholder.com/60x60?text=...'} 
+                  alt={`NOID #${noid.noid_id}`}
+                  className="leaderboard-noid-image"
+                />
+                
                 <div className="rank-badge">
                   {index === 0 && '🥇'}
                   {index === 1 && '🥈'}
@@ -1880,6 +1900,7 @@ function App() {
             setSelectedNoidId(noidId);
             setView('profile');
           }}
+          getNoidImage={getNoidImage}
         />
       )}
       {view === 'profile' && (
