@@ -1936,11 +1936,6 @@ body {
   font-size: 20px;
 }
 
-.help-header-btn .help-text {
-  font-family: 'Courier New', monospace;
-  font-weight: 500;
-}
-
 .header-spacer {
   flex: 1;
 }
