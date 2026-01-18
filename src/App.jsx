@@ -1800,7 +1800,6 @@ function App() {
           title="How to Play"
         >
           <span className="help-icon">❓</span>
-          <span className="help-text">Help</span>
         </button>
 
         <div className="header-spacer"></div>
@@ -1909,7 +1908,7 @@ function App() {
             <div className="btn-content">
               <h4>Daily Battle</h4>
               <p>One battle, one vote, 24 hours</p>
-              {userDailyVoted && <span className="voted-badge">âœ“ Voted</span>}
+              {userDailyVoted && <span className="voted-badge">✓ Voted</span>}
             </div>
           </button>
         </div>
@@ -2053,7 +2052,7 @@ function App() {
 
       {gameMode === 'daily' && userDailyVoted && (
         <div className="daily-voted-message glass-panel">
-          <span className="check-icon">âœ“</span>
+          <span className="check-icon">✓</span>
           <p>Thanks for voting! Come back tomorrow for the next battle.</p>
         </div>
       )}
