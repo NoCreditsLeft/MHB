@@ -1412,8 +1412,11 @@ body {
 .menu-header {
   position: absolute;
   top: 20px;
-  right: 20px;
+  left: 0;
+  right: 0;
+  padding: 0 20px;
   display: flex;
+  align-items: center;
   gap: 12px;
   z-index: 100;
 }
