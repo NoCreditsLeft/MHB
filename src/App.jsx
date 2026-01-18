@@ -642,10 +642,6 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
 };
 
 // ============================================
-// NOID PROFILE COMPONENT
-// ============================================
-
-// ============================================
 // HELP COMPONENT
 // ============================================
 
@@ -666,23 +662,18 @@ const Help = ({ onClose }) => {
       <div className="help-content">
         <div className="help-section glass-panel">
           <h3>🎮 Game Modes</h3>
-          
           <div className="help-mode">
-            <h4>🎲 Rando Battle</h4>
-            <p>Two completely random NOIDs face off. Vote for your favorite! Simple, fast, and unpredictable.</p>
-            <p className="help-limit">Limit: 55 votes per day</p>
+            <p className="help-limit">Votes across all games are limited to 55 votes per day</p>
           </div>
 
           <div className="help-mode">
             <h4>🏆 Sticky Winner</h4>
             <p>The winner stays to fight the next challenger. See how long your favorite NOID can maintain their winning streak!</p>
-            <p className="help-limit">Limit: 55 votes per day</p>
           </div>
 
           <div className="help-mode">
             <h4>👑 One of One Championship</h4>
             <p>Only the 42 rarest NOIDs with unique 1-of-1 traits compete. This is the elite league where legends are made.</p>
-            <p className="help-limit">Limit: 55 votes per day</p>
           </div>
 
           <div className="help-mode">
