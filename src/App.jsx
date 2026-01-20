@@ -910,8 +910,8 @@ const ShareButton = ({ noidId, address, imageUrl, stats, walletAddress }) => {
       URL.revokeObjectURL(url);
       
       // Open Twitter
-      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
-      window.open(twitterUrl, '_blank');
+      const tweetIntentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+      window.open(twitterIntentUrl, '_blank');
       
       // Show claim modal after a delay
       setTimeout(() => {
