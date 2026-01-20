@@ -1420,9 +1420,6 @@ const SearchModal = ({ isOpen, onClose, onSearch }) => {
 // ============================================
 
 const MusicPlayer = () => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState(() => Math.floor(Math.random() * tracks.length));  const [showPlayer, setShowPlayer] = useState(false);
-  const playerRef = useRef(null);
 
   const tracks = [
     { id: 'CmYgWhTI7bA', title: 'Cooling Down' },
@@ -1435,6 +1432,11 @@ const MusicPlayer = () => {
     { id: 'R_67sxcPPuQ', title: 'Vibing Out' },
     { id: 'tVl9klJs_fM', title: 'Wind' },
   ];
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTrack, setCurrentTrack] = useState(() => Math.floor(Math.random() * tracks.length));  
+  const [showPlayer, setShowPlayer] = useState(false);
+  const playerRef = useRef(null);
 
   useEffect(() => {
     // Check if user had music enabled last time
