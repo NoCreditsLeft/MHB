@@ -1425,7 +1425,7 @@ const MusicPlayer = () => {
     { id: 'CmYgWhTI7bA', title: 'Cooling Down' },
     { id: 'FxI2kSAQMZA', title: 'Nightsky' },
     { id: '7RlxwBpzm6k', title: 'Come On (Light it Upp)' },
-    { id: 'oFUUTx7_m1s', title: 'Don't be frightened, Run' },
+    { id: 'oFUUTx7_m1s', title: 'Dont be frightened, Run' },
     { id: 'IQX0Ly8yWqI', title: 'Hidden Meaning' },
     { id: 'rrik48YzNGE', title: 'Loosen Up' },
     { id: 'VA4-t8BDJ6Y', title: 'Slide Away' },
