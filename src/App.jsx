@@ -780,11 +780,116 @@ const Help = ({ onClose }) => {
   );
 };
 
+// Add this component before the NoidProfile component in App.jsx
+
+// ============================================
+// SHARE CARD GENERATOR
+// ============================================
+
+const generateShareCard = async (noidId, imageUrl, stats) => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200;
+    canvas.height = 630; // Twitter card dimensions
+    const ctx = canvas.getContext('2d');
+
+    // Background - dark with green gradient
+    const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
+    gradient.addColorStop(0, '#000000');
+    gradient.addColorStop(1, '#001a00');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 1200, 630);
+
+    // Matrix rain effect background (simplified)
+    ctx.fillStyle = 'rgba(0, 255, 65, 0.03)';
+    ctx.font = '14px monospace';
+    for (let i = 0; i < 100; i++) {
+      const x = Math.random() * 1200;
+      const y = Math.random() * 630;
+      ctx.fillText('01', x, y);
+    }
+
+    // Load NOID image
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      // Draw NOID image (left side, square)
+      const imgSize = 500;
+      const imgX = 50;
+      const imgY = 65;
+      
+      // Image border
+      ctx.strokeStyle = '#00ff41';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(imgX - 4, imgY - 4, imgSize + 8, imgSize + 8);
+      
+      ctx.drawImage(img, imgX, imgY, imgSize, imgSize);
+
+      // Right side - Stats
+      const rightX = 600;
+      
+      // NOID number
+      ctx.fillStyle = '#00ff41';
+      ctx.font = 'bold 80px Arial';
+      ctx.fillText(`NOID #${noidId}`, rightX, 120);
+
+      // Stats
+      ctx.font = 'bold 48px Arial';
+      ctx.fillStyle = '#ffffff';
+      
+      const winRate = stats.total_battles > 0 
+        ? ((stats.total_wins / stats.total_battles) * 100).toFixed(1)
+        : 0;
+      
+      ctx.fillText(`${winRate}% Win Rate`, rightX, 220);
+      
+      ctx.fillStyle = '#00ff41';
+      ctx.fillText(`${stats.total_wins}W - ${stats.total_losses}L`, rightX, 300);
+      
+      if (stats.current_streak !== 0) {
+        const streakText = stats.current_streak > 0 
+          ? `🔥 ${stats.current_streak} Win Streak`
+          : `❄️ ${Math.abs(stats.current_streak)} Loss Streak`;
+        ctx.fillStyle = stats.current_streak > 0 ? '#00ff41' : '#ff4444';
+        ctx.fillText(streakText, rightX, 380);
+      }
+
+      // Battles count
+      ctx.fillStyle = '#888888';
+      ctx.font = '36px Arial';
+      ctx.fillText(`${stats.total_battles} Total Battles`, rightX, 450);
+
+      // Branding at bottom
+      ctx.fillStyle = '#00ff41';
+      ctx.font = 'bold 42px Arial';
+      ctx.fillText('NOiDS BATTLE', rightX, 550);
+      
+      ctx.fillStyle = '#888888';
+      ctx.font = '28px Arial';
+      ctx.fillText('Vote at noidsbattle.com', rightX, 590);
+
+      // Convert to blob
+      canvas.toBlob((blob) => {
+        resolve(blob);
+      }, 'image/png');
+    };
+    
+    img.src = imageUrl;
+  });
+};
+
+            <ShareButton 
+              noidId={noidId}
+              imageUrl={imageUrl}
+              stats={noidData}
+              walletAddress={address}
+            />
+
 // ============================================
 // NOID PROFILE COMPONENT
 // ============================================
 
-const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage, setSelectedNoidId, setView }) => {
+const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetchNoidImage, setSelectedNoidId, setView }) => {
   const [noidData, setNoidData] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
   const [headToHead, setHeadToHead] = useState([]);
@@ -966,6 +1071,13 @@ const NoidProfile = ({ noidId, onClose, getNoidImage, imageCache, fetchNoidImage
                 <div className="stat-label">Battles</div>
               </div>
             </div>
+            
+            <ShareButton 
+              noidId={noidId}
+              imageUrl={imageUrl}
+              stats={noidData}
+              walletAddress={address}
+            />
           </div>
         </div>
 
@@ -2299,8 +2411,10 @@ function App() {
       {view === 'profile' && (
         <NoidProfile
           noidId={selectedNoidId}
+          address={address}
           onClose={() => {
-            // Go back to mynoids if we came from there, otherwise leaderboard
+
+// Go back to mynoids if we came from there, otherwise leaderboard
             const previousView = view === 'mynoids' ? 'mynoids' : 'leaderboard';
             setView(previousView);
           }}
