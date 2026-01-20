@@ -780,7 +780,7 @@ const Help = ({ onClose }) => {
   );
 };
 
-// Add this component before the NoidProfile component in App.jsx
+
 
 // ============================================
 // SHARE CARD GENERATOR
@@ -877,13 +877,6 @@ const generateShareCard = async (noidId, imageUrl, stats) => {
     img.src = imageUrl;
   });
 };
-
-            <ShareButton 
-              noidId={noidId}
-              imageUrl={imageUrl}
-              stats={noidData}
-              walletAddress={address}
-            />
 
 const ShareButton = ({ noidId, address, imageUrl, stats, walletAddress }) => {
   const [sharing, setSharing] = useState(false);
