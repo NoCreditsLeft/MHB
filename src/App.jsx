@@ -1426,15 +1426,15 @@ const MusicPlayer = () => {
   const playerRef = useRef(null);
 
   const tracks = [
-    { id: 'CmYgWhTI7bA', title: 'Track 1' },
-    { id: 'FxI2kSAQMZA', title: 'Track 2' },
-    { id: '7RlxwBpzm6k', title: 'Track 3' },
-    { id: 'oFUUTx7_m1s', title: 'Track 4' },
-    { id: 'IQX0Ly8yWqI', title: 'Track 5' },
-    { id: 'rrik48YzNGE', title: 'Track 6' },
-    { id: 'VA4-t8BDJ6Y', title: 'Track 7' },
-    { id: 'R_67sxcPPuQ', title: 'Track 8' },
-    { id: 'tVl9klJs_fM', title: 'Track 9' }
+    { id: 'CmYgWhTI7bA', title: 'Cooling Down' },
+    { id: 'FxI2kSAQMZA', title: 'Nightsky' },
+    { id: '7RlxwBpzm6k', title: 'Come On (Light it Upp)' },
+    { id: 'oFUUTx7_m1s', title: 'Don't be frightened, Run' },
+    { id: 'IQX0Ly8yWqI', title: 'Hidden Meaning' },
+    { id: 'rrik48YzNGE', title: 'Loosen Up' },
+    { id: 'VA4-t8BDJ6Y', title: 'Slide Away' },
+    { id: 'R_67sxcPPuQ', title: 'Vibing Out' },
+    { id: 'tVl9klJs_fM', title: 'Wind' }
   ];
 
   useEffect(() => {
