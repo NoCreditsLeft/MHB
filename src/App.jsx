@@ -1458,7 +1458,7 @@ const MusicPlayer = () => {
       playerRef.current = new window.YT.Player('youtube-player', {
         height: '0',
         width: '0',
-        videoId: tracks[0].id,
+        videoId: tracks[currentTrack].id,
         playerVars: {
           autoplay: 0,
           controls: 0,
@@ -1477,7 +1477,9 @@ const MusicPlayer = () => {
         }
       });
     };
-  }, []);
+}, [currentTrack]);  // <-- Add this dependency
+
+
 
   useEffect(() => {
     if (playerRef.current && playerRef.current.playVideo) {
