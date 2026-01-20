@@ -911,7 +911,7 @@ const ShareButton = ({ noidId, address, imageUrl, stats, walletAddress }) => {
       
       // Open Twitter
       const tweetIntentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
-      window.open(twitterIntentUrl, '_blank');
+      window.open(tweetIntentUrl, '_blank');
       
       // Show claim modal after a delay
       setTimeout(() => {
