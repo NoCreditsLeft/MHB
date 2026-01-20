@@ -885,6 +885,189 @@ const generateShareCard = async (noidId, imageUrl, stats) => {
               walletAddress={address}
             />
 
+const ShareButton = ({ noidId, imageUrl, stats, walletAddress }) => {
+  const [sharing, setSharing] = useState(false);
+  const [showClaimModal, setShowClaimModal] = useState(false);
+  const [tweetUrl, setTweetUrl] = useState('');
+  const [claiming, setClaiming] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  const handleShare = async () => {
+    setSharing(true);
+    
+    try {
+      // Generate share card image
+      const imageBlob = await generateShareCard(noidId, imageUrl, stats);
+      
+      const winRate = stats.total_battles > 0 
+        ? ((stats.total_wins / stats.total_battles) * 100).toFixed(1)
+        : 0;
+      
+      const tweetText = `My NOID #${noidId} is crushing it! ${winRate}% win rate 🔥\n\nVote at https://noidsbattle.com`;
+      
+      // Download image
+      const url = URL.createObjectURL(imageBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `noid-${noidId}-stats.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      // Open Twitter
+      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+      window.open(twitterUrl, '_blank');
+      
+      // Show claim modal after a delay
+      setTimeout(() => {
+        setShowClaimModal(true);
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error sharing:', error);
+      alert('Failed to generate share card. Please try again.');
+    }
+    
+    setSharing(false);
+  };
+
+  const handleClaim = async () => {
+    setError('');
+    setClaiming(true);
+
+    // Validate tweet URL
+    const twitterPattern = /^https?:\/\/(twitter\.com|x\.com)\/.*\/status\/\d+/;
+    if (!twitterUrl || !twitterPattern.test(tweetUrl)) {
+      setError('Please enter a valid Twitter/X post URL');
+      setClaiming(false);
+      return;
+    }
+
+    try {
+      // Check if user already shared today
+      const today = new Date().toISOString().split('T')[0];
+      const { data: existingShare } = await supabase
+        .from('shares')
+        .select('*')
+        .eq('sharer_wallet', walletAddress.toLowerCase())
+        .gte('created_at', `${today}T00:00:00`)
+        .lte('created_at', `${today}T23:59:59`)
+        .single();
+
+      if (existingShare) {
+        setError('You already claimed your share bonus today! Come back tomorrow.');
+        setClaiming(false);
+        return;
+      }
+
+      // Record the share
+      const { error: insertError } = await supabase
+        .from('shares')
+        .insert([{
+          sharer_wallet: walletAddress.toLowerCase(),
+          noid_id: noidId,
+          tweet_url: tweetUrl,
+          created_at: new Date().toISOString()
+        }]);
+
+      if (insertError) throw insertError;
+
+      // Award +10 votes
+      const { error: updateError } = await supabase
+        .from('user_stats')
+        .upsert({
+          user_id: walletAddress.toLowerCase(),
+          daily_votes_remaining: supabase.raw('COALESCE(daily_votes_remaining, 55) + 10'),
+          last_active: new Date().toISOString()
+        }, { 
+          onConflict: 'user_id',
+          ignoreDuplicates: false 
+        });
+
+      if (updateError) throw updateError;
+
+      setSuccess(true);
+      setTimeout(() => {
+        setShowClaimModal(false);
+        setSuccess(false);
+        setTweetUrl('');
+        window.location.reload(); // Refresh to show new vote count
+      }, 2000);
+
+    } catch (err) {
+      console.error('Error claiming bonus:', err);
+      setError('Failed to claim bonus. Please try again.');
+    }
+
+    setClaiming(false);
+  };
+
+  return (
+    <>
+      <button 
+        className="share-btn"
+        onClick={handleShare}
+        disabled={sharing || !walletAddress}
+        title={!walletAddress ? 'Connect wallet to share' : 'Share to X'}
+      >
+        <span className="share-icon">🔗</span>
+        {sharing ? 'Generating...' : 'Share to X (+10 Votes)'}
+      </button>
+
+      {showClaimModal && (
+        <div className="modal-overlay" onClick={() => setShowClaimModal(false)}>
+          <div className="claim-modal glass-panel" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowClaimModal(false)}>×</button>
+            
+            <h2>Claim Your Bonus!</h2>
+            <p className="claim-instructions">
+              Paste the link to your tweet to claim <strong>+10 votes</strong>
+            </p>
+
+            {!success ? (
+              <>
+                <input
+                  type="text"
+                  placeholder="https://twitter.com/yourname/status/..."
+                  value={tweetUrl}
+                  onChange={(e) => {
+                    setTweetUrl(e.target.value);
+                    setError('');
+                  }}
+                  className="tweet-url-input"
+                />
+
+                {error && <div className="claim-error">{error}</div>}
+
+                <button 
+                  className="claim-submit-btn"
+                  onClick={handleClaim}
+                  disabled={claiming || !tweetUrl}
+                >
+                  {claiming ? 'Verifying...' : 'Claim +10 Votes'}
+                </button>
+
+                <p className="claim-note">
+                  You can claim this bonus once per day
+                </p>
+              </>
+            ) : (
+              <div className="claim-success">
+                <div className="success-icon">✅</div>
+                <h3>Success!</h3>
+                <p>+10 votes added to your account</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+
 // ============================================
 // NOID PROFILE COMPONENT
 // ============================================
