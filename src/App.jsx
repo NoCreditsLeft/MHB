@@ -1421,8 +1421,7 @@ const SearchModal = ({ isOpen, onClose, onSearch }) => {
 
 const MusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState(0);
-  const [showPlayer, setShowPlayer] = useState(false);
+  const [currentTrack, setCurrentTrack] = useState(() => Math.floor(Math.random() * tracks.length));  const [showPlayer, setShowPlayer] = useState(false);
   const playerRef = useRef(null);
 
   const tracks = [
@@ -1434,7 +1433,7 @@ const MusicPlayer = () => {
     { id: 'rrik48YzNGE', title: 'Loosen Up' },
     { id: 'VA4-t8BDJ6Y', title: 'Slide Away' },
     { id: 'R_67sxcPPuQ', title: 'Vibing Out' },
-    { id: 'tVl9klJs_fM', title: 'Wind' }
+    { id: 'tVl9klJs_fM', title: 'Wind' },
   ];
 
   useEffect(() => {
