@@ -885,7 +885,7 @@ const generateShareCard = async (noidId, imageUrl, stats) => {
               walletAddress={address}
             />
 
-const ShareButton = ({ noidId, imageUrl, stats, walletAddress }) => {
+const ShareButton = ({ noidId, address, imageUrl, stats, walletAddress }) => {
   const [sharing, setSharing] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
   const [tweetUrl, setTweetUrl] = useState('');
