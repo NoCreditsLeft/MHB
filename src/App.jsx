@@ -932,7 +932,7 @@ const ShareButton = ({ noidId, address, imageUrl, stats, walletAddress }) => {
 
     // Validate tweet URL
     const twitterPattern = /^https?:\/\/(twitter\.com|x\.com)\/.*\/status\/\d+/;
-    if (!twitterUrl || !twitterPattern.test(tweetUrl)) {
+    if (!tweetUrl || !twitterPattern.test(tweetUrl)) {
       setError('Please enter a valid Twitter/X post URL');
       setClaiming(false);
       return;
