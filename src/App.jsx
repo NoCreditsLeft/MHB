@@ -1415,6 +1415,122 @@ const SearchModal = ({ isOpen, onClose, onSearch }) => {
   );
 };
 
+// ============================================
+// MUSIC PLAYER COMPONENT
+// ============================================
+
+const MusicPlayer = () => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTrack, setCurrentTrack] = useState(0);
+  const [showPlayer, setShowPlayer] = useState(false);
+  const playerRef = useRef(null);
+
+  const tracks = [
+    { id: 'CmYgWhTI7bA', title: 'Track 1' },
+    { id: 'FxI2kSAQMZA', title: 'Track 2' },
+    { id: '7RlxwBpzm6k', title: 'Track 3' },
+    { id: 'oFUUTx7_m1s', title: 'Track 4' },
+    { id: 'IQX0Ly8yWqI', title: 'Track 5' },
+    { id: 'rrik48YzNGE', title: 'Track 6' },
+    { id: 'VA4-t8BDJ6Y', title: 'Track 7' },
+    { id: 'R_67sxcPPuQ', title: 'Track 8' },
+    { id: 'tVl9klJs_fM', title: 'Track 9' }
+  ];
+
+  useEffect(() => {
+    // Check if user had music enabled last time
+    const musicEnabled = localStorage.getItem('noids_music_enabled') === 'true';
+    if (musicEnabled) {
+      setShowPlayer(true);
+      // Delay auto-play slightly to let YouTube API load
+      setTimeout(() => setIsPlaying(true), 1000);
+    }
+
+    // Load YouTube IFrame API
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    // YouTube API callback
+    window.onYouTubeIframeAPIReady = () => {
+      playerRef.current = new window.YT.Player('youtube-player', {
+        height: '0',
+        width: '0',
+        videoId: tracks[0].id,
+        playerVars: {
+          autoplay: 0,
+          controls: 0,
+          modestbranding: 1,
+          rel: 0
+        },
+        events: {
+          onStateChange: (event) => {
+            if (event.data === window.YT.PlayerState.ENDED) {
+              // Move to next track
+              const nextTrack = (currentTrack + 1) % tracks.length;
+              setCurrentTrack(nextTrack);
+              playerRef.current.loadVideoById(tracks[nextTrack].id);
+            }
+          }
+        }
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    if (playerRef.current && playerRef.current.playVideo) {
+      if (isPlaying) {
+        playerRef.current.playVideo();
+        localStorage.setItem('noids_music_enabled', 'true');
+      } else {
+        playerRef.current.pauseVideo();
+        localStorage.setItem('noids_music_enabled', 'false');
+      }
+    }
+  }, [isPlaying]);
+
+  const togglePlay = () => {
+    if (!showPlayer) {
+      setShowPlayer(true);
+      setTimeout(() => setIsPlaying(true), 500);
+    } else {
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const skipTrack = () => {
+    const nextTrack = (currentTrack + 1) % tracks.length;
+    setCurrentTrack(nextTrack);
+    if (playerRef.current) {
+      playerRef.current.loadVideoById(tracks[nextTrack].id);
+    }
+  };
+
+  return (
+    <>
+      <div id="youtube-player" style={{ display: 'none' }}></div>
+      <div className="music-player">
+        <button 
+          className="music-toggle-btn" 
+          onClick={togglePlay}
+          title={isPlaying ? 'Pause Music' : 'Play Music'}
+        >
+          <span className="music-icon">{isPlaying ? '🔊' : '🔇'}</span>
+        </button>
+        {showPlayer && (
+          <div className="music-info">
+            <span className="music-track-name">{tracks[currentTrack].title}</span>
+            <button className="music-skip-btn" onClick={skipTrack} title="Next Track">
+              ⏭️
+            </button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
+
 function App() {
   const [gameMode, setGameMode] = useState('menu');
   const [view, setView] = useState('menu'); // menu, battle, leaderboard, profile
@@ -2218,6 +2334,7 @@ function App() {
           <span className="footer-divider">•</span>
           <span className="footer-credits">NOiDS Battle built and hosted by @NoCredits</span>
         </div>
+        <MusicPlayer />
       </footer>
     </div>
   );
