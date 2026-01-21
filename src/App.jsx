@@ -967,9 +967,9 @@ const ShareButton = ({ noidId, imageUrl, stats, walletAddress }) => {
     setClaiming(true);
 
     // Validate tweet URL
-    const twitterPattern = /^https?:\/\/(twitter\.com|x\.com)\/.*\/status\/\d+/;
-    if (!twitterUrl || !twitterPattern.test(tweetUrl)) {
-      setError('Please enter a valid Twitter/X post URL');
+    const tweetPattern = /^https?:\/\/(twitter\.com|x\.com)\/.*\/status\/\d+/;
+    if (!tweetUrl || !tweetPattern.test(tweetUrl)) {
+      setError('Please enter a valid X post URL');
       setClaiming(false);
       return;
     }
