@@ -1781,15 +1781,15 @@ body {
   gap: 16px;
   padding: 16px;
   height: 100%;
-  animation: scroll 45s linear infinite;
+  animation: scroll 90s linear infinite;
 }
 
 @keyframes scroll {
   0% {
     transform: translateX(0);
   }
-  200% {
-    transform: translateX(-200%);
+  100% {
+    transform: translateX(-100%);
   }
 }
 
