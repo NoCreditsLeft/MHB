@@ -2661,7 +2661,7 @@ function App() {
 
       {gameMode === 'daily' && userDailyVoted && (
         <div className="daily-voted-message glass-panel">
-          <span className="check-icon">âœ“</span>
+          <span className="check-icon">✓</span>
           <p>Thanks for voting! Come back tomorrow for the next battle.</p>
         </div>
       )}
@@ -2733,7 +2733,7 @@ function App() {
 
       <footer className="app-footer">
         <div className="footer-content">
-          <span className="footer-version">v0.11 (Beta)</span>
+          <span className="footer-version">v0.47 (Beta)</span>
           <span className="footer-divider">•</span>
           <span className="footer-credits">NOiDS Battle built and hosted by @NoCredits</span>
         </div>
