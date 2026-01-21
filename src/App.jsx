@@ -780,7 +780,7 @@ const Help = ({ onClose }) => {
   );
 };
 
-
+// Add this component before the NoidProfile component in App.jsx
 
 // ============================================
 // SHARE CARD GENERATOR
@@ -878,7 +878,14 @@ const generateShareCard = async (noidId, imageUrl, stats) => {
   });
 };
 
-const ShareButton = ({ noidId, address, imageUrl, stats, walletAddress }) => {
+            <ShareButton 
+              noidId={noidId}
+              imageUrl={imageUrl}
+              stats={noidData}
+              walletAddress={address}
+            />
+
+const ShareButton = ({ noidId, imageUrl, stats, walletAddress }) => {
   const [sharing, setSharing] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
   const [tweetUrl, setTweetUrl] = useState('');
@@ -897,7 +904,7 @@ const ShareButton = ({ noidId, address, imageUrl, stats, walletAddress }) => {
         ? ((stats.total_wins / stats.total_battles) * 100).toFixed(1)
         : 0;
       
-      const tweetText = `My NOID #${noidId} is crushing it! ${winRate}% win rate 🔥\n\nVote at https://noidsbattle.com`;
+      const tweetText = `My NOID #${noidId} is crushing it! ${winRate}% win rate 🔥\nSee how your NOiDS are doing (and generate stats like this) at https://noidsbattle.com\n@thehumanoids`;
       
       // Download image
       const url = URL.createObjectURL(imageBlob);
@@ -910,8 +917,8 @@ const ShareButton = ({ noidId, address, imageUrl, stats, walletAddress }) => {
       URL.revokeObjectURL(url);
       
       // Open Twitter
-      const tweetIntentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
-      window.open(tweetIntentUrl, '_blank');
+      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+      window.open(twitterUrl, '_blank');
       
       // Show claim modal after a delay
       setTimeout(() => {
@@ -932,7 +939,7 @@ const ShareButton = ({ noidId, address, imageUrl, stats, walletAddress }) => {
 
     // Validate tweet URL
     const twitterPattern = /^https?:\/\/(twitter\.com|x\.com)\/.*\/status\/\d+/;
-    if (!tweetUrl || !twitterPattern.test(tweetUrl)) {
+    if (!twitterUrl || !twitterPattern.test(tweetUrl)) {
       setError('Please enter a valid Twitter/X post URL');
       setClaiming(false);
       return;
@@ -1840,6 +1847,8 @@ function App() {
   const [votedFor, setVotedFor] = useState(null);
   const [imageCache, setImageCache] = useState({});
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [userOwnedNoids, setUserOwnedNoids] = useState([]);
+  const [stickyWinStreak, setStickyWinStreak] = useState(0);
   
   // Get wallet connection status and address
   const { isConnected, address } = useAccount();
@@ -1849,6 +1858,7 @@ function App() {
     if (isConnected && address) {
       setUserId(address.toLowerCase());
       checkDailyVotes(address.toLowerCase());
+      fetchUserNoids(address);
     } else {
       let id = localStorage.getItem('noids_user_id');
       if (!id) {
@@ -1857,6 +1867,7 @@ function App() {
       }
       setUserId(id);
       checkDailyVotes(id);
+      setUserOwnedNoids([]); // Clear owned NOIDs when wallet disconnects
     }
   }, [isConnected, address]);
 
@@ -1909,6 +1920,31 @@ function App() {
     } catch (err) {
       console.error('Error fetching vote count:', err);
       setVotesRemaining(DAILY_VOTE_LIMIT);
+    }
+  };
+
+  const fetchUserNoids = async (walletAddress) => {
+    try {
+      const response = await fetch(
+        `https://api.opensea.io/api/v2/chain/ethereum/account/${walletAddress}/nfts?collection=noidsofficial&limit=200`,
+        {
+          headers: {
+            'x-api-key': 'f6662070d18f4d54936bdd66b94c3f11'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Failed to fetch user NOIDs');
+        return;
+      }
+
+      const data = await response.json();
+      const ownedIds = data.nfts.map(nft => parseInt(nft.identifier));
+      setUserOwnedNoids(ownedIds);
+      console.log(`✓ User owns ${ownedIds.length} NOIDs:`, ownedIds);
+    } catch (error) {
+      console.error('Error fetching user NOIDs:', error);
     }
   };
 
@@ -2017,24 +2053,46 @@ function App() {
         setNoid1({ id: id1, image: img1 });
         setNoid2({ id: id2, image: img2 });
       } else if (mode === 'sticky') {
+        // Check sticky win streak
         if (stickyWinner) {
-          const id2 = getRandomNoid([stickyWinner.id]);
-          const img2 = await getNoidImage(id2);
-          setNoid1(stickyWinner);
-          setNoid2({ id: id2, image: img2 });
+          const today = new Date().toISOString().split('T')[0];
+          const streakKey = `sticky_wins_${stickyWinner.id}_${today}`;
+          const currentStreak = parseInt(localStorage.getItem(streakKey) || '0');
+          
+          if (currentStreak >= 10) {
+            alert(`NOID #${stickyWinner.id} has dominated with 10 wins today! 🔥\nThey're taking a 24hr break. Starting fresh battle...`);
+            setStickyWinner(null);
+            setStickyWinStreak(0);
+            // Start fresh battle
+            const id1 = getRandomNoid(userOwnedNoids);
+            const id2 = getRandomNoid([id1, ...userOwnedNoids]);
+            const [img1, img2] = await Promise.all([
+              getNoidImage(id1),
+              getNoidImage(id2)
+            ]);
+            setNoid1({ id: id1, image: img1 });
+            setNoid2({ id: id2, image: img2 });
+          } else {
+            const id2 = getRandomNoid([stickyWinner.id, ...userOwnedNoids]);
+            const img2 = await getNoidImage(id2);
+            setNoid1(stickyWinner);
+            setNoid2({ id: id2, image: img2 });
+            setStickyWinStreak(currentStreak);
+          }
         } else {
-          const id1 = getRandomNoid();
-          const id2 = getRandomNoid([id1]);
+          const id1 = getRandomNoid(userOwnedNoids);
+          const id2 = getRandomNoid([id1, ...userOwnedNoids]);
           const [img1, img2] = await Promise.all([
             getNoidImage(id1),
             getNoidImage(id2)
           ]);
           setNoid1({ id: id1, image: img1 });
           setNoid2({ id: id2, image: img2 });
+          setStickyWinStreak(0);
         }
       } else if (mode === 'oneofone') {
-        const id1 = getRandomOneOfOne();
-        const id2 = getRandomOneOfOne([id1]);
+        const id1 = getRandomOneOfOne(userOwnedNoids);
+        const id2 = getRandomOneOfOne([id1, ...userOwnedNoids]);
         const [img1, img2] = await Promise.all([
           getNoidImage(id1),
           getNoidImage(id2)
@@ -2224,21 +2282,39 @@ function App() {
           return { noid1: { id: id1, image: img1 }, noid2: { id: id2, image: img2 } };
         } else if (gameMode === 'sticky') {
           if (newStickyWinner) {
-            const id2 = getRandomNoid([newStickyWinner.id]);
+            // Track sticky wins
+            const today = new Date().toISOString().split('T')[0];
+            const streakKey = `sticky_wins_${newStickyWinner.id}_${today}`;
+            const currentStreak = parseInt(localStorage.getItem(streakKey) || '0') + 1;
+            localStorage.setItem(streakKey, currentStreak.toString());
+            
+            // Check if hit 10-win cap
+            if (currentStreak >= 10) {
+              alert(`NOID #${newStickyWinner.id} just hit 10 wins in a row! 🔥\nThey're taking a 24hr break. Starting fresh battle...`);
+              const id1 = getRandomNoid(userOwnedNoids);
+              const id2 = getRandomNoid([id1, ...userOwnedNoids]);
+              const [img1, img2] = await Promise.all([
+                getNoidImage(id1),
+                getNoidImage(id2)
+              ]);
+              return { noid1: { id: id1, image: img1 }, noid2: { id: id2, image: img2 }, resetSticky: true };
+            }
+            
+            const id2 = getRandomNoid([newStickyWinner.id, ...userOwnedNoids]);
             const img2 = await getNoidImage(id2);
-            return { noid1: newStickyWinner, noid2: { id: id2, image: img2 } };
+            return { noid1: newStickyWinner, noid2: { id: id2, image: img2 }, resetSticky: false };
           } else {
-            const id1 = getRandomNoid();
-            const id2 = getRandomNoid([id1]);
+            const id1 = getRandomNoid(userOwnedNoids);
+            const id2 = getRandomNoid([id1, ...userOwnedNoids]);
             const [img1, img2] = await Promise.all([
               getNoidImage(id1),
               getNoidImage(id2)
             ]);
-            return { noid1: { id: id1, image: img1 }, noid2: { id: id2, image: img2 } };
+            return { noid1: { id: id1, image: img1 }, noid2: { id: id2, image: img2 }, resetSticky: false };
           }
         } else if (gameMode === 'oneofone') {
-          const id1 = getRandomOneOfOne();
-          const id2 = getRandomOneOfOne([id1]);
+          const id1 = getRandomOneOfOne(userOwnedNoids);
+          const id2 = getRandomOneOfOne([id1, ...userOwnedNoids]);
           const [img1, img2] = await Promise.all([
             getNoidImage(id1),
             getNoidImage(id2)
@@ -2267,7 +2343,12 @@ function App() {
         setNoid2(nextBattle.noid2);
         // Vote count already updated by checkDailyVotes call
         if (gameMode === 'sticky') {
-          setStickyWinner(newStickyWinner);
+          if (nextBattle.resetSticky) {
+            setStickyWinner(null);
+            setStickyWinStreak(0);
+          } else {
+            setStickyWinner(newStickyWinner);
+          }
         }
         
         // Small delay to let new images render, then remove voting state
@@ -2623,7 +2704,7 @@ function App() {
 
       <footer className="app-footer">
         <div className="footer-content">
-          <span className="footer-version">v0.11 (Beta)</span>
+          <span className="footer-version">v0.47 (Beta)</span>
           <span className="footer-divider">•</span>
           <span className="footer-credits">NOiDS Battle built and hosted by @NoCredits</span>
         </div>
