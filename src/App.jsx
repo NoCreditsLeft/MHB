@@ -675,13 +675,20 @@ const Help = ({ onClose }) => {
 
           <div className="help-mode">
             <h4>🏆 Sticky Winner</h4>
-            <p>The winner stays to fight the next challenger. See how long your favorite NOID can maintain their winning streak!</p>
+            <p>The winner stays to fight the next challenger. See how long a NOID can maintain their winning streak!</p>
+            <p className="help-detail"><strong>Fair Play Rules:</strong></p>
+            <ul>
+              <li>Your owned NOIDs are excluded from appearing in battles</li>
+              <li>Any NOID that wins 10 battles in a row takes a 24-hour break</li>
+              <li>This prevents both self-pumping and unstoppable dominance</li>
+            </ul>
             <p className="help-limit">Limit: 55 votes per day</p>
           </div>
 
           <div className="help-mode">
             <h4>👑 One of One Championship</h4>
             <p>Only the 42 rarest NOIDs with unique 1-of-1 traits compete. This is the elite league where legends are made.</p>
+            <p className="help-detail"><strong>Fair Play:</strong> Your owned 1-of-1 NOIDs are excluded from battles.</p>
             <p className="help-limit">Limit: 55 votes per day</p>
           </div>
 
@@ -723,9 +730,21 @@ const Help = ({ onClose }) => {
             <li>Vote on battles (required)</li>
             <li>Track your voting history</li>
             <li>View your owned NOIDs with battle stats</li>
-            <li>Prevent vote manipulation</li>
+            <li>Generate shareable stat cards</li>
+            <li>Earn bonus votes through sharing</li>
           </ul>
           <p>Your vote limits are tied to your wallet address, not your browser. This means you can't bypass limits by switching browsers or clearing cookies.</p>
+        </div>
+
+        <div className="help-section glass-panel">
+          <h3>🔗 Share to X (Earn +10 Votes!)</h3>
+          <p>On any NOID profile page, click "Share to X" to:</p>
+          <ul>
+            <li>Generate a custom stat card with the NOID's image and battle record</li>
+            <li>Share it on Twitter/X with @thehumanoids tagged</li>
+            <li>Paste your tweet link to claim <strong>+10 bonus votes</strong></li>
+          </ul>
+          <p className="help-limit">Limit: Once per 24 hours</p>
         </div>
 
         <div className="help-section glass-panel">
@@ -734,8 +753,25 @@ const Help = ({ onClose }) => {
           <ul>
             <li>55 votes per day for Rando, Sticky Winner, and One of One</li>
             <li>1 vote per day for Daily Battle</li>
+            <li>+10 bonus votes for sharing to X (once per day)</li>
             <li>Limits reset at midnight UTC</li>
             <li>No bypassing via browser switching or private mode</li>
+            <li>Owned NOIDs excluded from Sticky Winner and One-of-One modes</li>
+          </ul>
+        </div>
+
+        <div className="help-section glass-panel">
+          <h3>🔍 Search Function</h3>
+          <p>Click the magnifying glass icon (🔍) in the top-left to search for any NOID by number (1-5555). Instantly view their profile, stats, and battle history.</p>
+        </div>
+
+        <div className="help-section glass-panel">
+          <h3>🎵 Music Player</h3>
+          <p>Toggle background music on/off using the button in the bottom-right corner. Your preference is saved across sessions.</p>
+          <ul>
+            <li>Original tracks by @NoCredits</li>
+            <li>Auto-shuffles through playlist</li>
+            <li>Skip to next track anytime</li>
           </ul>
         </div>
 
@@ -773,7 +809,7 @@ const Help = ({ onClose }) => {
         <div className="help-section glass-panel">
           <h3>❓ Questions?</h3>
           <p>NOIDs Battle is a community-driven platform built for the NOIDs collection. All battles, votes, and statistics are transparent and verifiable.</p>
-          <p className="help-footer">Built by @NoCredits | Version 0.11 (Beta)</p>
+          <p className="help-footer">Built by @NoCredits | Version 0.47 (Beta)</p>
         </div>
       </div>
     </div>
@@ -877,13 +913,6 @@ const generateShareCard = async (noidId, imageUrl, stats) => {
     img.src = imageUrl;
   });
 };
-
-            <ShareButton 
-              noidId={noidId}
-              imageUrl={imageUrl}
-              stats={noidData}
-              walletAddress={address}
-            />
 
 const ShareButton = ({ noidId, imageUrl, stats, walletAddress }) => {
   const [sharing, setSharing] = useState(false);
@@ -2704,7 +2733,7 @@ function App() {
 
       <footer className="app-footer">
         <div className="footer-content">
-          <span className="footer-version">v0.47 (Beta)</span>
+          <span className="footer-version">v0.11 (Beta)</span>
           <span className="footer-divider">•</span>
           <span className="footer-credits">NOiDS Battle built and hosted by @NoCredits</span>
         </div>
