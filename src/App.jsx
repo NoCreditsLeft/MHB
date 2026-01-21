@@ -1623,7 +1623,14 @@ const TopNoidsScroller = React.memo(({ onNoidClick }) => {
   const handleMouseUp = () => setIsDragging(false);
   const handleMouseLeave = () => setIsDragging(false);
 
-  if (!isReady || noids.length === 0) return null;
+if (!isReady || noids.length === 0) {
+  return (
+    <div className="scroller-loading">
+      <div className="loading-spinner"></div>
+      <p>Getting latest leaderboard data...</p>
+    </div>
+  );
+}
 
   return (
     <div 
