@@ -2584,7 +2584,7 @@ function App() {
     }, 800);
   };
 
-  const Menu = () => (
+const Menu = () => (
     <div className="menu-container">
       <MatrixRain />
       
@@ -2643,13 +2643,6 @@ function App() {
         />
         <p className="subtitle">Which NOID reigns supreme?</p>
       </div>
-
-      <TopNoidsScroller 
-        onNoidClick={(noidId) => {
-          setSelectedNoidId(noidId);
-          setView('profile');
-        }}
-      />
 
       <div className="game-modes">
         <div className="glass-panel">
@@ -2711,7 +2704,7 @@ function App() {
             <div className="btn-content">
               <h4>Daily Battle</h4>
               <p>One battle, one vote, 24 hours</p>
-              {userDailyVoted && <span className="voted-badge">âœ“ Voted</span>}
+              {userDailyVoted && <span className="voted-badge">✔ Voted</span>}
             </div>
           </button>
         </div>
@@ -2723,15 +2716,19 @@ function App() {
           </div>
         )}
 
+        <TopNoidsScroller 
+          onNoidClick={(noidId) => {
+            setSelectedNoidId(noidId);
+            setView('profile');
+          }}
+        />
+
         <button 
           className="stats-btn glass-panel"
           onClick={() => setView('leaderboard')}
         >
           📊 View Stats & Leaderboard
         </button>
-      </div>
-      <div>
-          
       </div>
     </div>
   );
