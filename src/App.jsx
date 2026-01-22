@@ -98,6 +98,10 @@ async function recordCompleteBattle({
       updateGameModeStats(noid2Id, gameMode, winnerId === noid2Id)
     ]);
     
+// Check and award achievements for both NOIDs
+    await checkAndAwardAchievements(noid1Id);
+    await checkAndAwardAchievements(noid2Id);
+    
     console.log('✅ Battle recorded successfully');
     return { success: true };
     
@@ -333,6 +337,189 @@ async function updateGameModeStats(noidId, gameMode, won) {
     }
   } catch (error) {
     console.error('Error updating game mode stats:', error);
+  }
+}
+
+async function checkAndAwardAchievements(noidId) {
+  try {
+    // Get current stats for this NOID
+    const { data: stats } = await supabase
+      .from('noid_stats')
+      .select('*')
+      .eq('noid_id', noidId)
+      .single();
+    
+    if (!stats) return;
+    
+    const achievements = [];
+    
+    // 1. First Win
+    if (stats.total_wins === 1) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'first_win',
+        achievement_name: 'First Blood',
+        achievement_description: 'Won your first battle'
+      });
+    }
+    
+    // 2. Win Streaks
+    const streakMilestones = [
+      { count: 5, name: 'On Fire', desc: 'Won 5 battles in a row' },
+      { count: 10, name: 'Unstoppable', desc: 'Won 10 battles in a row' },
+      { count: 25, name: 'Dominating', desc: 'Won 25 battles in a row' },
+      { count: 50, name: 'Legendary', desc: 'Won 50 battles in a row' }
+    ];
+    
+    for (const milestone of streakMilestones) {
+      if (stats.best_streak >= milestone.count) {
+        achievements.push({
+          noid_id: noidId,
+          achievement_type: `win_streak_${milestone.count}`,
+          achievement_name: milestone.name,
+          achievement_description: milestone.desc
+        });
+      }
+    }
+    
+    // 3. Total Wins
+    const winMilestones = [
+      { count: 10, name: 'Veteran', desc: 'Won 10 battles' },
+      { count: 50, name: 'Warrior', desc: 'Won 50 battles' },
+      { count: 100, name: 'Champion', desc: 'Won 100 battles' },
+      { count: 250, name: 'Master', desc: 'Won 250 battles' },
+      { count: 500, name: 'Grandmaster', desc: 'Won 500 battles' },
+      { count: 1000, name: 'Legend', desc: 'Won 1000 battles' }
+    ];
+    
+    for (const milestone of winMilestones) {
+      if (stats.total_wins >= milestone.count) {
+        achievements.push({
+          noid_id: noidId,
+          achievement_type: `wins_${milestone.count}`,
+          achievement_name: milestone.name,
+          achievement_description: milestone.desc
+        });
+      }
+    }
+    
+    // 4. Total Battles
+    const battleMilestones = [
+      { count: 25, name: 'Getting Started', desc: 'Completed 25 battles' },
+      { count: 100, name: 'Battle Tested', desc: 'Completed 100 battles' },
+      { count: 500, name: 'Battle Hardened', desc: 'Completed 500 battles' },
+      { count: 1000, name: 'Battle Eternal', desc: 'Completed 1000 battles' }
+    ];
+    
+    for (const milestone of battleMilestones) {
+      if (stats.total_battles >= milestone.count) {
+        achievements.push({
+          noid_id: noidId,
+          achievement_type: `battles_${milestone.count}`,
+          achievement_name: milestone.name,
+          achievement_description: milestone.desc
+        });
+      }
+    }
+    
+    // 5. Underdog Wins
+    const underdogMilestones = [
+      { count: 5, name: 'Giant Slayer', desc: 'Won 5 underdog victories' },
+      { count: 10, name: 'David vs Goliath', desc: 'Won 10 underdog victories' },
+      { count: 25, name: 'Upset Specialist', desc: 'Won 25 underdog victories' },
+      { count: 50, name: 'Underdog Legend', desc: 'Won 50 underdog victories' },
+      { count: 100, name: 'Against All Odds', desc: 'Won 100 underdog victories' },
+      { count: 500, name: 'Miracle Worker', desc: 'Won 500 underdog victories' }
+    ];
+    
+    for (const milestone of underdogMilestones) {
+      if (stats.underdog_wins >= milestone.count) {
+        achievements.push({
+          noid_id: noidId,
+          achievement_type: `underdog_${milestone.count}`,
+          achievement_name: milestone.name,
+          achievement_description: milestone.desc
+        });
+      }
+    }
+    
+    // 6. Beauty is in the eye of the beholder (under 15% win rate, 5+ battles)
+    const winRate = stats.total_battles > 0 ? (stats.total_wins / stats.total_battles) * 100 : 0;
+    if (stats.total_battles >= 5 && winRate < 15) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'beauty_beholder',
+        achievement_name: 'Beauty is in the eye of the beholder',
+        achievement_description: 'Sometimes losing is winning in its own way'
+      });
+    }
+    
+    // 7. One-of-One Elite (Top 50% of 42 One-of-Ones by win rate)
+    if (ONE_OF_ONE_NOIDS.includes(noidId)) {
+      // Get all One-of-One stats
+      const { data: oneOfOneStats } = await supabase
+        .from('noid_stats')
+        .select('noid_id, total_wins, total_battles')
+        .in('noid_id', ONE_OF_ONE_NOIDS)
+        .gte('total_battles', 3); // Minimum 3 battles to be ranked
+      
+      if (oneOfOneStats) {
+        // Calculate win rates and sort
+        const rankedOnes = oneOfOneStats
+          .map(s => ({
+            noid_id: s.noid_id,
+            win_rate: s.total_battles > 0 ? (s.total_wins / s.total_battles) : 0
+          }))
+          .sort((a, b) => b.win_rate - a.win_rate);
+        
+        // Find this NOID's rank
+        const rank = rankedOnes.findIndex(s => s.noid_id === noidId);
+        
+        // Top 21 (top 50% of 42)
+        if (rank !== -1 && rank < 21) {
+          achievements.push({
+            noid_id: noidId,
+            achievement_type: 'oneofone_elite',
+            achievement_name: 'One-of-One Elite',
+            achievement_description: `Ranked in top 50% of the legendary 42 One-of-Ones`
+          });
+        }
+      }
+    }
+    
+    // 8. Elite Status (Top 10% of all NOIDs = Top 555)
+    if (stats.total_battles >= 5) {
+      // Count how many NOIDs have better win rate
+      const { count } = await supabase
+        .from('noid_stats')
+        .select('*', { count: 'exact', head: true })
+        .gte('total_battles', 5)
+        .gt('win_rate', winRate);
+      
+      // If fewer than 555 NOIDs have better win rate, you're in top 10%
+      if (count < 555) {
+        achievements.push({
+          noid_id: noidId,
+          achievement_type: 'elite_status',
+          achievement_name: 'Elite Status',
+          achievement_description: 'Ranked in the top 10% of all NOIDs'
+        });
+      }
+    }
+    
+    // Insert all achievements (UNIQUE constraint prevents duplicates)
+    if (achievements.length > 0) {
+      const { error } = await supabase
+        .from('noid_achievements')
+        .insert(achievements);
+      
+      if (error && error.code !== '23505') { // Ignore duplicate key errors
+        console.error('Error inserting achievements:', error);
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error checking achievements:', error);
   }
 }
 
