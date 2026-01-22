@@ -3001,32 +3001,29 @@ function App() {
       // Wait for next battle to load
       const nextBattle = await nextBattlePromise;
       
-if (nextBattle) {
-        // Brief fade before showing next battle
-        setIsVoting(true); // Keep voting overlay visible
-        
-        setTimeout(() => {
-          // Update all state at once
-          setNoid1(nextBattle.noid1);
-          setNoid2(nextBattle.noid2);
-          
-          if (gameMode === 'sticky') {
-            if (nextBattle.resetSticky) {
-              setStickyWinner(null);
-              setStickyWinStreak(0);
-            } else {
-              setStickyWinner(newStickyWinner);
-            }
+      if (nextBattle) {
+        // Update all state at once
+        setNoid1(nextBattle.noid1);
+        setNoid2(nextBattle.noid2);
+        // Vote count already updated by checkDailyVotes call
+        if (gameMode === 'sticky') {
+          if (nextBattle.resetSticky) {
+            setStickyWinner(null);
+            setStickyWinStreak(0);
+          } else {
+            setStickyWinner(newStickyWinner);
           }
-          
-          // Remove voting state after new images render
-          setTimeout(() => {
-            setIsVoting(false);
-          }, 100);
-        }, 300);
+        }
+        
+        // Small delay to let new images render, then remove voting state
+        setTimeout(() => {
+          setIsVoting(false);
+        }, 100);
       } else {
         setIsVoting(false);
       }
+    }, 800);
+  };
 
   const Menu = () => (
     <div className="menu-container">
