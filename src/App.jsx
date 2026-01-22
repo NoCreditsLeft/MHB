@@ -3023,16 +3023,10 @@ if (nextBattle) {
           setTimeout(() => {
             setIsVoting(false);
           }, 100);
-        }, 300); // 300ms delay for smoother transition        
-        // Small delay to let new images render, then remove voting state
-        setTimeout(() => {
-          setIsVoting(false);
-        }, 100);
+        }, 300);
       } else {
         setIsVoting(false);
       }
-    }, 800);
-  };
 
   const Menu = () => (
     <div className="menu-container">
