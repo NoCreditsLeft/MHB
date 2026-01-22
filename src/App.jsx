@@ -1353,7 +1353,7 @@ const ShareButton = ({ noidId, imageUrl, stats, walletAddress }) => {
         ? ((stats.total_wins / stats.total_battles) * 100).toFixed(1)
         : 0;
       
-      const tweetText = `My NOID #${noidId} is crushing it! ${winRate}% win rate 🔥\nSee how your NOiDS are doing (and generate stats like this) at https://noidsbattle.com\n@thehumanoids`;
+      const tweetText = `NOID #${noidId} is crushing it! ${winRate}% win rate 🔥\nVote and See how your NOiDS are doing (and generate stats like this) at https://noidsbattle.com\n@thehumanoids`;
       
       // Download image
       const url = URL.createObjectURL(imageBlob);
@@ -1539,8 +1539,8 @@ const ShareAchievementsButton = ({ noidId, achievements, imageUrl, userWallet })
       URL.revokeObjectURL(url);
 
       // Generate tweet text
-      const achievementNames = achievements.slice(0, 3).map(a => a.achievement_name).join(', ');
-      const tweetText = `My NOID #${noidId} has unlocked ${achievements.length} achievement${achievements.length !== 1 ? 's' : ''}! 🏆\n${achievementNames}${achievements.length > 3 ? '...' : ''}\n\nSee yours at https://noidsbattle.com\n@thehumanoids`;
+      const achievementNames = achievements.map(a => a.achievement_name).join(', ');
+      const tweetText = `NOID #${noidId} has unlocked ${achievements.length} achievement${achievements.length !== 1 ? 's' : ''}! 🏆\n${achievementNames}\n\nCheck out the stats at https://noidsbattle.com\n@thehumanoids`;
       
       // Open Twitter
       const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
