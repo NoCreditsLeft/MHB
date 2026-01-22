@@ -2358,6 +2358,23 @@ body {
   font-size: 24px;
 }
 
+/* Share Achievements Button */
+.share-achievements-btn {
+  margin-top: 12px;
+  background: rgba(255, 215, 0, 0.1);
+  border-color: rgba(255, 215, 0, 0.5);
+}
+
+.share-achievements-btn:hover {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: rgba(255, 215, 0, 0.7);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.share-achievements-btn .share-icon {
+  font-size: 20px;
+}
+
 @media (max-width: 768px) {
   .share-btn {
     font-size: 16px;

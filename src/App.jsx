@@ -1199,6 +1199,317 @@ const generateShareCard = async (noidId, imageUrl, stats) => {
   });
 };
 
+// Add this function after generateShareCard function (around line 1200)
+
+const generateAchievementsShareCard = async (noidId, achievements, imageUrl) => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200;
+    canvas.height = 630;
+    const ctx = canvas.getContext('2d');
+
+    // Background gradient
+    const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
+    gradient.addColorStop(0, '#0a0a0a');
+    gradient.addColorStop(1, '#1a1a1a');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 1200, 630);
+
+    // Matrix rain effect background
+    ctx.fillStyle = 'rgba(0, 255, 65, 0.05)';
+    for (let i = 0; i < 50; i++) {
+      const x = Math.random() * 1200;
+      const y = Math.random() * 630;
+      const height = Math.random() * 100 + 50;
+      ctx.fillRect(x, y, 2, height);
+    }
+
+    // Left side - NOID image
+    if (imageUrl) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(50, 115, 400, 400, 20);
+        ctx.clip();
+        ctx.drawImage(img, 50, 115, 400, 400);
+        ctx.restore();
+
+        // Border around image
+        ctx.strokeStyle = 'rgba(0, 255, 65, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(50, 115, 400, 400, 20);
+        ctx.stroke();
+
+        finishCard();
+      };
+      img.onerror = () => finishCard();
+      img.src = imageUrl;
+    } else {
+      finishCard();
+    }
+
+    function finishCard() {
+      // Title
+      ctx.fillStyle = '#00ff41';
+      ctx.font = 'bold 48px Arial';
+      ctx.fillText(`NOID #${noidId}`, 500, 80);
+
+      // Achievement count
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '32px Arial';
+      ctx.fillText(`${achievements.length} Achievement${achievements.length !== 1 ? 's' : ''} Unlocked 🏆`, 500, 130);
+
+      // Achievement badges (2 columns)
+      const startX = 500;
+      const startY = 180;
+      const badgeWidth = 320;
+      const badgeHeight = 80;
+      const gap = 20;
+      const columns = 2;
+
+      achievements.forEach((ach, index) => {
+        const col = index % columns;
+        const row = Math.floor(index / columns);
+        const x = startX + col * (badgeWidth + gap);
+        const y = startY + row * (badgeHeight + gap);
+
+        // Badge background
+        ctx.fillStyle = 'rgba(0, 255, 65, 0.1)';
+        ctx.beginPath();
+        ctx.roundRect(x, y, badgeWidth, badgeHeight, 10);
+        ctx.fill();
+
+        // Badge border
+        ctx.strokeStyle = 'rgba(0, 255, 65, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Achievement icon
+        ctx.font = '32px Arial';
+        const icon = getAchievementIcon(ach.achievement_type);
+        ctx.fillText(icon, x + 15, y + 45);
+
+        // Achievement name
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 18px Arial';
+        ctx.fillText(ach.achievement_name, x + 60, y + 30);
+
+        // Achievement description
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.font = '14px Arial';
+        const desc = ach.achievement_description;
+        const maxWidth = badgeWidth - 70;
+        if (ctx.measureText(desc).width > maxWidth) {
+          ctx.fillText(desc.substring(0, 25) + '...', x + 60, y + 55);
+        } else {
+          ctx.fillText(desc, x + 60, y + 55);
+        }
+      });
+
+      // Branding at bottom
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.font = '20px Arial';
+      ctx.fillText('NOiDS Battle • noidsbattle.com', 500, 600);
+
+      // Convert to blob and resolve
+      canvas.toBlob((blob) => {
+        resolve(blob);
+      }, 'image/png');
+    }
+  });
+
+  function getAchievementIcon(type) {
+    if (type.includes('win_streak')) return '🔥';
+    if (type.includes('wins_')) return '🏆';
+    if (type.includes('battles_')) return '⚔️';
+    if (type.includes('underdog_')) return '🎯';
+    if (type === 'first_win') return '⭐';
+    if (type === 'beauty_beholder') return '💔';
+    if (type === 'oneofone_elite') return '💎';
+    if (type === 'elite_status') return '🌟';
+    return '🎖️';
+  }
+};
+
+// Add ShareAchievementsButton component after ShareButton component (around line 1300)
+
+const ShareAchievementsButton = ({ noidId, achievements, imageUrl, userWallet }) => {
+  const [showClaimModal, setShowClaimModal] = useState(false);
+  const [tweetUrl, setTweetUrl] = useState('');
+  const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState('');
+  const [claimSuccess, setClaimSuccess] = useState(false);
+
+  const handleShare = async () => {
+    try {
+      // Generate share card
+      const blob = await generateAchievementsShareCard(noidId, achievements, imageUrl);
+      
+      // Download image
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `noid-${noidId}-achievements.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      // Generate tweet text
+      const achievementNames = achievements.slice(0, 3).map(a => a.achievement_name).join(', ');
+      const tweetText = `My NOID #${noidId} has unlocked ${achievements.length} achievement${achievements.length !== 1 ? 's' : ''}! 🏆\n${achievementNames}${achievements.length > 3 ? '...' : ''}\n\nSee yours at https://noidsbattle.com\n@thehumanoids`;
+      
+      // Open Twitter
+      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+      window.open(twitterUrl, '_blank');
+
+      // Show claim modal
+      setShowClaimModal(true);
+    } catch (error) {
+      console.error('Error sharing achievements:', error);
+      alert('Failed to generate share card. Please try again.');
+    }
+  };
+
+  const handleClaimVotes = async () => {
+    if (!userWallet) {
+      setClaimError('Please connect your wallet first');
+      return;
+    }
+
+    if (!tweetUrl.trim()) {
+      setClaimError('Please paste your tweet URL');
+      return;
+    }
+
+    // Validate URL
+    if (!tweetUrl.includes('twitter.com') && !tweetUrl.includes('x.com')) {
+      setClaimError('Please enter a valid Twitter/X URL');
+      return;
+    }
+
+    setClaiming(true);
+    setClaimError('');
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Check if already shared achievements today
+      const { data: existingShare } = await supabase
+        .from('shares')
+        .select('*')
+        .eq('sharer_wallet', userWallet.toLowerCase())
+        .eq('share_type', 'achievements')
+        .gte('created_at', `${today}T00:00:00Z`)
+        .single();
+
+      if (existingShare) {
+        setClaimError('You already claimed achievement share bonus today!');
+        setClaiming(false);
+        return;
+      }
+
+      // Record share
+      const { error: shareError } = await supabase
+        .from('shares')
+        .insert([{
+          sharer_wallet: userWallet.toLowerCase(),
+          noid_id: noidId,
+          tweet_url: tweetUrl,
+          share_type: 'achievements'
+        }]);
+
+      if (shareError) throw shareError;
+
+      // Award +10 votes
+      const { error: voteError } = await supabase
+        .from('user_stats')
+        .upsert({
+          wallet_address: userWallet.toLowerCase(),
+          daily_votes_remaining: supabase.raw('COALESCE(daily_votes_remaining, 55) + 10'),
+          last_updated: new Date().toISOString()
+        }, {
+          onConflict: 'wallet_address'
+        });
+
+      if (voteError) throw voteError;
+
+      setClaimSuccess(true);
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error claiming votes:', error);
+      setClaimError('Failed to claim votes. Please try again.');
+    }
+
+    setClaiming(false);
+  };
+
+  return (
+    <>
+      <button 
+        className="share-btn share-achievements-btn"
+        onClick={handleShare}
+      >
+        <span className="share-icon">🏆</span>
+        Share Achievements (+10 Votes)
+      </button>
+
+      {showClaimModal && (
+        <div className="modal-overlay" onClick={() => setShowClaimModal(false)}>
+          <div className="claim-modal glass-panel" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowClaimModal(false)}>×</button>
+            
+            <h2>Claim Your Bonus Votes! 🏆</h2>
+            
+            {claimSuccess ? (
+              <div className="claim-success">
+                <div className="success-icon">✓</div>
+                <p>+10 votes added! Refreshing page...</p>
+              </div>
+            ) : (
+              <>
+                <p className="modal-description">
+                  Paste your tweet URL below to claim +10 bonus votes!
+                </p>
+
+                <input
+                  type="text"
+                  className="tweet-url-input"
+                  placeholder="https://twitter.com/yourname/status/..."
+                  value={tweetUrl}
+                  onChange={(e) => setTweetUrl(e.target.value)}
+                />
+
+                {claimError && (
+                  <div className="claim-error">{claimError}</div>
+                )}
+
+                <button 
+                  className="claim-votes-btn"
+                  onClick={handleClaimVotes}
+                  disabled={claiming}
+                >
+                  {claiming ? 'Claiming...' : 'Claim +10 Votes'}
+                </button>
+
+                <p className="modal-note">
+                  Share limit: Once per 24 hours per wallet
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
 const ShareButton = ({ noidId, imageUrl, stats, walletAddress }) => {
   const [sharing, setSharing] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
@@ -1381,6 +1692,179 @@ const ShareButton = ({ noidId, imageUrl, stats, walletAddress }) => {
   );
 };
 
+const ShareAchievementsButton = ({ noidId, achievements, imageUrl, userWallet }) => {
+  const [showClaimModal, setShowClaimModal] = useState(false);
+  const [tweetUrl, setTweetUrl] = useState('');
+  const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState('');
+  const [claimSuccess, setClaimSuccess] = useState(false);
+
+  const handleShare = async () => {
+    try {
+      // Generate share card
+      const blob = await generateAchievementsShareCard(noidId, achievements, imageUrl);
+      
+      // Download image
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `noid-${noidId}-achievements.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      // Generate tweet text
+      const achievementNames = achievements.slice(0, 3).map(a => a.achievement_name).join(', ');
+      const tweetText = `My NOID #${noidId} has unlocked ${achievements.length} achievement${achievements.length !== 1 ? 's' : ''}! 🏆\n${achievementNames}${achievements.length > 3 ? '...' : ''}\n\nSee yours at https://noidsbattle.com\n@thehumanoids`;
+      
+      // Open Twitter
+      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+      window.open(twitterUrl, '_blank');
+
+      // Show claim modal
+      setShowClaimModal(true);
+    } catch (error) {
+      console.error('Error sharing achievements:', error);
+      alert('Failed to generate share card. Please try again.');
+    }
+  };
+
+  const handleClaimVotes = async () => {
+    if (!userWallet) {
+      setClaimError('Please connect your wallet first');
+      return;
+    }
+
+    if (!tweetUrl.trim()) {
+      setClaimError('Please paste your tweet URL');
+      return;
+    }
+
+    // Validate URL
+    if (!tweetUrl.includes('twitter.com') && !tweetUrl.includes('x.com')) {
+      setClaimError('Please enter a valid Twitter/X URL');
+      return;
+    }
+
+    setClaiming(true);
+    setClaimError('');
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Check if already shared achievements today
+      const { data: existingShare } = await supabase
+        .from('shares')
+        .select('*')
+        .eq('sharer_wallet', userWallet.toLowerCase())
+        .eq('share_type', 'achievements')
+        .gte('created_at', `${today}T00:00:00Z`)
+        .single();
+
+      if (existingShare) {
+        setClaimError('You already claimed achievement share bonus today!');
+        setClaiming(false);
+        return;
+      }
+
+      // Record share
+      const { error: shareError } = await supabase
+        .from('shares')
+        .insert([{
+          sharer_wallet: userWallet.toLowerCase(),
+          noid_id: noidId,
+          tweet_url: tweetUrl,
+          share_type: 'achievements'
+        }]);
+
+      if (shareError) throw shareError;
+
+      // Award +10 votes
+      const { error: voteError } = await supabase
+        .from('user_stats')
+        .upsert({
+          wallet_address: userWallet.toLowerCase(),
+          daily_votes_remaining: supabase.raw('COALESCE(daily_votes_remaining, 55) + 10'),
+          last_updated: new Date().toISOString()
+        }, {
+          onConflict: 'wallet_address'
+        });
+
+      if (voteError) throw voteError;
+
+      setClaimSuccess(true);
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error claiming votes:', error);
+      setClaimError('Failed to claim votes. Please try again.');
+    }
+
+    setClaiming(false);
+  };
+
+  return (
+    <>
+      <button 
+        className="share-btn share-achievements-btn"
+        onClick={handleShare}
+      >
+        <span className="share-icon">🏆</span>
+        Share Achievements (+10 Votes)
+      </button>
+
+      {showClaimModal && (
+        <div className="modal-overlay" onClick={() => setShowClaimModal(false)}>
+          <div className="claim-modal glass-panel" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowClaimModal(false)}>×</button>
+            
+            <h2>Claim Your Bonus Votes! 🏆</h2>
+            
+            {claimSuccess ? (
+              <div className="claim-success">
+                <div className="success-icon">✓</div>
+                <p>+10 votes added! Refreshing page...</p>
+              </div>
+            ) : (
+              <>
+                <p className="modal-description">
+                  Paste your tweet URL below to claim +10 bonus votes!
+                </p>
+
+                <input
+                  type="text"
+                  className="tweet-url-input"
+                  placeholder="https://twitter.com/yourname/status/..."
+                  value={tweetUrl}
+                  onChange={(e) => setTweetUrl(e.target.value)}
+                />
+
+                {claimError && (
+                  <div className="claim-error">{claimError}</div>
+                )}
+
+                <button 
+                  className="claim-votes-btn"
+                  onClick={handleClaimVotes}
+                  disabled={claiming}
+                >
+                  {claiming ? 'Claiming...' : 'Claim +10 Votes'}
+                </button>
+
+                <p className="modal-note">
+                  Share limit: Once per 24 hours per wallet
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
 
 // ============================================
 // NOID PROFILE COMPONENT
@@ -1575,6 +2059,15 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
               stats={noidData}
               walletAddress={address}
             />
+            
+            {achievements.length > 0 && (
+              <ShareAchievementsButton
+                noidId={noidId}
+                achievements={achievements}
+                imageUrl={imageUrl}
+                userWallet={address}
+              />
+            )}
           </div>
         </div>
 
