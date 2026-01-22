@@ -1022,8 +1022,8 @@ const Help = ({ onClose }) => {
         </div>
 
         <div className="help-section glass-panel">
-          <h3>🔗 Share to X (Earn +10 Votes!)</h3>
-          <p>On any NOID profile page, click "Share to X" to:</p>
+          <h3>🔗 Share Profile (Earn +10 Votes!)</h3>
+          <p>On any NOID profile page, click "Share Profile" to:</p>
           <ul>
             <li>Generate a custom stat card with the NOID's image and battle record</li>
             <li>Share it on Twitter/X with @thehumanoids tagged</li>
@@ -1459,10 +1459,10 @@ const ShareButton = ({ noidId, imageUrl, stats, walletAddress }) => {
         className="share-btn"
         onClick={handleShare}
         disabled={sharing || !walletAddress}
-        title={!walletAddress ? 'Connect wallet to share' : 'Share to X'}
+        title={!walletAddress ? 'Connect wallet to share' : 'Share Profile'}
       >
         <span className="share-icon">🔗</span>
-        {sharing ? 'Generating...' : 'Share to X (+10 Votes)'}
+        {sharing ? 'Generating...' : 'Share Profile (+10 Votes)'}
       </button>
 
       {showClaimModal && (
@@ -3368,7 +3368,7 @@ function App() {
 
       <footer className="app-footer">
         <div className="footer-content">
-          <span className="footer-version">v0.47 (Beta)</span>
+          <span className="footer-version">v0.51 (Beta)</span>
           <span className="footer-divider">•</span>
           <span className="footer-credits">NOiDS Battle built and hosted by @NoCredits</span>
         </div>
