@@ -352,8 +352,12 @@ async function checkAndAwardAchievements(noidId) {
     if (!stats) return;
     
     const achievements = [];
+    const achievementsToDelete = [];
     
-    // 1. First Win
+    // Calculate win rate
+    const winRate = stats.total_battles > 0 ? (stats.total_wins / stats.total_battles) * 100 : 0;
+    
+    // 1. First Win (only if under 10 total wins)
     if (stats.total_wins === 1) {
       achievements.push({
         noid_id: noidId,
@@ -361,90 +365,180 @@ async function checkAndAwardAchievements(noidId) {
         achievement_name: 'First Blood',
         achievement_description: 'Won your first battle'
       });
+    } else if (stats.total_wins >= 10) {
+      // Remove First Blood if they hit 10+ wins
+      achievementsToDelete.push('first_win');
     }
     
-    // 2. Win Streaks
-    const streakMilestones = [
-      { count: 5, name: 'On Fire', desc: 'Won 5 battles in a row' },
-      { count: 10, name: 'Unstoppable', desc: 'Won 10 battles in a row' },
-      { count: 25, name: 'Dominating', desc: 'Won 25 battles in a row' },
-      { count: 50, name: 'Legendary', desc: 'Won 50 battles in a row' }
-    ];
-    
-    for (const milestone of streakMilestones) {
-      if (stats.best_streak >= milestone.count) {
-        achievements.push({
-          noid_id: noidId,
-          achievement_type: `win_streak_${milestone.count}`,
-          achievement_name: milestone.name,
-          achievement_description: milestone.desc
-        });
-      }
+    // 2. Win Streaks (only highest tier)
+    if (stats.best_streak >= 50) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'win_streak_50',
+        achievement_name: 'Legendary',
+        achievement_description: 'Won 50 battles in a row'
+      });
+      achievementsToDelete.push('win_streak_5', 'win_streak_10', 'win_streak_25');
+    } else if (stats.best_streak >= 25) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'win_streak_25',
+        achievement_name: 'Dominating',
+        achievement_description: 'Won 25 battles in a row'
+      });
+      achievementsToDelete.push('win_streak_5', 'win_streak_10');
+    } else if (stats.best_streak >= 10) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'win_streak_10',
+        achievement_name: 'Unstoppable',
+        achievement_description: 'Won 10 battles in a row'
+      });
+      achievementsToDelete.push('win_streak_5');
+    } else if (stats.best_streak >= 5) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'win_streak_5',
+        achievement_name: 'On Fire',
+        achievement_description: 'Won 5 battles in a row'
+      });
     }
     
-    // 3. Total Wins
-    const winMilestones = [
-      { count: 10, name: 'Veteran', desc: 'Won 10 battles' },
-      { count: 50, name: 'Warrior', desc: 'Won 50 battles' },
-      { count: 100, name: 'Champion', desc: 'Won 100 battles' },
-      { count: 250, name: 'Master', desc: 'Won 250 battles' },
-      { count: 500, name: 'Grandmaster', desc: 'Won 500 battles' },
-      { count: 1000, name: 'Legend', desc: 'Won 1000 battles' }
-    ];
-    
-    for (const milestone of winMilestones) {
-      if (stats.total_wins >= milestone.count) {
-        achievements.push({
-          noid_id: noidId,
-          achievement_type: `wins_${milestone.count}`,
-          achievement_name: milestone.name,
-          achievement_description: milestone.desc
-        });
-      }
+    // 3. Total Wins (only highest tier)
+    if (stats.total_wins >= 1000) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'wins_1000',
+        achievement_name: 'Legend',
+        achievement_description: 'Won 1000 battles'
+      });
+      achievementsToDelete.push('wins_10', 'wins_50', 'wins_100', 'wins_250', 'wins_500');
+    } else if (stats.total_wins >= 500) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'wins_500',
+        achievement_name: 'Grandmaster',
+        achievement_description: 'Won 500 battles'
+      });
+      achievementsToDelete.push('wins_10', 'wins_50', 'wins_100', 'wins_250');
+    } else if (stats.total_wins >= 250) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'wins_250',
+        achievement_name: 'Master',
+        achievement_description: 'Won 250 battles'
+      });
+      achievementsToDelete.push('wins_10', 'wins_50', 'wins_100');
+    } else if (stats.total_wins >= 100) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'wins_100',
+        achievement_name: 'Champion',
+        achievement_description: 'Won 100 battles'
+      });
+      achievementsToDelete.push('wins_10', 'wins_50');
+    } else if (stats.total_wins >= 50) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'wins_50',
+        achievement_name: 'Warrior',
+        achievement_description: 'Won 50 battles'
+      });
+      achievementsToDelete.push('wins_10');
+    } else if (stats.total_wins >= 10) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'wins_10',
+        achievement_name: 'Veteran',
+        achievement_description: 'Won 10 battles'
+      });
     }
     
-    // 4. Total Battles
-    const battleMilestones = [
-      { count: 25, name: 'Getting Started', desc: 'Completed 25 battles' },
-      { count: 100, name: 'Battle Tested', desc: 'Completed 100 battles' },
-      { count: 500, name: 'Battle Hardened', desc: 'Completed 500 battles' },
-      { count: 1000, name: 'Battle Eternal', desc: 'Completed 1000 battles' }
-    ];
-    
-    for (const milestone of battleMilestones) {
-      if (stats.total_battles >= milestone.count) {
-        achievements.push({
-          noid_id: noidId,
-          achievement_type: `battles_${milestone.count}`,
-          achievement_name: milestone.name,
-          achievement_description: milestone.desc
-        });
-      }
+    // 4. Total Battles (only highest tier)
+    if (stats.total_battles >= 1000) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'battles_1000',
+        achievement_name: 'Battle Eternal',
+        achievement_description: 'Completed 1000 battles'
+      });
+      achievementsToDelete.push('battles_25', 'battles_100', 'battles_500');
+    } else if (stats.total_battles >= 500) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'battles_500',
+        achievement_name: 'Battle Hardened',
+        achievement_description: 'Completed 500 battles'
+      });
+      achievementsToDelete.push('battles_25', 'battles_100');
+    } else if (stats.total_battles >= 100) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'battles_100',
+        achievement_name: 'Battle Tested',
+        achievement_description: 'Completed 100 battles'
+      });
+      achievementsToDelete.push('battles_25');
+    } else if (stats.total_battles >= 25) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'battles_25',
+        achievement_name: 'Getting Started',
+        achievement_description: 'Completed 25 battles'
+      });
     }
     
-    // 5. Underdog Wins
-    const underdogMilestones = [
-      { count: 5, name: 'Giant Slayer', desc: 'Won 5 underdog victories' },
-      { count: 10, name: 'David vs Goliath', desc: 'Won 10 underdog victories' },
-      { count: 25, name: 'Upset Specialist', desc: 'Won 25 underdog victories' },
-      { count: 50, name: 'Underdog Legend', desc: 'Won 50 underdog victories' },
-      { count: 100, name: 'Against All Odds', desc: 'Won 100 underdog victories' },
-      { count: 500, name: 'Miracle Worker', desc: 'Won 500 underdog victories' }
-    ];
-    
-    for (const milestone of underdogMilestones) {
-      if (stats.underdog_wins >= milestone.count) {
-        achievements.push({
-          noid_id: noidId,
-          achievement_type: `underdog_${milestone.count}`,
-          achievement_name: milestone.name,
-          achievement_description: milestone.desc
-        });
-      }
+    // 5. Underdog Wins (only highest tier)
+    if (stats.underdog_wins >= 500) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'underdog_500',
+        achievement_name: 'Miracle Worker',
+        achievement_description: 'Won 500 underdog victories'
+      });
+      achievementsToDelete.push('underdog_5', 'underdog_10', 'underdog_25', 'underdog_50', 'underdog_100');
+    } else if (stats.underdog_wins >= 100) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'underdog_100',
+        achievement_name: 'Against All Odds',
+        achievement_description: 'Won 100 underdog victories'
+      });
+      achievementsToDelete.push('underdog_5', 'underdog_10', 'underdog_25', 'underdog_50');
+    } else if (stats.underdog_wins >= 50) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'underdog_50',
+        achievement_name: 'Underdog Legend',
+        achievement_description: 'Won 50 underdog victories'
+      });
+      achievementsToDelete.push('underdog_5', 'underdog_10', 'underdog_25');
+    } else if (stats.underdog_wins >= 25) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'underdog_25',
+        achievement_name: 'Upset Specialist',
+        achievement_description: 'Won 25 underdog victories'
+      });
+      achievementsToDelete.push('underdog_5', 'underdog_10');
+    } else if (stats.underdog_wins >= 10) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'underdog_10',
+        achievement_name: 'David vs Goliath',
+        achievement_description: 'Won 10 underdog victories'
+      });
+      achievementsToDelete.push('underdog_5');
+    } else if (stats.underdog_wins >= 5) {
+      achievements.push({
+        noid_id: noidId,
+        achievement_type: 'underdog_5',
+        achievement_name: 'Giant Slayer',
+        achievement_description: 'Won 5 underdog victories'
+      });
     }
     
-    // 6. Beauty is in the eye of the beholder (under 15% win rate, 5+ battles)
-    const winRate = stats.total_battles > 0 ? (stats.total_wins / stats.total_battles) * 100 : 0;
+    // 6. Beauty is in the eye of the beholder (standalone)
     if (stats.total_battles >= 5 && winRate < 15) {
       achievements.push({
         noid_id: noidId,
@@ -454,17 +548,15 @@ async function checkAndAwardAchievements(noidId) {
       });
     }
     
-    // 7. One-of-One Elite (Top 50% of 42 One-of-Ones by win rate)
+    // 7. One-of-One Elite (standalone)
     if (ONE_OF_ONE_NOIDS.includes(noidId)) {
-      // Get all One-of-One stats
       const { data: oneOfOneStats } = await supabase
         .from('noid_stats')
         .select('noid_id, total_wins, total_battles')
         .in('noid_id', ONE_OF_ONE_NOIDS)
-        .gte('total_battles', 3); // Minimum 3 battles to be ranked
+        .gte('total_battles', 3);
       
       if (oneOfOneStats) {
-        // Calculate win rates and sort
         const rankedOnes = oneOfOneStats
           .map(s => ({
             noid_id: s.noid_id,
@@ -472,31 +564,27 @@ async function checkAndAwardAchievements(noidId) {
           }))
           .sort((a, b) => b.win_rate - a.win_rate);
         
-        // Find this NOID's rank
         const rank = rankedOnes.findIndex(s => s.noid_id === noidId);
         
-        // Top 21 (top 50% of 42)
         if (rank !== -1 && rank < 21) {
           achievements.push({
             noid_id: noidId,
             achievement_type: 'oneofone_elite',
             achievement_name: 'One-of-One Elite',
-            achievement_description: `Ranked in top 50% of the legendary 42 One-of-Ones`
+            achievement_description: 'Ranked in top 50% of the legendary 42 One-of-Ones'
           });
         }
       }
     }
     
-    // 8. Elite Status (Top 10% of all NOIDs = Top 555)
+    // 8. Elite Status (standalone)
     if (stats.total_battles >= 5) {
-      // Count how many NOIDs have better win rate
       const { count } = await supabase
         .from('noid_stats')
         .select('*', { count: 'exact', head: true })
         .gte('total_battles', 5)
         .gt('win_rate', winRate);
       
-      // If fewer than 555 NOIDs have better win rate, you're in top 10%
       if (count < 555) {
         achievements.push({
           noid_id: noidId,
@@ -507,13 +595,22 @@ async function checkAndAwardAchievements(noidId) {
       }
     }
     
-    // Insert all achievements (UNIQUE constraint prevents duplicates)
+    // Delete lower tier achievements
+    if (achievementsToDelete.length > 0) {
+      await supabase
+        .from('noid_achievements')
+        .delete()
+        .eq('noid_id', noidId)
+        .in('achievement_type', achievementsToDelete);
+    }
+    
+    // Insert new achievements
     if (achievements.length > 0) {
       const { error } = await supabase
         .from('noid_achievements')
         .insert(achievements);
       
-      if (error && error.code !== '23505') { // Ignore duplicate key errors
+      if (error && error.code !== '23505') {
         console.error('Error inserting achievements:', error);
       }
     }
@@ -522,6 +619,7 @@ async function checkAndAwardAchievements(noidId) {
     console.error('Error checking achievements:', error);
   }
 }
+
 
 // ============================================
 // MATRIX RAIN COMPONENT
@@ -2584,7 +2682,7 @@ function App() {
     }, 800);
   };
 
-const Menu = () => (
+  const Menu = () => (
     <div className="menu-container">
       <MatrixRain />
       
@@ -2643,6 +2741,13 @@ const Menu = () => (
         />
         <p className="subtitle">Which NOID reigns supreme?</p>
       </div>
+
+      <TopNoidsScroller 
+        onNoidClick={(noidId) => {
+          setSelectedNoidId(noidId);
+          setView('profile');
+        }}
+      />
 
       <div className="game-modes">
         <div className="glass-panel">
@@ -2704,7 +2809,7 @@ const Menu = () => (
             <div className="btn-content">
               <h4>Daily Battle</h4>
               <p>One battle, one vote, 24 hours</p>
-              {userDailyVoted && <span className="voted-badge">✔ Voted</span>}
+              {userDailyVoted && <span className="voted-badge">âœ“ Voted</span>}
             </div>
           </button>
         </div>
@@ -2716,19 +2821,15 @@ const Menu = () => (
           </div>
         )}
 
-        <TopNoidsScroller 
-          onNoidClick={(noidId) => {
-            setSelectedNoidId(noidId);
-            setView('profile');
-          }}
-        />
-
         <button 
           className="stats-btn glass-panel"
           onClick={() => setView('leaderboard')}
         >
           📊 View Stats & Leaderboard
         </button>
+      </div>
+      <div>
+          
       </div>
     </div>
   );
