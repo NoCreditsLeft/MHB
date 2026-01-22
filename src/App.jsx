@@ -1841,49 +1841,76 @@ const TopNoidsScroller = React.memo(({ onNoidClick }) => {
       const { data } = await supabase
         .from('noid_stats')
         .select('*')
-        .gte('total_battles', 5);
+        .gte('total_battles', 5)
+        .order('total_wins', { ascending: false })
+        .limit(15);
 
       if (!data || data.length === 0) return;
 
-      // Calculate Wilson Score for each NOID
-      const processedData = data.map(noid => {
-        const wins = noid.total_wins;
-        const battles = noid.total_battles;
-        const z = 1.96;
-        const p = battles > 0 ? wins / battles : 0;
-        const wilsonScore = battles > 0 
-          ? ((p + z*z/(2*battles) - z * Math.sqrt((p*(1-p)+z*z/(4*battles))/battles))/(1+z*z/battles))
-          : 0;
+      // Check localStorage for cached images
+      const cachedImages = {};
+      const noidIdsToFetch = [];
+      
+      data.forEach(noid => {
+        const cacheKey = `noid_image_${noid.noid_id}`;
+        const cached = localStorage.getItem(cacheKey);
         
-        return {
-          ...noid,
-          wilson_score: wilsonScore
-        };
+        if (cached) {
+          try {
+            const { url, timestamp } = JSON.parse(cached);
+            // Cache valid for 7 days
+            if (Date.now() - timestamp < 7 * 24 * 60 * 60 * 1000) {
+              cachedImages[noid.noid_id] = url;
+            } else {
+              noidIdsToFetch.push(noid.noid_id);
+            }
+          } catch (e) {
+            noidIdsToFetch.push(noid.noid_id);
+          }
+        } else {
+          noidIdsToFetch.push(noid.noid_id);
+        }
       });
 
-      // Sort by Wilson Score and take top 15
-      processedData.sort((a, b) => b.wilson_score - a.wilson_score);
-      const top15 = processedData.slice(0, 15);
+      // Fetch missing images with delay to avoid rate limit
+      const fetchedImages = { ...cachedImages };
+      
+      for (let i = 0; i < noidIdsToFetch.length; i++) {
+        const noidId = noidIdsToFetch[i];
+        
+        try {
+          // Add 200ms delay between requests
+          if (i > 0) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+          
+          const response = await fetch(
+            `https://api.opensea.io/api/v2/chain/ethereum/contract/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/nfts/${noidId}`,
+            { headers: { 'x-api-key': 'f6662070d18f4d54936bdd66b94c3f11' } }
+          );
+          
+          if (response.ok) {
+            const d = await response.json();
+            const url = d.nft.image_url;
+            
+            if (url) {
+              fetchedImages[noidId] = url;
+              
+              // Cache in localStorage
+              localStorage.setItem(`noid_image_${noidId}`, JSON.stringify({
+                url: url,
+                timestamp: Date.now()
+              }));
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching NOID #${noidId}:`, error);
+        }
+      }
 
-      // Load ALL images before showing anything
-      const imagePromises = top15.map(noid => 
-        fetch(`https://api.opensea.io/api/v2/chain/ethereum/contract/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/nfts/${noid.noid_id}`, {
-          headers: { 'x-api-key': 'f6662070d18f4d54936bdd66b94c3f11' }
-        })
-        .then(r => r.json())
-        .then(d => ({ id: noid.noid_id, url: d.nft?.image_url || null }))
-        .catch(() => ({ id: noid.noid_id, url: null }))
-      );
-
-      const loadedImages = await Promise.all(imagePromises);
-      const imageMap = {};
-      loadedImages.forEach(img => {
-        if (img.url) imageMap[img.id] = img.url;
-      });
-
-      // ONE state update with everything ready
-      setNoids(top15);
-      setImages(imageMap);
+      // Set state once with everything ready
+      setNoids(data);
+      setImages(fetchedImages);
       setIsReady(true);
     } catch (error) {
       console.error('Error loading scroller:', error);
@@ -1908,14 +1935,14 @@ const TopNoidsScroller = React.memo(({ onNoidClick }) => {
   const handleMouseUp = () => setIsDragging(false);
   const handleMouseLeave = () => setIsDragging(false);
 
-if (!isReady || noids.length === 0) {
-  return (
-    <div className="scroller-loading">
-      <div className="loading-spinner"></div>
-      <p>Getting latest leaderboard data...</p>
-    </div>
-  );
-}
+  if (!isReady || noids.length === 0) {
+    return (
+      <div className="scroller-loading">
+        <div className="loading-spinner"></div>
+        <p>Getting latest leaderboard data...</p>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -1939,7 +1966,7 @@ if (!isReady || noids.length === 0) {
             >
               <div className="scroller-rank">#{rank}</div>
               <img 
-                src={images[noid.noid_id] || 'https://via.placeholder.com/100x100'} 
+                src={images[noid.noid_id] || 'https://via.placeholder.com/100x100?text=Loading'} 
                 alt={`NOID #${noid.noid_id}`}
                 className="scroller-image"
               />
@@ -1956,7 +1983,6 @@ if (!isReady || noids.length === 0) {
     </div>
   );
 });
-
 // ============================================
 // SEARCH MODAL COMPONENT
 // ============================================
