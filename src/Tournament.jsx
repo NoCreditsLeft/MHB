@@ -840,7 +840,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, getNoi
 // LIVE TOURNAMENT (Active battle view)
 // ============================================
 
-const LiveTournament = ({ tournamentId, walletAddress, onClose, imageCache, setImageCache }) => {
+const LiveTournament = ({ tournamentId, walletAddress, onClose, imageCache, setImageCache, onViewNoid }) => {
   const [tournament, setTournament] = useState(null);
   const [matchups, setMatchups] = useState([]);
   const [activeMatchup, setActiveMatchup] = useState(null);
@@ -1317,6 +1317,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, imageCache, setI
         imageCache={imageCache}
         setImageCache={setImageCache}
         onClose={() => setShowBracket(false)}
+        onViewNoid={onViewNoid}
       />
     );
   }
@@ -1346,7 +1347,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, imageCache, setI
           <h2>Tournament Complete!</h2>
           <div className="podium">
             {tournament.winner_noid_id && (
-              <div className="podium-place first">
+              <div className="podium-place first" onClick={() => onViewNoid && onViewNoid(tournament.winner_noid_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
                 <span className="podium-medal">🥇</span>
                 {getPodiumImg(tournament.winner_noid_id) && (
                   <img src={getPodiumImg(tournament.winner_noid_id)} alt="" className="podium-img" />
@@ -1356,7 +1357,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, imageCache, setI
               </div>
             )}
             {tournament.runner_up_noid_id && (
-              <div className="podium-place second">
+              <div className="podium-place second" onClick={() => onViewNoid && onViewNoid(tournament.runner_up_noid_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
                 <span className="podium-medal">🥈</span>
                 {getPodiumImg(tournament.runner_up_noid_id) && (
                   <img src={getPodiumImg(tournament.runner_up_noid_id)} alt="" className="podium-img" />
@@ -1366,7 +1367,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, imageCache, setI
               </div>
             )}
             {tournament.third_place_noid_id && (
-              <div className="podium-place third">
+              <div className="podium-place third" onClick={() => onViewNoid && onViewNoid(tournament.third_place_noid_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
                 <span className="podium-medal">🥉</span>
                 {getPodiumImg(tournament.third_place_noid_id) && (
                   <img src={getPodiumImg(tournament.third_place_noid_id)} alt="" className="podium-img" />
@@ -1496,7 +1497,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, imageCache, setI
 // BRACKET VIEW
 // ============================================
 
-const TournamentBracket = ({ tournament, matchups, imageCache, setImageCache, onClose }) => {
+const TournamentBracket = ({ tournament, matchups, imageCache, setImageCache, onClose, onViewNoid }) => {
   const totalRounds = TOTAL_ROUNDS[tournament.bracket_size];
   const [bracketImages, setBracketImages] = useState({});
 
@@ -1552,14 +1553,20 @@ const TournamentBracket = ({ tournament, matchups, imageCache, setImageCache, on
                         {m.noid1_id && getNoidImg(m.noid1_id) && (
                           <img src={getNoidImg(m.noid1_id)} alt="" className="bracket-noid-img" />
                         )}
-                        <span className="bracket-noid-id">{m.noid1_id ? `#${m.noid1_id}` : 'TBD'}</span>
+                        <span 
+                          className="bracket-noid-id clickable"
+                          onClick={(e) => { if (m.noid1_id && onViewNoid) { e.stopPropagation(); onViewNoid(m.noid1_id); } }}
+                        >{m.noid1_id ? `#${m.noid1_id}` : 'TBD'}</span>
                         {m.status === 'completed' && <span className="bracket-votes">{m.noid1_votes}</span>}
                       </div>
                       <div className={`bracket-noid ${m.winner_id === m.noid2_id ? 'winner' : ''} ${m.winner_id === m.noid1_id ? 'loser' : ''}`}>
                         {m.noid2_id && getNoidImg(m.noid2_id) && (
                           <img src={getNoidImg(m.noid2_id)} alt="" className="bracket-noid-img" />
                         )}
-                        <span className="bracket-noid-id">{m.noid2_id ? `#${m.noid2_id}` : 'TBD'}</span>
+                        <span 
+                          className="bracket-noid-id clickable"
+                          onClick={(e) => { if (m.noid2_id && onViewNoid) { e.stopPropagation(); onViewNoid(m.noid2_id); } }}
+                        >{m.noid2_id ? `#${m.noid2_id}` : 'TBD'}</span>
                         {m.status === 'completed' && <span className="bracket-votes">{m.noid2_votes}</span>}
                       </div>
                       {m.is_coin_flip && <span className="bracket-coinflip">🪙</span>}
@@ -1580,7 +1587,7 @@ const TournamentBracket = ({ tournament, matchups, imageCache, setImageCache, on
 // MAIN TOURNAMENT COMPONENT (Router)
 // ============================================
 
-const Tournament = ({ walletAddress, onClose, showWalletModal }) => {
+const Tournament = ({ walletAddress, onClose, showWalletModal, onViewNoid }) => {
   const [tournamentView, setTournamentView] = useState('hub'); // hub, create, lobby, live
   const [activeTournamentId, setActiveTournamentId] = useState(null);
   const [imageCache, setImageCache] = useState({});
@@ -1663,6 +1670,7 @@ const Tournament = ({ walletAddress, onClose, showWalletModal }) => {
           onClose={() => setTournamentView('hub')}
           imageCache={imageCache}
           setImageCache={setImageCache}
+          onViewNoid={onViewNoid}
         />
       );
     default:

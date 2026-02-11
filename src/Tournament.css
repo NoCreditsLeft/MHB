@@ -701,6 +701,8 @@
 .bracket-view {
   overflow-x: auto;
   padding: 20px 0;
+  display: flex;
+  justify-content: center;
 }
 
 .bracket-scroll {
@@ -766,6 +768,15 @@
 
 .bracket-noid .bracket-noid-id {
   flex: 1;
+}
+
+.bracket-noid-id.clickable {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.bracket-noid-id.clickable:hover {
+  color: #00ff41;
 }
 
 .bracket-noid:last-child {

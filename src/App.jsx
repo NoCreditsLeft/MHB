@@ -1035,6 +1035,36 @@ const Help = ({ onClose }) => {
         </div>
 
         <div className="help-section glass-panel">
+          <h3>🏟️ Tournaments</h3>
+          <p>Create or join single-elimination bracket tournaments where the community votes on every matchup live.</p>
+          
+          <div className="help-mode">
+            <h4>Creating a Tournament</h4>
+            <p>Set a name, choose bracket size (8, 16, or 32), round timer (15s, 30s, or 60s), max entries per player, and whether it's open or code-gated (private).</p>
+          </div>
+
+          <div className="help-mode">
+            <h4>Entering NOIDs</h4>
+            <p>Only NOIDs you own can be entered. Connect your wallet, pick from your collection, and enter them into open slots. The creator can "Fill & Start" to fill remaining slots with random NOIDs.</p>
+          </div>
+
+          <div className="help-mode">
+            <h4>Live Voting</h4>
+            <p>Everyone watches the same matchup at the same time. Each round has a countdown timer — vote before it hits zero. One vote per wallet per matchup. Tournament votes don't count against your daily 55 limit.</p>
+          </div>
+
+          <div className="help-mode">
+            <h4>Tie-Breaking</h4>
+            <p>If votes are tied, the NOID that received the first vote wins. If nobody votes (0-0), it's a coin flip and no stats are recorded for that matchup.</p>
+          </div>
+
+          <div className="help-mode">
+            <h4>Results</h4>
+            <p>Tournament battles feed into the main stats system. View the full bracket at any time, click any NOID to see their profile. Top 3 finishers get podium recognition.</p>
+          </div>
+        </div>
+
+        <div className="help-section glass-panel">
           <h3>🔒 Fair Play</h3>
           <p>NOIDs Battle uses database-enforced vote limits to ensure fair competition:</p>
           <ul>
@@ -1096,7 +1126,7 @@ const Help = ({ onClose }) => {
         <div className="help-section glass-panel">
           <h3>❓ Questions?</h3>
           <p>NOIDs Battle is a community-driven platform built for the NOIDs collection. All battles, votes, and statistics are transparent and verifiable.</p>
-          <p className="help-footer">Built by @NoCredits | Version 0.47 (Beta)</p>
+          <p className="help-footer">Built by @NoCredits | Version 0.84 (Beta)</p>
         </div>
       </div>
     </div>
@@ -3349,6 +3379,10 @@ function App() {
           walletAddress={address?.toLowerCase()}
           onClose={() => setView('menu')}
           showWalletModal={() => setShowWalletModal(true)}
+          onViewNoid={(noidId) => {
+            setSelectedNoidId(noidId);
+            setView('profile');
+          }}
         />
       )}
       {view === 'leaderboard' && (
