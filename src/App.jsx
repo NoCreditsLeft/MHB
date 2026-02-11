@@ -3159,19 +3159,25 @@ function App() {
           </button>
         </div>
 
-        <div className="glass-panel h2h-panel">
+        <div className="glass-panel community-panel">
           <div className="panel-header">
             <h3>Multiplayer</h3>
           </div>
           
           <button 
-            className="mode-btn h2h-btn"
-            onClick={() => setView('h2h-lobby')}
+            className="mode-btn"
+            onClick={() => {
+              if (!isConnected) {
+                setShowWalletModal(true);
+              } else {
+                setView('tournament');
+              }
+            }}
           >
-            <div className="btn-icon">⚔️</div>
+            <div className="btn-icon">🏟️</div>
             <div className="btn-content">
-              <h4>Head to Head</h4>
-              <p>Create or join live battles</p>
+              <h4>Tournaments</h4>
+              <p>Create or join bracket battles</p>
             </div>
           </button>
         </div>
@@ -3182,20 +3188,6 @@ function App() {
             <p>You've used all your daily votes!<br/>Come back tomorrow.</p>
           </div>
         )}
-
-        <button 
-          className="stats-btn glass-panel"
-          style={{ background: 'rgba(0, 255, 65, 0.1)', borderColor: 'rgba(0, 255, 65, 0.3)' }}
-          onClick={() => {
-            if (!isConnected) {
-              setShowWalletModal(true);
-            } else {
-              setView('tournament');
-            }
-          }}
-        >
-          🏟️ Tournaments
-        </button>
 
         <button 
           className="stats-btn glass-panel"
