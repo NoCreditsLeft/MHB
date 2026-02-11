@@ -524,7 +524,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, getNoi
       return;
     }
 
-    if (!confirm(`Fill ${remaining} empty slots with random NOIDs and start?`)) return;
+    if (!window.confirm(`Fill ${remaining} empty slots with random NOIDs and start?`)) return;
 
     try {
       // Generate random NOIDs that aren't already entered
