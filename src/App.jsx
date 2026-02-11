@@ -3383,6 +3383,7 @@ function App() {
             setSelectedNoidId(noidId);
             setView('profile');
           }}
+          parentImageCache={imageCache}
         />
       )}
       {view === 'leaderboard' && (
