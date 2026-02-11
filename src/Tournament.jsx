@@ -9,6 +9,14 @@ const CONTRACT_ADDRESS = '0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902';
 const OPENSEA_API_KEY = 'f6662070d18f4d54936bdd66b94c3f11';
 const TOTAL_NOIDS = 5555;
 
+const ONE_OF_ONE_NOIDS = [
+  3399, 4550, 46, 3421, 5521, 4200, 814, 1587, 4234, 1601,
+  2480, 1046, 4999, 2290, 1401, 2148, 3921, 4900, 4699, 1187,
+  2225, 948, 2214, 1448, 3321, 4221, 4111, 2281, 2231, 2014,
+  2187, 4800, 4890, 1748, 4601, 1948, 4400, 4981, 412, 4651,
+  3390, 601
+];
+
 const ROUND_NAMES = {
   8: { 1: 'Quarter Finals', 2: 'Semi-Finals', 3: 'Final' },
   16: { 1: 'Pool Play 16', 2: 'Quarter Finals', 3: 'Semi-Finals', 4: 'Final' },
@@ -225,6 +233,7 @@ const CreateTournament = ({ walletAddress, onClose, onCreated }) => {
   const [isGated, setIsGated] = useState(false);
   const [gateCode, setGateCode] = useState('');
   const [roundTimer, setRoundTimer] = useState(15);
+  const [includeOneOfOne, setIncludeOneOfOne] = useState(true);
   const [creating, setCreating] = useState(false);
 
   const handleCreate = async () => {
@@ -242,6 +251,7 @@ const CreateTournament = ({ walletAddress, onClose, onCreated }) => {
         is_gated: isGated,
         gate_code: isGated ? gateCode.trim() : null,
         round_timer: roundTimer,
+        include_oneofone: includeOneOfOne,
         status: 'open'
       }]).select().single();
 
@@ -367,6 +377,24 @@ const CreateTournament = ({ walletAddress, onClose, onCreated }) => {
               <button className="copy-btn" onClick={() => navigator.clipboard.writeText(gateCode)}>📋</button>
             </div>
           )}
+        </div>
+
+        <div className="form-group">
+          <label>Include 1:1s?</label>
+          <div className="option-row">
+            <button
+              className={`option-btn ${includeOneOfOne ? 'active' : ''}`}
+              onClick={() => setIncludeOneOfOne(true)}
+            >
+              ✅ Yes
+            </button>
+            <button
+              className={`option-btn ${!includeOneOfOne ? 'active' : ''}`}
+              onClick={() => setIncludeOneOfOne(false)}
+            >
+              ❌ No 1:1s
+            </button>
+          </div>
         </div>
 
         <button
@@ -513,6 +541,18 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, getNoi
       await loadLobby();
     } catch (err) {
       console.error('Error removing entry:', err);
+    }
+  };
+
+  const handleDeleteTournament = async () => {
+    if (!window.confirm('Delete this tournament? This cannot be undone.')) return;
+    try {
+      // Delete entries first, then tournament
+      await supabase.from('tournament_entries').delete().eq('tournament_id', tournamentId);
+      await supabase.from('tournaments').delete().eq('id', tournamentId);
+      onClose();
+    } catch (err) {
+      console.error('Error deleting tournament:', err);
     }
   };
 
@@ -710,6 +750,10 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, getNoi
           <strong>{tournament.is_gated ? '🔒 Code-Gated' : '🌐 Open'}</strong>
         </div>
         <div className="lobby-info-row">
+          <span>1:1 NOIDs</span>
+          <strong>{tournament.include_oneofone === false ? '❌ Excluded' : '✅ Allowed'}</strong>
+        </div>
+        <div className="lobby-info-row">
           <span>Entries</span>
           <strong className="entries-count">{entries.length} / {tournament.bracket_size}</strong>
         </div>
@@ -791,6 +835,12 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, getNoi
             {isFull ? '🚀 Start Tournament' : `🚀 Fill & Start (${tournament.bracket_size - entries.length} random)`}
           </button>
         )}
+
+        {isCreator && tournament.status === 'open' && (
+          <button className="delete-tournament-btn" onClick={handleDeleteTournament}>
+            🗑️ Delete Tournament
+          </button>
+        )}
       </div>
 
       {/* NOID picker modal */}
@@ -810,7 +860,9 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, getNoi
               {ownedNoids.length === 0 ? (
                 <p className="picker-empty">No NOIDs found in your wallet</p>
               ) : (
-                ownedNoids.map(noidId => {
+                ownedNoids
+                .filter(noidId => tournament.include_oneofone !== false || !ONE_OF_ONE_NOIDS.includes(noidId))
+                .map(noidId => {
                   const alreadyIn = entries.some(e => e.noid_id === noidId);
                   const atLimit = tournament.max_entries_per_player && myEntries.length >= tournament.max_entries_per_player;
                   const imgUrl = pickerImages[noidId] || entryImages[noidId];
