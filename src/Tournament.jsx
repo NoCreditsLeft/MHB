@@ -81,6 +81,7 @@ const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTourn
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, open, active, completed
+  const [hubImages, setHubImages] = useState({});
 
   useEffect(() => {
     loadTournaments();
@@ -112,6 +113,14 @@ const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTourn
       }));
 
       setTournaments(tourneysWithCounts);
+
+      // Load winner images for completed tournaments
+      tourneysWithCounts.forEach(async (t) => {
+        if (t.winner_noid_id && !hubImages[t.winner_noid_id]) {
+          const url = await fetchNoidImage(t.winner_noid_id, hubImages, null);
+          setHubImages(prev => ({ ...prev, [t.winner_noid_id]: url }));
+        }
+      });
     } catch (err) {
       console.error('Error loading tournaments:', err);
     }
@@ -172,6 +181,9 @@ const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTourn
                 className="tournament-list-item glass-panel"
                 onClick={() => onViewTournament(t.id)}
               >
+                {t.winner_noid_id && hubImages[t.winner_noid_id] && (
+                  <img src={hubImages[t.winner_noid_id]} alt={`#${t.winner_noid_id}`} className="tl-winner-img" />
+                )}
                 <div className="tl-main">
                   <div className="tl-name">{t.tournament_name}</div>
                   <div className="tl-meta">
@@ -430,12 +442,22 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, getNoi
     setLoading(false);
   };
 
+  const [pickerImages, setPickerImages] = useState({});
+
   const loadOwnedNoids = async () => {
     setLoadingOwned(true);
     const noids = await fetchOwnedNoids(walletAddress);
     setOwnedNoids(noids);
-    setLoadingOwned(false);
     setShowEntryPicker(true);
+    setLoadingOwned(false);
+
+    // Load images in background
+    noids.forEach(async (noidId) => {
+      if (!pickerImages[noidId] && !entryImages[noidId]) {
+        const url = await fetchNoidImage(noidId, imageCache, setImageCache);
+        setPickerImages(prev => ({ ...prev, [noidId]: url }));
+      }
+    });
   };
 
   const handleEnterNoid = async (noidId) => {
@@ -470,6 +492,15 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, getNoi
 
       if (error) throw error;
       await loadLobby();
+
+      // Auto-close picker if player hit their max or tournament is now full
+      const newEntryCount = entries.length + 1;
+      const newPlayerEntries = alreadyEntered.length + 1;
+      if (newEntryCount >= tournament.bracket_size) {
+        setShowEntryPicker(false);
+      } else if (maxEntries && newPlayerEntries >= maxEntries) {
+        setShowEntryPicker(false);
+      }
     } catch (err) {
       console.error('Error entering NOID:', err);
       alert('Failed to enter NOID');
@@ -493,7 +524,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, getNoi
       return;
     }
 
-    if (!window.confirm(`Fill ${remaining} empty slots with random NOIDs and start?`)) return;
+    if (!confirm(`Fill ${remaining} empty slots with random NOIDs and start?`)) return;
 
     try {
       // Generate random NOIDs that aren't already entered
@@ -782,13 +813,15 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, getNoi
                 ownedNoids.map(noidId => {
                   const alreadyIn = entries.some(e => e.noid_id === noidId);
                   const atLimit = tournament.max_entries_per_player && myEntries.length >= tournament.max_entries_per_player;
+                  const imgUrl = pickerImages[noidId] || entryImages[noidId];
                   return (
                     <button
                       key={noidId}
-                      className={`picker-item ${alreadyIn ? 'entered' : ''}`}
+                      className={`picker-item has-image ${alreadyIn ? 'entered' : ''}`}
                       onClick={() => !alreadyIn && !atLimit && handleEnterNoid(noidId)}
                       disabled={alreadyIn || atLimit}
                     >
+                      {imgUrl && <img src={imgUrl} alt={`#${noidId}`} className="picker-item-img" />}
                       <span>#{noidId}</span>
                       {alreadyIn && <span className="picker-check">✓</span>}
                     </button>
@@ -1289,6 +1322,14 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, imageCache, setI
   }
 
   if (tournamentComplete) {
+    const getPodiumImg = (noidId) => imageCache[noidId] || null;
+    // Load podium images if not cached
+    [tournament.winner_noid_id, tournament.runner_up_noid_id, tournament.third_place_noid_id].forEach(id => {
+      if (id && !imageCache[id]) {
+        fetchNoidImage(id, imageCache, setImageCache);
+      }
+    });
+
     return (
       <div className="tournament-container">
         <div className="tournament-header glass-panel">
@@ -1307,6 +1348,9 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, imageCache, setI
             {tournament.winner_noid_id && (
               <div className="podium-place first">
                 <span className="podium-medal">🥇</span>
+                {getPodiumImg(tournament.winner_noid_id) && (
+                  <img src={getPodiumImg(tournament.winner_noid_id)} alt="" className="podium-img" />
+                )}
                 <span className="podium-noid">NOID #{tournament.winner_noid_id}</span>
                 <span className="podium-label">Champion</span>
               </div>
@@ -1314,6 +1358,9 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, imageCache, setI
             {tournament.runner_up_noid_id && (
               <div className="podium-place second">
                 <span className="podium-medal">🥈</span>
+                {getPodiumImg(tournament.runner_up_noid_id) && (
+                  <img src={getPodiumImg(tournament.runner_up_noid_id)} alt="" className="podium-img" />
+                )}
                 <span className="podium-noid">NOID #{tournament.runner_up_noid_id}</span>
                 <span className="podium-label">Runner-up</span>
               </div>
@@ -1321,6 +1368,9 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, imageCache, setI
             {tournament.third_place_noid_id && (
               <div className="podium-place third">
                 <span className="podium-medal">🥉</span>
+                {getPodiumImg(tournament.third_place_noid_id) && (
+                  <img src={getPodiumImg(tournament.third_place_noid_id)} alt="" className="podium-img" />
+                )}
                 <span className="podium-noid">NOID #{tournament.third_place_noid_id}</span>
                 <span className="podium-label">3rd Place</span>
               </div>
@@ -1448,6 +1498,25 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, imageCache, setI
 
 const TournamentBracket = ({ tournament, matchups, imageCache, setImageCache, onClose }) => {
   const totalRounds = TOTAL_ROUNDS[tournament.bracket_size];
+  const [bracketImages, setBracketImages] = useState({});
+
+  useEffect(() => {
+    // Collect all unique NOID IDs from matchups
+    const noidIds = new Set();
+    matchups.forEach(m => {
+      if (m.noid1_id) noidIds.add(m.noid1_id);
+      if (m.noid2_id) noidIds.add(m.noid2_id);
+    });
+    // Load images
+    noidIds.forEach(async (noidId) => {
+      if (!bracketImages[noidId] && !imageCache[noidId]) {
+        const url = await fetchNoidImage(noidId, imageCache, setImageCache);
+        setBracketImages(prev => ({ ...prev, [noidId]: url }));
+      }
+    });
+  }, [matchups]);
+
+  const getNoidImg = (noidId) => bracketImages[noidId] || imageCache[noidId] || null;
 
   const getMatchupsByRound = (round) => {
     return matchups
@@ -1480,10 +1549,16 @@ const TournamentBracket = ({ tournament, matchups, imageCache, setImageCache, on
                   {roundMatchups.map(m => (
                     <div key={m.id} className={`bracket-matchup ${m.status}`}>
                       <div className={`bracket-noid ${m.winner_id === m.noid1_id ? 'winner' : ''} ${m.winner_id === m.noid2_id ? 'loser' : ''}`}>
+                        {m.noid1_id && getNoidImg(m.noid1_id) && (
+                          <img src={getNoidImg(m.noid1_id)} alt="" className="bracket-noid-img" />
+                        )}
                         <span className="bracket-noid-id">{m.noid1_id ? `#${m.noid1_id}` : 'TBD'}</span>
                         {m.status === 'completed' && <span className="bracket-votes">{m.noid1_votes}</span>}
                       </div>
                       <div className={`bracket-noid ${m.winner_id === m.noid2_id ? 'winner' : ''} ${m.winner_id === m.noid1_id ? 'loser' : ''}`}>
+                        {m.noid2_id && getNoidImg(m.noid2_id) && (
+                          <img src={getNoidImg(m.noid2_id)} alt="" className="bracket-noid-img" />
+                        )}
                         <span className="bracket-noid-id">{m.noid2_id ? `#${m.noid2_id}` : 'TBD'}</span>
                         {m.status === 'completed' && <span className="bracket-votes">{m.noid2_votes}</span>}
                       </div>

@@ -451,7 +451,7 @@
 
 .picker-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   gap: 8px;
 }
 
@@ -467,6 +467,22 @@
   transition: all 0.2s;
   text-align: center;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.picker-item.has-image {
+  padding: 8px;
+}
+
+.picker-item-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .picker-item:hover:not(:disabled) {
@@ -698,7 +714,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  min-width: 180px;
+  min-width: 220px;
 }
 
 .bracket-round-header {
@@ -742,9 +758,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 14px;
+  padding: 8px 12px;
+  gap: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   transition: background 0.2s;
+}
+
+.bracket-noid .bracket-noid-id {
+  flex: 1;
 }
 
 .bracket-noid:last-child {
@@ -801,6 +822,58 @@
 @keyframes livePulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+/* ===== TOURNAMENT LIST WINNER IMAGE ===== */
+.tl-winner-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 2px solid rgba(255, 215, 0, 0.4);
+  flex-shrink: 0;
+}
+
+/* ===== BRACKET NOID IMAGES ===== */
+.bracket-noid-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
+.bracket-noid.winner .bracket-noid-img {
+  border-color: rgba(0, 255, 65, 0.5);
+}
+
+.bracket-noid.loser .bracket-noid-img {
+  opacity: 0.4;
+}
+
+/* ===== PODIUM IMAGES ===== */
+.podium-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.podium-place.first .podium-img {
+  width: 80px;
+  height: 80px;
+  border-color: rgba(255, 215, 0, 0.5);
+}
+
+.podium-place.second .podium-img {
+  border-color: rgba(192, 192, 192, 0.4);
+}
+
+.podium-place.third .podium-img {
+  border-color: rgba(205, 127, 50, 0.4);
 }
 
 /* ===== RESPONSIVE ===== */
