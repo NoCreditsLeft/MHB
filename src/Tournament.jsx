@@ -316,24 +316,19 @@ const ShareTournamentButton = ({ tournament, getImg }) => {
     setSharing(true);
     try {
       const dataUrl = await generateTournamentShareCard(tournament, getImg);
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
-      const file = new File([blob], 'tournament-result.png', { type: 'image/png' });
 
+      // Download the image
+      const link = document.createElement('a');
+      link.download = 'tournament-result.png';
+      link.href = dataUrl;
+      link.click();
+
+      // Open Twitter intent with pre-written post
       const tweetText = `🏆 ${tournament.tournament_name} Results!\n\n🥇 NOID #${tournament.winner_noid_id}\n🥈 NOID #${tournament.runner_up_noid_id}${tournament.third_place_noid_id ? `\n🥉 NOID #${tournament.third_place_noid_id}` : ''}\n\nBattle it out at noids-battle.vercel.app\n\n#NOiDS #NOiDSBattle #NFT`;
 
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ text: tweetText, files: [file] });
-      } else {
-        const link = document.createElement('a');
-        link.download = 'tournament-result.png';
-        link.href = dataUrl;
-        link.click();
-
-        setTimeout(() => {
-          window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank');
-        }, 500);
-      }
+      setTimeout(() => {
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank');
+      }, 500);
     } catch (err) {
       console.error('Error sharing:', err);
     }
