@@ -1544,7 +1544,7 @@ const TournamentBracket = ({ tournament, matchups, imageCache, setImageCache, on
             const roundName = getRoundName(tournament.bracket_size, round);
 
             return (
-              <div key={round} className="bracket-round">
+              <div key={round} className={`bracket-round ${roundName === 'Quarter Finals' || roundName === 'Semi-Finals' || roundName === 'Final' ? 'bracket-round-late' : ''} ${roundName === 'Semi-Finals' ? 'bracket-round-semis' : ''} ${roundName === 'Final' ? 'bracket-round-final' : ''}`}>
                 <div className="bracket-round-header">{roundName}</div>
                 <div className="bracket-matchups">
                   {roundMatchups.map(m => (

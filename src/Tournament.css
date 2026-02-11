@@ -719,6 +719,57 @@
   min-width: 220px;
 }
 
+/* QF and beyond: bigger layout */
+.bracket-round-late {
+  min-width: 300px;
+}
+
+.bracket-round-late .bracket-noid {
+  padding: 14px 16px;
+  gap: 12px;
+}
+
+.bracket-round-late .bracket-noid-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+}
+
+.bracket-round-late .bracket-noid-id {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.bracket-round-late .bracket-votes {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* Semi-Finals: brighter border */
+.bracket-round-semis .bracket-matchup {
+  border-color: rgba(0, 255, 65, 0.35);
+}
+
+.bracket-round-semis .bracket-matchup.completed {
+  border-color: rgba(0, 255, 65, 0.25);
+}
+
+/* Final: gold border */
+.bracket-round-final .bracket-matchup {
+  border: 5px solid rgba(255, 215, 0, 0.6);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
+}
+
+.bracket-round-final .bracket-matchup.active {
+  border-color: rgba(255, 215, 0, 0.8);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+}
+
+.bracket-round-final .bracket-round-header {
+  color: #ffd700;
+  border-bottom-color: rgba(255, 215, 0, 0.4);
+}
+
 .bracket-round-header {
   font-size: 14px;
   font-weight: 700;
