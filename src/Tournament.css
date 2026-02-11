@@ -1075,3 +1075,30 @@
     height: 48px;
   }
 }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .countdown-content {
+    padding: 40px 30px;
+  }
+
+  .countdown-number {
+    font-size: 80px;
+  }
+
+  .countdown-title {
+    font-size: 22px;
+  }
+
+  .round-transition-title {
+    font-size: 24px;
+  }
+
+  .live-tournament-banner {
+    padding: 12px 16px;
+  }
+
+  .ltb-text {
+    font-size: 14px;
+  }
+}
