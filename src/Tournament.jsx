@@ -1362,6 +1362,14 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
     return {};
   };
 
+  // Preload podium images via effect, not in render body
+  useEffect(() => {
+    if (tournamentComplete && tournament) {
+      const podiumIds = [tournament.winner_noid_id, tournament.runner_up_noid_id, tournament.third_place_noid_id].filter(Boolean);
+      if (podiumIds.length > 0) ensureImages(podiumIds);
+    }
+  }, [tournamentComplete, tournament?.winner_noid_id, tournament?.runner_up_noid_id, tournament?.third_place_noid_id]);
+
   // ---- RENDER ----
 
   if (!tournament) {
@@ -1380,14 +1388,6 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   if (showBracket) {
     return <TournamentBracket tournament={tournament} matchups={matchups} getImg={getImg} onClose={() => setShowBracket(false)} onViewNoid={onViewNoid} />;
   }
-
-  // Preload podium images via effect, not in render body
-  useEffect(() => {
-    if (tournamentComplete && tournament) {
-      const podiumIds = [tournament.winner_noid_id, tournament.runner_up_noid_id, tournament.third_place_noid_id].filter(Boolean);
-      if (podiumIds.length > 0) ensureImages(podiumIds);
-    }
-  }, [tournamentComplete, tournament?.winner_noid_id, tournament?.runner_up_noid_id, tournament?.third_place_noid_id]);
 
   if (tournamentComplete) {
     return (
