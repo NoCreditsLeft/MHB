@@ -556,18 +556,14 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, getNoi
     }
   };
 
-  const handleFillAndStart = async () => {
+  const handleFillRemaining = async () => {
     if (!tournament) return;
     const remaining = tournament.bracket_size - entries.length;
-    if (remaining <= 0) {
-      await handleStartTournament();
-      return;
-    }
+    if (remaining <= 0) return;
 
-    if (!window.confirm(`Fill ${remaining} empty slots with random NOIDs and start?`)) return;
+    if (!window.confirm(`Fill ${remaining} empty slots with random NOIDs?`)) return;
 
     try {
-      // Generate random NOIDs that aren't already entered
       const existingIds = entries.map(e => e.noid_id);
       const randomEntries = [];
       while (randomEntries.length < remaining) {
@@ -587,10 +583,10 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, getNoi
         if (error) throw error;
       }
 
-      await handleStartTournament();
+      await loadLobby();
     } catch (err) {
       console.error('Error filling tournament:', err);
-      alert('Failed to fill and start');
+      alert('Failed to fill slots');
     }
   };
 
@@ -827,12 +823,21 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, getNoi
           </button>
         )}
 
-        {isCreator && tournament.status === 'open' && (
+        {isCreator && tournament.status === 'open' && isFull && (
           <button
             className="start-btn fill-start-btn"
-            onClick={isFull ? handleStartTournament : handleFillAndStart}
+            onClick={handleStartTournament}
           >
-            {isFull ? '🚀 Start Tournament' : `🚀 Fill & Start (${tournament.bracket_size - entries.length} random)`}
+            🚀 Start Tournament
+          </button>
+        )}
+
+        {isCreator && tournament.status === 'open' && !isFull && (
+          <button
+            className="start-btn fill-start-btn"
+            onClick={handleFillRemaining}
+          >
+            🎲 Fill Remaining ({tournament.bracket_size - entries.length} random)
           </button>
         )}
 
