@@ -4,7 +4,7 @@ import { useAccount } from 'wagmi';
 import ConnectWalletModal from './ConnectWalletModal';
 import MyNoids from './MyNoids';
 import './App.css';
-import Tournament from './Tournament';
+import Tournament, { LiveTournamentBanner } from './Tournament';
 import './Tournament.css';
 
 // Supabase configuration
@@ -3123,6 +3123,8 @@ function App() {
           setView('profile');
         }}
       />
+
+      <LiveTournamentBanner onClick={() => setView('tournament')} />
 
       <div className="game-modes">
         <div className="glass-panel">
