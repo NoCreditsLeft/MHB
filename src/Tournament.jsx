@@ -394,7 +394,7 @@ export const LiveTournamentBanner = ({ onClick }) => {
 const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTournament, parentImageCache }) => {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('open');
   const { ensureImages, getImg } = useImageLoader(parentImageCache);
 
   useEffect(() => {
@@ -469,7 +469,7 @@ const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTourn
       </div>
 
       <div className="tournament-filters glass-panel">
-        {['all', 'open', 'active', 'completed'].map(f => (
+        {['open', 'active', 'completed', 'all'].map(f => (
           <button
             key={f}
             className={`tab-btn ${filter === f ? 'active' : ''}`}
