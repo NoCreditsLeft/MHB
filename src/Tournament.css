@@ -745,7 +745,7 @@
   font-weight: 700;
 }
 
-/* Semi-Finals: brighter border */
+/* Semi-Finals: brighter border + taller */
 .bracket-round-semis .bracket-matchup {
   border-color: rgba(0, 255, 65, 0.35);
 }
@@ -754,7 +754,16 @@
   border-color: rgba(0, 255, 65, 0.25);
 }
 
-/* Final: gold border */
+.bracket-round-semis .bracket-noid {
+  padding: 18px 16px;
+}
+
+.bracket-round-semis .bracket-noid-img {
+  width: 56px;
+  height: 56px;
+}
+
+/* Final: gold border + much taller */
 .bracket-round-final .bracket-matchup {
   border: 5px solid rgba(255, 215, 0, 0.6);
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
@@ -768,6 +777,24 @@
 .bracket-round-final .bracket-round-header {
   color: #ffd700;
   border-bottom-color: rgba(255, 215, 0, 0.4);
+}
+
+.bracket-round-final .bracket-noid {
+  padding: 28px 20px;
+}
+
+.bracket-round-final .bracket-noid-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+}
+
+.bracket-round-final .bracket-noid-id {
+  font-size: 28px;
+}
+
+.bracket-round-final .bracket-votes {
+  font-size: 26px;
 }
 
 .bracket-round-header {
