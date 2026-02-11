@@ -3400,7 +3400,7 @@ function App() {
 
       <footer className="app-footer">
         <div className="footer-content">
-          <span className="footer-version">v0.51 (Beta)</span>
+          <span className="footer-version">v0.83 (Beta)</span>
           <span className="footer-divider">•</span>
           <span className="footer-credits">NOiDS Battle built and hosted by @NoCredits</span>
         </div>
