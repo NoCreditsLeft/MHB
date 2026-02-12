@@ -437,7 +437,9 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
       ctx.fillStyle = '#888'; ctx.font = 'bold 24px monospace'; ctx.fillText(`🥈 #${l}`, 950, 360);
     } catch (e) { console.error('Share image error:', e); }
     ctx.fillStyle = '#fff'; ctx.font = 'bold 60px monospace'; ctx.fillText('VS', 600, 250);
-    ctx.fillStyle = '#00ff41'; ctx.font = 'bold 48px monospace'; ctx.fillText(`${battle.noid1_votes} - ${battle.noid2_votes}`, 600, 450);
+    const winVotes = w === battle.noid1_id ? battle.noid1_votes : battle.noid2_votes;
+    const loseVotes = w === battle.noid1_id ? battle.noid2_votes : battle.noid1_votes;
+    ctx.fillStyle = '#00ff41'; ctx.font = 'bold 48px monospace'; ctx.fillText(`${winVotes} - ${loseVotes}`, 600, 450);
     const margin = Math.abs(battle.noid1_votes - battle.noid2_votes);
     const result = battle.is_coin_flip ? 'Won by coin flip! 🪙' : margin >= 4 ? 'SMOKED! 💨' : margin >= 2 ? 'Beaten!' : 'Close one!';
     ctx.fillStyle = '#fff'; ctx.font = '28px monospace'; ctx.fillText(result, 600, 510);
