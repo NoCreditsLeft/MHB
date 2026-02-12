@@ -324,7 +324,7 @@ const ShareTournamentButton = ({ tournament, getImg }) => {
       link.click();
 
       // Open Twitter intent with pre-written post
-      const tweetText = `🏆 ${tournament.tournament_name} Results!\n\n🥇 NOID #${tournament.winner_noid_id}\n🥈 NOID #${tournament.runner_up_noid_id}${tournament.third_place_noid_id ? `\n🥉 NOID #${tournament.third_place_noid_id}` : ''}\n\nBattle it out at noids-battle.vercel.app\n\n#NOiDS #NOiDSBattle #NFT`;
+      const tweetText = `"${tournament.tournament_name}" Tournament Results!\n\n🥇 NOID #${tournament.winner_noid_id}\n🥈 NOID #${tournament.runner_up_noid_id}${tournament.third_place_noid_id ? `\n🥉 NOID #${tournament.third_place_noid_id}` : ''}\n\nBattle it out at noidsbattle.com\n\n#NOiDSBattle @thehumanoids`;
 
       setTimeout(() => {
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank');
@@ -386,7 +386,7 @@ export const LiveTournamentBanner = ({ onClick }) => {
 // TOURNAMENT HUB
 // ============================================
 
-const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTournament, parentImageCache }) => {
+const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTournament, parentImageCache, showWalletModal }) => {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('open');
@@ -458,7 +458,7 @@ const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTourn
           Back to Menu
         </button>
         <h2 className="tournament-title">🏟️ Tournaments</h2>
-        <button className="create-tournament-btn" onClick={onCreateTournament}>
+        <button className="create-tournament-btn" onClick={() => walletAddress ? onCreateTournament() : showWalletModal()}>
           + Create
         </button>
       </div>
@@ -1003,7 +1003,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
 // LIVE TOURNAMENT
 // ============================================
 
-const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, parentImageCache }) => {
+const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, parentImageCache, showWalletModal }) => {
   const [tournament, setTournament] = useState(null);
   const [matchups, setMatchups] = useState([]);
   const [activeMatchup, setActiveMatchup] = useState(null);
@@ -1149,7 +1149,8 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   };
 
   const handleVote = async (noidId) => {
-    if (hasVoted || isVoting || !activeMatchup || !walletAddress) return;
+    if (hasVoted || isVoting || !activeMatchup) return;
+    if (!walletAddress) { showWalletModal && showWalletModal(); return; }
     setIsVoting(true);
     setVotedFor(noidId);
 
@@ -1656,31 +1657,21 @@ const Tournament = ({ walletAddress, onClose, showWalletModal, onViewNoid, paren
     }
   };
 
-  if (!walletAddress) {
-    return (
-      <div className="tournament-container">
-        <div className="tournament-header glass-panel">
-          <button className="back-btn" onClick={onClose}><span className="back-arrow">←</span>Back to Menu</button>
-          <h2 className="tournament-title">🏟️ Tournaments</h2>
-          <div className="spacer"></div>
-        </div>
-        <div className="empty-state glass-panel">
-          <p>Connect your wallet to access tournaments.</p>
-          <button className="start-btn" onClick={showWalletModal}>Connect Wallet</button>
-        </div>
-      </div>
-    );
+  if (!walletAddress && tournamentView === 'create') {
+    // Only creating requires wallet
+    showWalletModal();
+    setTournamentView('hub');
   }
 
   switch (tournamentView) {
     case 'hub':
-      return <TournamentHub walletAddress={walletAddress} onClose={onClose} onViewTournament={handleViewTournament} onCreateTournament={() => setTournamentView('create')} parentImageCache={parentImageCache} />;
+      return <TournamentHub walletAddress={walletAddress} onClose={onClose} onViewTournament={handleViewTournament} onCreateTournament={() => setTournamentView('create')} parentImageCache={parentImageCache} showWalletModal={showWalletModal} />;
     case 'create':
       return <CreateTournament walletAddress={walletAddress} onClose={() => setTournamentView('hub')} onCreated={(id) => { setActiveTournamentId(id); setTournamentView('lobby'); }} />;
     case 'lobby':
       return <TournamentLobby tournamentId={activeTournamentId} walletAddress={walletAddress} onClose={() => setTournamentView('hub')} onStart={(id) => { setActiveTournamentId(id); setTournamentView('live'); }} parentImageCache={parentImageCache} />;
     case 'live':
-      return <LiveTournament tournamentId={activeTournamentId} walletAddress={walletAddress} onClose={() => setTournamentView('hub')} onViewNoid={onViewNoid} parentImageCache={parentImageCache} />;
+      return <LiveTournament tournamentId={activeTournamentId} walletAddress={walletAddress} onClose={() => setTournamentView('hub')} onViewNoid={onViewNoid} parentImageCache={parentImageCache} showWalletModal={showWalletModal} />;
     default:
       return null;
   }
