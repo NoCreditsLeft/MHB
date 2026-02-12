@@ -186,7 +186,7 @@ const CreateH2H = ({ walletAddress, onCancel, onCreated, getImage, ensureImages 
       try {
         let allNoids = [], cursor = null;
         do {
-          let url = `https://api.opensea.io/api/v2/chain/ethereum/account/${walletAddress}/nfts?collection=the-humanoids&limit=50`;
+          let url = `https://api.opensea.io/api/v2/chain/ethereum/account/${walletAddress}/nfts?collection=noidsofficial&limit=200`;
           if (cursor) url += `&next=${cursor}`;
           const response = await fetch(url, { headers: { 'x-api-key': OPENSEA_API_KEY } });
           if (!response.ok) throw new Error('Failed to fetch NOiDS');
