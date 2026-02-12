@@ -3128,101 +3128,101 @@ function App() {
 
       <LiveTournamentBanner onClick={() => setView('tournament')} />
 
-      <div className="game-modes">
-        <div className="glass-panel">
-          <div className="panel-header">
-            <h3>Single Player</h3>
-            <div className="votes-badge">
-              <span className="votes-text">Votes:</span>
-              <span className="votes-number">{votesRemaining}/55</span>
-            </div>
+<div className="battle-modes-panel glass-panel">
+        <div className="panel-header">
+          <h3>Battle Modes</h3>
+          <div className="votes-badge">
+            <span className="votes-text">Votes:</span>
+            <span className="votes-number">{votesRemaining}/55</span>
           </div>
-          
+        </div>
+
+        <div className="modes-grid">
           <button 
-            className="mode-btn"
+            className="mode-grid-btn"
             onClick={() => startBattle('rando')}
             disabled={votesRemaining <= 0}
           >
-            <div className="btn-icon">🎲</div>
-            <div className="btn-content">
+            <span className="mode-grid-icon">🎲</span>
+            <div className="mode-grid-text">
               <h4>Rando Battle</h4>
               <p>Two random NOiDS face off</p>
             </div>
           </button>
 
           <button 
-            className="mode-btn"
+            className="mode-grid-btn"
             onClick={() => startBattle('sticky')}
             disabled={votesRemaining <= 0}
           >
-            <div className="btn-icon">🏆</div>
-            <div className="btn-content">
+            <span className="mode-grid-icon">🏆</span>
+            <div className="mode-grid-text">
               <h4>Sticky Winner</h4>
               <p>Winner stays, challenger appears</p>
             </div>
           </button>
 
           <button 
-            className="mode-btn"
+            className="mode-grid-btn"
             onClick={() => startBattle('oneofone')}
             disabled={votesRemaining <= 0}
           >
-            <div className="btn-icon">👑</div>
-            <div className="btn-content">
-              <h4>One of One Championship</h4>
+            <span className="mode-grid-icon">👑</span>
+            <div className="mode-grid-text">
+              <h4>One of One</h4>
               <p>Battle of the rarest</p>
             </div>
           </button>
-        </div>
 
-        <div className="glass-panel community-panel">
-          <div className="panel-header">
-            <h3>Community Mode</h3>
-          </div>
-          
           <button 
-            className="mode-btn community-btn"
+            className="mode-grid-btn"
             onClick={() => startBattle('daily')}
           >
-            <div className="btn-icon">⭐</div>
-            <div className="btn-content">
+            <span className="mode-grid-icon">⭐</span>
+            <div className="mode-grid-text">
               <h4>Daily Battle</h4>
-              <p>One battle, one vote, 24 hours</p>
-              {userDailyVoted && <span className="voted-badge">âœ“ Voted</span>}
+              <p>One vote, 24 hours</p>
+              {userDailyVoted && <span className="voted-badge">✔ Voted</span>}
             </div>
           </button>
-        </div>
 
-        <div className="glass-panel community-panel">
-          <div className="panel-header">
-            <h3>Multiplayer</h3>
-          </div>
-          
           <button 
-            className="mode-btn"
-              onClick={() => setView('tournament')}
+            className="mode-grid-btn"
+            onClick={() => setView('h2h')}
           >
-            <div className="btn-icon">🏟️</div>
-            <div className="btn-content">
+            <span className="mode-grid-icon">⚔️</span>
+            <div className="mode-grid-text">
+              <h4>H2H Battle</h4>
+              <p>1v1 live showdown</p>
+            </div>
+          </button>
+
+          <button 
+            className="mode-grid-btn"
+            onClick={() => setView('tournament')}
+          >
+            <span className="mode-grid-icon">🏟️</span>
+            <div className="mode-grid-text">
               <h4>Tournaments</h4>
-              <p>Create or join bracket battles</p>
+              <p>Bracket battles</p>
             </div>
           </button>
         </div>
 
         {votesRemaining <= 0 && (
-          <div className="limit-notice glass-panel">
-            <span className="notice-icon">⏰</span>
-            <p>You've used all your daily votes!<br/>Come back tomorrow.</p>
+          <div className="limit-notice-inline">
+            <span>⏰</span>
+            <p>Daily votes used! Come back tomorrow.</p>
           </div>
         )}
+      </div>
 
-        <button 
-          className="stats-btn glass-panel"
-          onClick={() => setView('leaderboard')}
-        >
-          📊 View Stats & Leaderboard
-        </button>
+      <button 
+        className="stats-btn glass-panel"
+        onClick={() => setView('leaderboard')}
+      >
+        📊 View Stats & Leaderboard
+      </button>
       </div>
       <div>
           
