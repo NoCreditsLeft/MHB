@@ -120,7 +120,31 @@ const useImageLoader = (parentImageCache) => {
     return images[noidId] || globalImageCache[noidId] || null;
   }, [images]);
 
-  return { images, ensureImages, getImg };
+  const forceRefreshImages = useCallback((noidIds) => {
+    const toFetch = noidIds.filter(id => id);
+    if (toFetch.length === 0) return;
+
+    // Clear from cache so they re-fetch
+    toFetch.forEach(id => {
+      delete globalImageCache[id];
+      pendingRef.current.delete(id);
+    });
+
+    toFetch.forEach(id => pendingRef.current.add(id));
+
+    Promise.all(toFetch.map(id => fetchAndCacheImage(id))).then(() => {
+      toFetch.forEach(id => pendingRef.current.delete(id));
+      setImages(prev => {
+        const updated = { ...prev };
+        toFetch.forEach(id => {
+          if (globalImageCache[id]) updated[id] = globalImageCache[id];
+        });
+        return updated;
+      });
+    });
+  }, []);
+
+  return { images, ensureImages, getImg, forceRefreshImages };
 };
 
 // ============================================
@@ -425,7 +449,7 @@ const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTourn
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('open');
-  const { ensureImages, getImg } = useImageLoader(parentImageCache);
+  const { ensureImages, getImg, forceRefreshImages } = useImageLoader(parentImageCache);
 
   useEffect(() => {
     loadTournaments();
@@ -698,7 +722,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
   const [gateInput, setGateInput] = useState('');
   const [gateUnlocked, setGateUnlocked] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { ensureImages, getImg } = useImageLoader(parentImageCache);
+  const { ensureImages, getImg, forceRefreshImages } = useImageLoader(parentImageCache);
 
   useEffect(() => {
     loadLobby();
@@ -801,7 +825,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
     if (!tournament) return;
     const remaining = tournament.bracket_size - entries.length;
     if (remaining <= 0) return;
-    if (!window.confirm(`Fill ${remaining} empty slots with random NOIDs?`)) return;
+    if (!window.confirm(`Fill ${remaining} empty slots with random NOiDS?`)) return;
 
     try {
       const existingIds = entries.map(e => e.noid_id);
@@ -936,11 +960,11 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
 
       <div className="lobby-info glass-panel">
         <div className="lobby-info-row"><span>Created by</span><strong>{tournament.creator_name || `${tournament.creator_wallet.slice(0, 6)}...${tournament.creator_wallet.slice(-4)}`}</strong></div>
-        <div className="lobby-info-row"><span>Bracket</span><strong>{tournament.bracket_size} NOIDs</strong></div>
+        <div className="lobby-info-row"><span>Bracket</span><strong>{tournament.bracket_size} NOiDS</strong></div>
         <div className="lobby-info-row"><span>Round Timer</span><strong>{tournament.round_timer}s</strong></div>
         <div className="lobby-info-row"><span>Max Per Player</span><strong>{tournament.max_entries_per_player || '∞'}</strong></div>
         <div className="lobby-info-row"><span>Access</span><strong>{tournament.is_gated ? '🔒 Code-Gated' : '🌐 Open'}</strong></div>
-        <div className="lobby-info-row"><span>1:1 NOIDs</span><strong>{tournament.include_oneofone === false ? '❌ Excluded' : '✅ Allowed'}</strong></div>
+        <div className="lobby-info-row"><span>1:1 NOiDS</span><strong>{tournament.include_oneofone === false ? '❌ Excluded' : '✅ Allowed'}</strong></div>
         <div className="lobby-info-row"><span>Entries</span><strong className="entries-count">{entries.length} / {tournament.bracket_size}</strong></div>
       </div>
 
@@ -955,7 +979,14 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
       )}
 
       <div className="lobby-entries glass-panel">
-        <h3 className="section-title">Bracket Slots</h3>
+        <div className="section-header-row">
+          <h3 className="section-title">Bracket Slots</h3>
+          {entries.length > 0 && (
+            <button className="refresh-images-btn" onClick={() => forceRefreshImages(entries.map(e => e.noid_id))}>
+              🔄 Refresh Images
+            </button>
+          )}
+        </div>
         <div className="entry-grid">
           {Array.from({ length: tournament.bracket_size }).map((_, idx) => {
             const entry = entries[idx];
@@ -983,7 +1014,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
       <div className="lobby-actions">
         {canEnter && !needsGateCode && walletAddress && (
           <button className="start-btn" onClick={loadOwnedNoids} disabled={loadingOwned}>
-            {loadingOwned ? 'Loading NOIDs...' : '+ Enter Your NOIDs'}
+            {loadingOwned ? 'Loading NOiDS...' : '+ Enter Your NOiDS'}
           </button>
         )}
         {isCreator && tournament.status === 'open' && isFull && (
@@ -1001,7 +1032,8 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
         <div className="modal-overlay" onClick={() => setShowEntryPicker(false)}>
           <div className="noid-picker-modal glass-panel" onClick={e => e.stopPropagation()}>
             <div className="picker-header">
-              <h3>Select NOIDs to Enter</h3>
+              <h3>Select NOiDS to Enter</h3>
+              <button className="refresh-images-btn" onClick={() => forceRefreshImages(ownedNoids)}>🔄</button>
               <button className="modal-close" onClick={() => setShowEntryPicker(false)}>×</button>
             </div>
             <div className="picker-info">
@@ -1009,7 +1041,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
             </div>
             <div className="picker-grid">
               {ownedNoids.length === 0 ? (
-                <p className="picker-empty">No NOIDs found in your wallet</p>
+                <p className="picker-empty">No NOiDS found in your wallet</p>
               ) : (
                 ownedNoids
                   .filter(noidId => tournament.include_oneofone !== false || !ONE_OF_ONE_NOIDS.includes(noidId))
@@ -1054,7 +1086,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   const timerRef = useRef(null);
   const pollRef = useRef(null);
   const activeMatchupIdRef = useRef(null);
-  const { ensureImages, getImg } = useImageLoader(parentImageCache);
+  const { ensureImages, getImg, forceRefreshImages } = useImageLoader(parentImageCache);
 
   useEffect(() => {
     loadTournamentState();
@@ -1428,7 +1460,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   }
 
   if (showBracket) {
-    return <TournamentBracket tournament={tournament} matchups={matchups} getImg={getImg} onClose={() => setShowBracket(false)} onViewNoid={onViewNoid} />;
+    return <TournamentBracket tournament={tournament} matchups={matchups} getImg={getImg} onClose={() => setShowBracket(false)} onViewNoid={onViewNoid} forceRefreshImages={forceRefreshImages} />;
   }
 
   if (tournamentComplete) {
@@ -1524,7 +1556,13 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       <div className="tournament-header glass-panel">
         <button className="back-btn" onClick={onClose}><span className="back-arrow">←</span>Back</button>
         <h2 className="tournament-title">{tournament.tournament_name}</h2>
-        <button className="bracket-toggle-btn" onClick={() => setShowBracket(true)}>📊 Bracket</button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="refresh-images-btn" onClick={() => {
+            const allIds = matchups.flatMap(m => [m.noid1_id, m.noid2_id]).filter(Boolean);
+            forceRefreshImages([...new Set(allIds)]);
+          }}>🔄</button>
+          <button className="bracket-toggle-btn" onClick={() => setShowBracket(true)}>📊 Bracket</button>
+        </div>
       </div>
 
       {coinFlipData && <CoinFlipOverlay winnerId={coinFlipData.winnerId} getImg={getImg} />}
@@ -1641,7 +1679,7 @@ const getRoundClass = (roundName) => {
 // BRACKET VIEW (full page)
 // ============================================
 
-const TournamentBracket = ({ tournament, matchups, getImg, onClose, onViewNoid }) => {
+const TournamentBracket = ({ tournament, matchups, getImg, onClose, onViewNoid, forceRefreshImages }) => {
   const totalRounds = TOTAL_ROUNDS[tournament.bracket_size];
 
   return (
@@ -1649,7 +1687,10 @@ const TournamentBracket = ({ tournament, matchups, getImg, onClose, onViewNoid }
       <div className="tournament-header glass-panel">
         <button className="back-btn" onClick={onClose}><span className="back-arrow">←</span>Back</button>
         <h2 className="tournament-title">{tournament.tournament_name} — Bracket</h2>
-        <div className="spacer"></div>
+        <button className="refresh-images-btn" onClick={() => {
+          const allIds = matchups.flatMap(m => [m.noid1_id, m.noid2_id]).filter(Boolean);
+          forceRefreshImages && forceRefreshImages([...new Set(allIds)]);
+        }}>🔄 Refresh Images</button>
       </div>
       <div className="bracket-view">
         <div className="bracket-scroll">
