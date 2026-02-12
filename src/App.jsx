@@ -3198,13 +3198,7 @@ function App() {
           
           <button 
             className="mode-btn"
-            onClick={() => {
-              if (!isConnected) {
-                setShowWalletModal(true);
-              } else {
-                setView('tournament');
-              }
-            }}
+              onClick={() => setView('tournament')}
           >
             <div className="btn-icon">🏟️</div>
             <div className="btn-content">
