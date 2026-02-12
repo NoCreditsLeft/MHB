@@ -2523,3 +2523,65 @@ body {
     padding: 14px;
   }
 }
+/* ===== BATTLE MODES GRID ===== */
+.battle-modes-panel {
+  width: 100%;
+  max-width: 600px;
+  animation: fadeInUp 0.8s ease 0.2s both;
+}
+
+.modes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.mode-grid-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.mode-grid-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 255, 65, 0.5);
+  transform: translateY(-3px);
+  box-shadow: 0 4px 20px rgba(0, 255, 65, 0.15);
+}
+
+.mode-grid-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.mode-grid-btn:disabled:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
+
+.mode-grid-icon {
+  font-size: 32px;
+}
+
+.mode-grid-text h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 2px;
+}
+
+.mode-grid-text p {
+  font
