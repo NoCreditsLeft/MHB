@@ -87,7 +87,7 @@ const H2HLobby = ({ walletAddress, onCreateBattle, onJoinBattle, getImage, ensur
   const loadBattles = useCallback(async () => {
     try {
       let query = supabase.from('h2h_battles').select('*').order('created_at', { ascending: false }).limit(50);
-      if (filter === 'live') query = query.in('status', ['countdown', 'live']);
+      if (filter === 'live') query = query.in('status', ['pending', 'countdown', 'live']);
       else if (filter === 'completed') query = query.eq('status', 'completed');
       const { data, error } = await query;
       if (error) throw error;
@@ -102,6 +102,7 @@ const H2HLobby = ({ walletAddress, onCreateBattle, onJoinBattle, getImage, ensur
   useEffect(() => { loadBattles(); const i = setInterval(loadBattles, 5000); return () => clearInterval(i); }, [loadBattles]);
 
   const getStatusLabel = (b) => {
+    if (b.status === 'pending') return '🟡 Waiting...';
     if (b.status === 'countdown') return '⏳ Starting...';
     if (b.status === 'live') return '🔴 LIVE';
     if (b.status === 'completed') return b.is_coin_flip ? '🪙 Coin Flip' : '✅ Finished';
@@ -164,6 +165,9 @@ const H2HLobby = ({ walletAddress, onCreateBattle, onJoinBattle, getImage, ensur
               {(b.status === 'live' || b.status === 'countdown') && (
                 <div className="h2h-card-live-indicator">{b.status === 'live' ? 'TAP TO VOTE' : 'STARTING SOON'}</div>
               )}
+              {b.status === 'pending' && (
+                <div className="h2h-card-live-indicator" style={{color: '#ffa500', background: 'rgba(255,165,0,0.15)'}}>WAITING TO START</div>
+              )}
             </button>
           ))}
         </div>
@@ -211,13 +215,9 @@ const CreateH2H = ({ walletAddress, onCancel, onCreated, getImage, ensureImages 
     setCreating(true); setError(null);
     try {
       await fetchAndCacheImage(oppId);
-      const now = new Date();
-      const countdownUntil = new Date(now.getTime() + COUNTDOWN_DURATION * 1000);
-      const votingEndsAt = new Date(countdownUntil.getTime() + VOTING_DURATION * 1000);
       const { data, error: insertError } = await supabase.from('h2h_battles').insert({
         noid1_id: selectedNoid.id, noid2_id: oppId, creator_wallet: walletAddress,
-        status: 'countdown', noid1_votes: 0, noid2_votes: 0,
-        countdown_until: countdownUntil.toISOString(), voting_ends_at: votingEndsAt.toISOString(),
+        status: 'pending', noid1_votes: 0, noid2_votes: 0,
         battle_url: `h2h-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`
       }).select().single();
       if (insertError) throw insertError;
@@ -299,8 +299,27 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
   const [hasVoted, setHasVoted] = useState(false);
   const [votedFor, setVotedFor] = useState(null);
   const [showCoinFlip, setShowCoinFlip] = useState(false);
+  const [viewerCount, setViewerCount] = useState(0);
   const pollingRef = useRef(null);
   const timerRef = useRef(null);
+  const viewerRef = useRef(null);
+
+  const isCreator = walletAddress && battle?.creator_wallet === walletAddress;
+  const viewerId = walletAddress || `anon-${Math.random().toString(36).substr(2, 8)}`;
+
+  // Ping viewer presence every 5 seconds
+  useEffect(() => {
+    if (!battle) return;
+    const ping = async () => {
+      try {
+        const { data } = await supabase.rpc('h2h_ping_viewer', { p_battle_id: battle.id, p_viewer_id: viewerId });
+        if (typeof data === 'number') setViewerCount(data);
+      } catch {}
+    };
+    ping();
+    viewerRef.current = setInterval(ping, 5000);
+    return () => clearInterval(viewerRef.current);
+  }, [battle?.id, viewerId]);
 
   useEffect(() => { if (battle) ensureImages([battle.noid1_id, battle.noid2_id]); }, [battle?.noid1_id, battle?.noid2_id, ensureImages]);
 
@@ -313,11 +332,25 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
     checkVote();
   }, [walletAddress, battle?.id]);
 
+  // Start battle (creator only)
+  const handleStart = async () => {
+    const now = new Date();
+    const countdownUntil = new Date(now.getTime() + COUNTDOWN_DURATION * 1000);
+    const votingEndsAt = new Date(countdownUntil.getTime() + VOTING_DURATION * 1000);
+    await supabase.from('h2h_battles').update({
+      status: 'countdown',
+      countdown_until: countdownUntil.toISOString(),
+      voting_ends_at: votingEndsAt.toISOString()
+    }).eq('id', battle.id);
+    setBattle(prev => ({ ...prev, status: 'countdown', countdown_until: countdownUntil.toISOString(), voting_ends_at: votingEndsAt.toISOString() }));
+  };
+
   useEffect(() => {
     if (!battle) return;
     const updatePhase = () => {
       const now = new Date();
       if (battle.status === 'completed') { setPhase('completed'); return; }
+      if (battle.status === 'pending') { setPhase('pending'); return; }
       if (battle.countdown_until) {
         const end = new Date(battle.countdown_until);
         if (now < end) { setPhase('countdown'); setCountdown(Math.ceil((end - now) / 1000)); return; }
@@ -453,6 +486,36 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
   return (
     <div className="h2h-live">
       {showCoinFlip && <CoinFlipOverlay winnerId={battle.winner_id} onDismiss={() => setShowCoinFlip(false)} getImage={getImage} />}
+
+      {/* Viewer count badge - shown during pending, countdown, voting */}
+      {(phase === 'pending' || phase === 'countdown' || phase === 'voting') && viewerCount > 0 && (
+        <div className="h2h-viewer-count">👁 {viewerCount} watching</div>
+      )}
+
+      {phase === 'pending' && (
+        <div className="h2h-countdown-phase">
+          <h2 className="h2h-phase-title">⚔️ HEAD TO HEAD ⚔️</h2>
+          <div className="h2h-splash-matchup">
+            <div className="h2h-splash-noid">
+              {getImage(battle.noid1_id) ? <img src={getImage(battle.noid1_id)} alt="" className="h2h-splash-img" /> : <div className="h2h-splash-placeholder">#{battle.noid1_id}</div>}
+              <span className="h2h-splash-number">NOiD #{battle.noid1_id}</span>
+            </div>
+            <div className="h2h-splash-vs">VS</div>
+            <div className="h2h-splash-noid">
+              {getImage(battle.noid2_id) ? <img src={getImage(battle.noid2_id)} alt="" className="h2h-splash-img" /> : <div className="h2h-splash-placeholder">#{battle.noid2_id}</div>}
+              <span className="h2h-splash-number">NOiD #{battle.noid2_id}</span>
+            </div>
+          </div>
+          {isCreator ? (
+            <button className="h2h-start-btn" onClick={handleStart}>🚀 Start Now</button>
+          ) : (
+            <div className="h2h-waiting-text">
+              <div className="h2h-waiting-pulse"></div>
+              <span>Waiting for creator to start...</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {phase === 'countdown' && (
         <div className="h2h-countdown-phase">
