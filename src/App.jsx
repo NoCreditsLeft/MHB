@@ -3126,8 +3126,8 @@ function App() {
         }}
       />
 
-      <LiveTournamentBanner onClick={() => setView('tournament')} />
-
+<LiveTournamentBanner onClick={() => setView('tournament')} />
+<>
 <div className="battle-modes-panel glass-panel">
         <div className="panel-header">
           <h3>Battle Modes</h3>
@@ -3223,6 +3223,7 @@ function App() {
       >
         📊 View Stats & Leaderboard
       </button>
+      </>
       </div>
     </div>
   );
