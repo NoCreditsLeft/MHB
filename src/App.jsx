@@ -14,11 +14,11 @@ const supabaseUrl = 'https://jvmddbqxhfaicyctmmvt.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bWRkYnF4aGZhaWN5Y3RtbXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyOTg4MDYsImV4cCI6MjA4Mzg3NDgwNn0.SD37h5vkKVQwODXavoRkej6yFsAYhT8nLmxIxs3AoZg';
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-const TOTAL_NOIDS = 5555;
+const TOTAL_NOiDS = 5555;
 const DAILY_VOTE_LIMIT = 55;
 
-// 1-of-1 NOIDs with unique traits
-const ONE_OF_ONE_NOIDS = [
+// 1-of-1 NOiDs with unique traits
+const ONE_OF_ONE_NOiDS = [
   3399, 4550, 46, 3421, 5521, 4200, 814, 1587, 4234, 1601,
   2480, 1046, 4999, 2290, 1401, 2148, 3921, 4900, 4699, 1187,
   2225, 948, 2214, 1448, 3321, 4221, 4111, 2281, 2231, 2014,
@@ -102,7 +102,7 @@ async function recordCompleteBattle({
       updateGameModeStats(noid2Id, gameMode, winnerId === noid2Id)
     ]);
     
-// Check and award achievements for both NOIDs
+// Check and award achievements for both NOiDs
     await checkAndAwardAchievements(noid1Id);
     await checkAndAwardAchievements(noid2Id);
     
@@ -346,7 +346,7 @@ async function updateGameModeStats(noidId, gameMode, won) {
 
 async function checkAndAwardAchievements(noidId) {
   try {
-    // Get current stats for this NOID
+    // Get current stats for this NOiD
     const { data: stats } = await supabase
       .from('noid_stats')
       .select('*')
@@ -553,11 +553,11 @@ async function checkAndAwardAchievements(noidId) {
     }
     
     // 7. One-of-One Elite (standalone)
-    if (ONE_OF_ONE_NOIDS.includes(noidId)) {
+    if (ONE_OF_ONE_NOiDS.includes(noidId)) {
       const { data: oneOfOneStats } = await supabase
         .from('noid_stats')
         .select('noid_id, total_wins, total_battles')
-        .in('noid_id', ONE_OF_ONE_NOIDS)
+        .in('noid_id', ONE_OF_ONE_NOiDS)
         .gte('total_battles', 3);
       
       if (oneOfOneStats) {
@@ -594,7 +594,7 @@ async function checkAndAwardAchievements(noidId) {
           noid_id: noidId,
           achievement_type: 'elite_status',
           achievement_name: 'Elite Status',
-          achievement_description: 'Ranked in the top 10% of all NOIDs'
+          achievement_description: 'Ranked in the top 10% of all NOiDs'
         });
       }
     }
@@ -732,7 +732,7 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
     try {
       let query = supabase.from('noid_stats').select('*');
       
-      // For win rate tab, get all NOIDs with at least 3 battles, then sort by Wilson Score
+      // For win rate tab, get all NOiDs with at least 3 battles, then sort by Wilson Score
       // For other tabs, use existing logic
       switch (view) {
         case 'winrate':
@@ -782,7 +782,7 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
         setLeaderboardData(processedData);
       }
       
-      // Fetch images for all NOIDs
+      // Fetch images for all NOiDs
       const imagePromises = processedData.slice(0, 50).map(noid => 
         getNoidImage(noid.noid_id).then(img => ({ id: noid.noid_id, img }))
       );
@@ -861,7 +861,7 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
               >
                 <img 
                   src={images[noid.noid_id] || 'https://via.placeholder.com/60x60?text=...'} 
-                  alt={`NOID #${noid.noid_id}`}
+                  alt={`NOiD #${noid.noid_id}`}
                   className="leaderboard-noid-image"
                 />
                 
@@ -873,7 +873,7 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
                 </div>
 
                 <div className="noid-preview">
-                  <div className="noid-id">NOID #{noid.noid_id}</div>
+                  <div className="noid-id">NOiD #{noid.noid_id}</div>
                   <a 
                     href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid.noid_id}`}
                     target="_blank"
@@ -931,7 +931,7 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
 };
 
 // ============================================
-// NOID PROFILE COMPONENT
+// NOiD PROFILE COMPONENT
 // ============================================
 
 // ============================================
@@ -958,17 +958,17 @@ const Help = ({ onClose }) => {
           
           <div className="help-mode">
             <h4>🎲 Rando Battle</h4>
-            <p>Two completely random NOIDs face off. Vote for your favorite! Simple, fast, and unpredictable.</p>
+            <p>Two completely random NOiDs face off. Vote for your favorite! Simple, fast, and unpredictable.</p>
             <p className="help-limit">Limit: 55 votes per day</p>
           </div>
 
           <div className="help-mode">
             <h4>🏆 Sticky Winner</h4>
-            <p>The winner stays to fight the next challenger. See how long a NOID can maintain their winning streak!</p>
+            <p>The winner stays to fight the next challenger. See how long a NOiD can maintain their winning streak!</p>
             <p className="help-detail"><strong>Fair Play Rules:</strong></p>
             <ul>
-              <li>Your owned NOIDs are excluded from appearing in battles</li>
-              <li>Any NOID that wins 10 battles in a row takes a 24-hour break</li>
+              <li>Your owned NOiDs are excluded from appearing in battles</li>
+              <li>Any NOiD that wins 10 battles in a row takes a 24-hour break</li>
               <li>This prevents both self-pumping and unstoppable dominance</li>
             </ul>
             <p className="help-limit">Limit: 55 votes per day</p>
@@ -976,8 +976,8 @@ const Help = ({ onClose }) => {
 
           <div className="help-mode">
             <h4>👑 One of One Championship</h4>
-            <p>Only the 42 rarest NOIDs with unique 1-of-1 traits compete. This is the elite league where legends are made.</p>
-            <p className="help-detail"><strong>Fair Play:</strong> Your owned 1-of-1 NOIDs are excluded from battles.</p>
+            <p>Only the 42 rarest NOiDs with unique 1-of-1 traits compete. This is the elite league where legends are made.</p>
+            <p className="help-detail"><strong>Fair Play:</strong> Your owned 1-of-1 NOiDs are excluded from battles.</p>
             <p className="help-limit">Limit: 55 votes per day</p>
           </div>
 
@@ -994,12 +994,12 @@ const Help = ({ onClose }) => {
           
           <div className="help-detail">
             <h4>Why Wilson Score?</h4>
-            <p>A NOID with 1 win in 1 battle (100% win rate) shouldn't rank above a NOID with 50 wins in 51 battles (98% win rate). Wilson Score solves this by weighing both:</p>
+            <p>A NOiD with 1 win in 1 battle (100% win rate) shouldn't rank above a NOiD with 50 wins in 51 battles (98% win rate). Wilson Score solves this by weighing both:</p>
             <ul>
               <li><strong>Win Rate</strong> - Your percentage of victories</li>
               <li><strong>Battle Volume</strong> - How many times you've proven it</li>
             </ul>
-            <p>The more battles a NOID wins, the more confident we are in their true skill. This prevents lucky streaks from dominating the leaderboard.</p>
+            <p>The more battles a NOiD wins, the more confident we are in their true skill. This prevents lucky streaks from dominating the leaderboard.</p>
           </div>
 
           <div className="help-detail">
@@ -1018,9 +1018,9 @@ const Help = ({ onClose }) => {
           <ul>
             <li>Vote on battles and tournaments</li>
             <li>Create tournaments (holders only)</li>
-            <li>Enter your NOIDs into tournaments</li>
+            <li>Enter your NOiDs into tournaments</li>
             <li>Track your voting history</li>
-            <li>View your owned NOIDs with battle stats</li>
+            <li>View your owned NOiDs with battle stats</li>
             <li>Generate shareable stat cards</li>
             <li>Earn bonus votes through sharing</li>
           </ul>
@@ -1029,9 +1029,9 @@ const Help = ({ onClose }) => {
 
         <div className="help-section glass-panel">
           <h3>🔗 Share Profile (Earn +10 Votes!)</h3>
-          <p>On any NOID profile page, click "Share Profile" to:</p>
+          <p>On any NOiD profile page, click "Share Profile" to:</p>
           <ul>
-            <li>Generate a custom stat card with the NOID's image and battle record</li>
+            <li>Generate a custom stat card with the NOiD's image and battle record</li>
             <li>Share it on Twitter/X with @thehumanoids tagged</li>
             <li>Paste your tweet link to claim <strong>+10 bonus votes</strong></li>
           </ul>
@@ -1044,12 +1044,12 @@ const Help = ({ onClose }) => {
           
           <div className="help-mode">
             <h4>Creating a Tournament</h4>
-            <p>Only NOID holders can create tournaments. Connect your wallet, set a name, choose bracket size (8, 16, or 32), round timer (15s, 30s, or 60s), max entries per player, and whether it's open or code-gated (private).</p>
+            <p>Only NOiD holders can create tournaments. Connect your wallet, set a name, choose bracket size (8, 16, or 32), round timer (15s, 30s, or 60s), max entries per player, and whether it's open or code-gated (private).</p>
           </div>
 
           <div className="help-mode">
-            <h4>Entering NOIDs</h4>
-            <p>Only NOIDs you own can be entered. Connect your wallet, pick from your collection, and enter them into open slots. The creator can "Fill & Start" to fill remaining slots with random NOIDs.</p>
+            <h4>Entering NOiDs</h4>
+            <p>Only NOiDs you own can be entered. Connect your wallet, pick from your collection, and enter them into open slots. The creator can "Fill & Start" to fill remaining slots with random NOiDs.</p>
           </div>
 
           <div className="help-mode">
@@ -1059,31 +1059,31 @@ const Help = ({ onClose }) => {
 
           <div className="help-mode">
             <h4>Tie-Breaking</h4>
-            <p>If votes are tied, the NOID that received the first vote wins. If nobody votes (0-0), it's a coin flip and no stats are recorded for that matchup.</p>
+            <p>If votes are tied, the NOiD that received the first vote wins. If nobody votes (0-0), it's a coin flip and no stats are recorded for that matchup.</p>
           </div>
 
           <div className="help-mode">
             <h4>Results</h4>
-            <p>Tournament battles feed into the main stats system. View the full bracket at any time, click any NOID to see their profile. Top 3 finishers get podium recognition and you can share results to X.</p>
+            <p>Tournament battles feed into the main stats system. View the full bracket at any time, click any NOiD to see their profile. Top 3 finishers get podium recognition and you can share results to X.</p>
           </div>
         </div>
 
         <div className="help-section glass-panel">
           <h3>🔒 Fair Play</h3>
-          <p>NOIDs Battle uses database-enforced vote limits to ensure fair competition:</p>
+          <p>NOiDs Battle uses database-enforced vote limits to ensure fair competition:</p>
           <ul>
             <li>55 votes per day for Rando, Sticky Winner, and One of One</li>
             <li>1 vote per day for Daily Battle</li>
             <li>+10 bonus votes for sharing to X (once per day)</li>
             <li>Limits reset at midnight UTC</li>
             <li>No bypassing via browser switching or private mode</li>
-            <li>Owned NOIDs excluded from Sticky Winner and One-of-One modes</li>
+            <li>Owned NOiDs excluded from Sticky Winner and One-of-One modes</li>
           </ul>
         </div>
 
         <div className="help-section glass-panel">
           <h3>🔍 Search Function</h3>
-          <p>Click the magnifying glass icon (🔍) in the top-left to search for any NOID by number (1-5555). Instantly view their profile, stats, and battle history.</p>
+          <p>Click the magnifying glass icon (🔍) in the top-left to search for any NOiD by number (1-5555). Instantly view their profile, stats, and battle history.</p>
         </div>
 
         <div className="help-section glass-panel">
@@ -1100,7 +1100,7 @@ const Help = ({ onClose }) => {
           <h3>📈 Statistics Tracking</h3>
           <p>Every vote is recorded and contributes to:</p>
           <ul>
-            <li><strong>Total Battles</strong> - How many times a NOID has been voted on</li>
+            <li><strong>Total Battles</strong> - How many times a NOiD has been voted on</li>
             <li><strong>Wins & Losses</strong> - Complete battle record</li>
             <li><strong>Win Rate</strong> - Percentage calculated from all battles</li>
             <li><strong>Current Streak</strong> - Consecutive wins or losses</li>
@@ -1111,25 +1111,25 @@ const Help = ({ onClose }) => {
         </div>
 
         <div className="help-section glass-panel">
-          <h3>🖼️ My NOIDs</h3>
-          <p>If you own NOIDs, connect your wallet to see:</p>
+          <h3>🖼️ My NOiDs</h3>
+          <p>If you own NOiDs, connect your wallet to see:</p>
           <ul>
-            <li>All NOIDs in your wallet</li>
-            <li>Battle statistics for each NOID</li>
+            <li>All NOiDs in your wallet</li>
+            <li>Battle statistics for each NOiD</li>
             <li>Win rates and records</li>
             <li>Current rankings</li>
           </ul>
-          <p>Click any NOID to view their complete battle history and profile.</p>
+          <p>Click any NOiD to view their complete battle history and profile.</p>
         </div>
 
         <div className="help-section glass-panel">
           <h3>🌐 OpenSea Integration</h3>
-          <p>Click the OpenSea logo on any NOID to view them on OpenSea, check their traits, rarity, and marketplace listings.</p>
+          <p>Click the OpenSea logo on any NOiD to view them on OpenSea, check their traits, rarity, and marketplace listings.</p>
         </div>
 
         <div className="help-section glass-panel">
           <h3>❓ Questions?</h3>
-          <p>NOIDs Battle is a community-driven platform built for the NOIDs collection. All battles, votes, and statistics are transparent and verifiable.</p>
+          <p>NOiDs Battle is a community-driven platform built for the NOiDs collection. All battles, votes, and statistics are transparent and verifiable.</p>
           <p className="help-footer">Built by @NoCredits | Version 0.84 (Beta)</p>
         </div>
       </div>
@@ -1166,11 +1166,11 @@ const generateShareCard = async (noidId, imageUrl, stats) => {
       ctx.fillText('01', x, y);
     }
 
-    // Load NOID image
+    // Load NOiD image
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-      // Draw NOID image (left side, square)
+      // Draw NOiD image (left side, square)
       const imgSize = 500;
       const imgX = 50;
       const imgY = 65;
@@ -1185,10 +1185,10 @@ const generateShareCard = async (noidId, imageUrl, stats) => {
       // Right side - Stats
       const rightX = 600;
       
-      // NOID number
+      // NOiD number
       ctx.fillStyle = '#00ff41';
       ctx.font = 'bold 80px Arial';
-      ctx.fillText(`NOID #${noidId}`, rightX, 120);
+      ctx.fillText(`NOiD #${noidId}`, rightX, 120);
 
       // Stats
       ctx.font = 'bold 48px Arial';
@@ -1260,7 +1260,7 @@ const generateAchievementsShareCard = async (noidId, achievements, imageUrl) => 
       ctx.fillRect(x, y, 2, height);
     }
 
-    // Left side - NOID image
+    // Left side - NOiD image
     if (imageUrl) {
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -1291,7 +1291,7 @@ const generateAchievementsShareCard = async (noidId, achievements, imageUrl) => 
       // Title
       ctx.fillStyle = '#00ff41';
       ctx.font = 'bold 48px Arial';
-      ctx.fillText(`NOID #${noidId}`, 500, 80);
+      ctx.fillText(`NOiD #${noidId}`, 500, 80);
 
       // Achievement count
       ctx.fillStyle = '#ffffff';
@@ -1389,7 +1389,7 @@ const ShareButton = ({ noidId, imageUrl, stats, walletAddress }) => {
         ? ((stats.total_wins / stats.total_battles) * 100).toFixed(1)
         : 0;
       
-      const tweetText = `NOID #${noidId} is crushing it! ${winRate}% win rate 🔥\nVote and See how your NOiDS are doing (and generate stats like this) at https://noidsbattle.com\n@thehumanoids`;
+      const tweetText = `NOiD #${noidId} is crushing it! ${winRate}% win rate 🔥\nVote and See how your NOiDS are doing (and generate stats like this) at https://noidsbattle.com\n@thehumanoids`;
       
       // Download image
       const url = URL.createObjectURL(imageBlob);
@@ -1576,7 +1576,7 @@ const ShareAchievementsButton = ({ noidId, achievements, imageUrl, userWallet })
 
       // Generate tweet text
       const achievementNames = achievements.map(a => a.achievement_name).join(', ');
-      const tweetText = `NOID #${noidId} has unlocked ${achievements.length} achievement${achievements.length !== 1 ? 's' : ''}! 🏆\n${achievementNames}\n\nCheck out the stats at https://noidsbattle.com\n@thehumanoids`;
+      const tweetText = `NOiD #${noidId} has unlocked ${achievements.length} achievement${achievements.length !== 1 ? 's' : ''}! 🏆\n${achievementNames}\n\nCheck out the stats at https://noidsbattle.com\n@thehumanoids`;
       
       // Open Twitter
       const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
@@ -1727,7 +1727,7 @@ const ShareAchievementsButton = ({ noidId, achievements, imageUrl, userWallet })
 };
 
 // ============================================
-// NOID PROFILE COMPONENT
+// NOiD PROFILE COMPONENT
 // ============================================
 
 const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetchNoidImage, setSelectedNoidId, setView }) => {
@@ -1840,7 +1840,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
         <MatrixRain />
         <div className="loading-state">
           <div className="loading-spinner"></div>
-          <p>Loading NOID profile...</p>
+          <p>Loading NOiD profile...</p>
         </div>
       </div>
     );
@@ -1851,8 +1851,8 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
       <div className="profile-container">
         <MatrixRain />
         <div className="glass-panel empty-state">
-          <h2>NOID #{noidId}</h2>
-          <p>This NOID hasn't battled yet!</p>
+          <h2>NOiD #{noidId}</h2>
+          <p>This NOiD hasn't battled yet!</p>
           <button className="back-btn" onClick={onClose}>Back to Menu</button>
         </div>
       </div>
@@ -1868,18 +1868,18 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
           <span className="back-arrow">←</span>
           Back
         </button>
-        <h2 className="profile-title">NOID #{noidId}</h2>
+        <h2 className="profile-title">NOiD #{noidId}</h2>
         <div className="spacer"></div>
       </div>
 
       <div className="profile-content">
         <div className="profile-hero glass-panel">
           <div className="hero-image">
-            {imageUrl && <img src={imageUrl} alt={`NOID #${noidId}`} />}
+            {imageUrl && <img src={imageUrl} alt={`NOiD #${noidId}`} />}
           </div>
           <div className="hero-stats">
             <div className="hero-title">
-              <h1>NOID #{noidId}</h1>
+              <h1>NOiD #{noidId}</h1>
               <a 
                 href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noidId}`}
                 target="_blank"
@@ -2059,7 +2059,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
                         <div className="h2h-opponent">
                           <img 
                             src={imageCache[h2h.opponent_id] || 'https://via.placeholder.com/50x50?text=Loading'} 
-                            alt={`NOID #${h2h.opponent_id}`}
+                            alt={`NOiD #${h2h.opponent_id}`}
                             className="h2h-thumbnail"
                             onClick={() => {
                               setSelectedNoidId(h2h.opponent_id);
@@ -2082,7 +2082,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
                                 setView('profile');
                               }}
                             >
-                              NOID #{h2h.opponent_id}
+                              NOiD #{h2h.opponent_id}
                             </span>
                             <span className="battles-count">{h2h.battles} battles</span>
                           </div>
@@ -2104,7 +2104,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
                 <div className="beaten-list">
                   {beaten.map(b => (
                     <div key={b.beaten_id} className="beaten-item">
-                      <span className="beaten-id">NOID #{b.beaten_id}</span>
+                      <span className="beaten-id">NOiD #{b.beaten_id}</span>
                       <span className="times-beaten">{b.times_beaten}x</span>
                     </div>
                   ))}
@@ -2121,7 +2121,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
                 <div className="beaten-list">
                   {beatenBy.map(b => (
                     <div key={b.beaten_by_id} className="beaten-item nemesis">
-                      <span className="beaten-id">NOID #{b.beaten_by_id}</span>
+                      <span className="beaten-id">NOiD #{b.beaten_by_id}</span>
                       <span className="times-beaten">{b.times_beaten}x</span>
                     </div>
                   ))}
@@ -2257,7 +2257,7 @@ const TopNoidsScroller = React.memo(({ onNoidClick }) => {
             }
           }
         } catch (error) {
-          console.error(`Error fetching NOID #${noidId}:`, error);
+          console.error(`Error fetching NOiD #${noidId}:`, error);
         }
       }
 
@@ -2320,7 +2320,7 @@ const TopNoidsScroller = React.memo(({ onNoidClick }) => {
               <div className="scroller-rank">#{rank}</div>
               <img 
                 src={images[noid.noid_id] || 'https://via.placeholder.com/100x100?text=Loading'} 
-                alt={`NOID #${noid.noid_id}`}
+                alt={`NOiD #${noid.noid_id}`}
                 className="scroller-image"
               />
               <div className="scroller-info">
@@ -2351,16 +2351,16 @@ const SearchModal = ({ isOpen, onClose, onSearch }) => {
     const noidId = parseInt(searchInput);
     
     if (!searchInput || isNaN(noidId)) {
-      setError('Please enter a NOID number');
+      setError('Please enter a NOiD number');
       return;
     }
     
     if (noidId < 1 || noidId > 5555) {
-      setError('That NOID lives only in your imagination!');
+      setError('That NOiD lives only in your imagination!');
       return;
     }
     
-    // Valid NOID - open profile
+    // Valid NOiD - open profile
     onSearch(noidId);
     setSearchInput('');
     setError('');
@@ -2384,14 +2384,14 @@ const SearchModal = ({ isOpen, onClose, onSearch }) => {
       <div className="search-modal glass-panel" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={handleClose}>×</button>
         
-        <h2>Search for a NOID</h2>
+        <h2>Search for a NOiD</h2>
         
         <form onSubmit={handleSubmit}>
           <input
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
-            placeholder="Enter NOID # (1-5555)"
+            placeholder="Enter NOiD # (1-5555)"
             value={searchInput}
             onChange={handleInputChange}
             maxLength="4"
@@ -2402,7 +2402,7 @@ const SearchModal = ({ isOpen, onClose, onSearch }) => {
           {error && <div className="search-error">{error}</div>}
           
           <button type="submit" className="search-submit-btn">
-            Go to NOID
+            Go to NOiD
           </button>
         </form>
       </div>
@@ -2567,7 +2567,7 @@ function App() {
       }
       setUserId(id);
       checkDailyVotes(id);
-      setUserOwnedNoids([]); // Clear owned NOIDs when wallet disconnects
+      setUserOwnedNoids([]); // Clear owned NOiDs when wallet disconnects
     }
   }, [isConnected, address]);
 
@@ -2635,29 +2635,29 @@ function App() {
       );
 
       if (!response.ok) {
-        console.error('Failed to fetch user NOIDs');
+        console.error('Failed to fetch user NOiDs');
         return;
       }
 
       const data = await response.json();
       const ownedIds = data.nfts.map(nft => parseInt(nft.identifier));
       setUserOwnedNoids(ownedIds);
-      console.log(`✓ User owns ${ownedIds.length} NOIDs:`, ownedIds);
+      console.log(`✓ User owns ${ownedIds.length} NOiDs:`, ownedIds);
     } catch (error) {
-      console.error('Error fetching user NOIDs:', error);
+      console.error('Error fetching user NOiDs:', error);
     }
   };
 
   const getRandomNoid = (exclude = []) => {
     let num;
     do {
-      num = Math.floor(Math.random() * TOTAL_NOIDS) + 1;
+      num = Math.floor(Math.random() * TOTAL_NOiDS) + 1;
     } while (exclude.includes(num));
     return num;
   };
 
   const getRandomOneOfOne = (exclude = []) => {
-    const available = ONE_OF_ONE_NOIDS.filter(id => !exclude.includes(id));
+    const available = ONE_OF_ONE_NOiDS.filter(id => !exclude.includes(id));
     if (available.length === 0) return getRandomNoid(exclude);
     return available[Math.floor(Math.random() * available.length)];
   };
@@ -2693,7 +2693,7 @@ function App() {
 
       throw new Error('No image URL in response');
     } catch (error) {
-      console.error(`Error fetching image for NOID #${tokenId}:`, error);
+      console.error(`Error fetching image for NOiD #${tokenId}:`, error);
       // Fallback to IPFS if API fails
       return `https://gateway.pinata.cloud/ipfs/QmcXuDARMGMv59Q4ZZuoN5rjdM9GQrmp8NjLH5PDLixgAE/${tokenId}`;
     }
@@ -2724,7 +2724,7 @@ function App() {
       setImageCache(prev => ({...prev, [tokenId]: imageUrl}));
       return imageUrl;
     } catch (error) {
-      console.error(`Error fetching image for NOID #${tokenId}:`, error);
+      console.error(`Error fetching image for NOiD #${tokenId}:`, error);
       return null;
     }
   }, [imageCache]);
@@ -2760,7 +2760,7 @@ function App() {
           const currentStreak = parseInt(localStorage.getItem(streakKey) || '0');
           
           if (currentStreak >= 10) {
-            alert(`NOID #${stickyWinner.id} has dominated with 10 wins today! 🔥\nThey're taking a 24hr break. Starting fresh battle...`);
+            alert(`NOiD #${stickyWinner.id} has dominated with 10 wins today! 🔥\nThey're taking a 24hr break. Starting fresh battle...`);
             setStickyWinner(null);
             setStickyWinStreak(0);
             // Start fresh battle
@@ -2990,7 +2990,7 @@ function App() {
             
             // Check if hit 10-win cap
             if (currentStreak >= 10) {
-              alert(`NOID #${newStickyWinner.id} just hit 10 wins in a row! 🔥\nThey're taking a 24hr break. Starting fresh battle...`);
+              alert(`NOiD #${newStickyWinner.id} just hit 10 wins in a row! 🔥\nThey're taking a 24hr break. Starting fresh battle...`);
               const id1 = getRandomNoid(userOwnedNoids);
               const id2 = getRandomNoid([id1, ...userOwnedNoids]);
               const [img1, img2] = await Promise.all([
@@ -3077,7 +3077,7 @@ function App() {
         <button 
           className="search-header-btn"
           onClick={() => setShowSearchModal(true)}
-          title="Search for a NOID"
+          title="Search for a NOiD"
         >
           <span className="search-icon">🔍</span>
         </button>
@@ -3107,7 +3107,7 @@ function App() {
             onClick={() => setView('mynoids')}
           >
             <span className="noids-icon">🖼️</span>
-            <span className="noids-text">My NOIDs</span>
+            <span className="noids-text">My NOiDs</span>
           </button>
         )}
       </div>
@@ -3118,7 +3118,7 @@ function App() {
           alt="NOiDS Battle Logo" 
           className="main-logo"
         />
-        <p className="subtitle">Which NOID reigns supreme?</p>
+        <p className="subtitle">Which NOiD reigns supreme?</p>
       </div>
       <TopNoidsScroller 
         onNoidClick={(noidId) => {
@@ -3277,10 +3277,10 @@ function App() {
             >
               <div className="card-glow"></div>
               <div className="image-container">
-                <img src={noid1?.image} alt={`NOID #${noid1?.id}`} />
+                <img src={noid1?.image} alt={`NOiD #${noid1?.id}`} />
               </div>
               <div className="noid-info">
-                <h3>NOID #{noid1?.id}</h3>
+                <h3>NOiD #{noid1?.id}</h3>
                 <a 
                   href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid1?.id}`}
                   target="_blank"
@@ -3319,10 +3319,10 @@ function App() {
           >
             <div className="card-glow"></div>
             <div className="image-container">
-              <img src={noid2?.image} alt={`NOID #${noid2?.id}`} />
+              <img src={noid2?.image} alt={`NOiD #${noid2?.id}`} />
             </div>
             <div className="noid-info">
-              <h3>NOID #{noid2?.id}</h3>
+              <h3>NOiD #{noid2?.id}</h3>
               <a 
                 href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid2?.id}`}
                 target="_blank"
