@@ -3223,7 +3223,6 @@ function App() {
       >
         📊 View Stats & Leaderboard
       </button>
-      </div>
     </div>
   );
 
