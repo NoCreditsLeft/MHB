@@ -1012,9 +1012,11 @@ const Help = ({ onClose }) => {
 
         <div className="help-section glass-panel">
           <h3>💳 Wallet Connection</h3>
-          <p>Connect your wallet to:</p>
+          <p>Tournaments can be viewed and browsed without a wallet. Connect your wallet to:</p>
           <ul>
-            <li>Vote on battles (required)</li>
+            <li>Vote on battles and tournaments</li>
+            <li>Create tournaments (holders only)</li>
+            <li>Enter your NOIDs into tournaments</li>
             <li>Track your voting history</li>
             <li>View your owned NOIDs with battle stats</li>
             <li>Generate shareable stat cards</li>
@@ -1034,13 +1036,13 @@ const Help = ({ onClose }) => {
           <p className="help-limit">Limit: Once per 24 hours</p>
         </div>
 
-        <div className="help-section glass-panel">
+<div className="help-section glass-panel">
           <h3>🏟️ Tournaments</h3>
-          <p>Create or join single-elimination bracket tournaments where the community votes on every matchup live.</p>
+          <p>Single-elimination bracket tournaments where the community votes on every matchup live. Anyone can view and vote — no wallet needed to participate!</p>
           
           <div className="help-mode">
             <h4>Creating a Tournament</h4>
-            <p>Set a name, choose bracket size (8, 16, or 32), round timer (15s, 30s, or 60s), max entries per player, and whether it's open or code-gated (private).</p>
+            <p>Only NOID holders can create tournaments. Connect your wallet, set a name, choose bracket size (8, 16, or 32), round timer (15s, 30s, or 60s), max entries per player, and whether it's open or code-gated (private).</p>
           </div>
 
           <div className="help-mode">
@@ -1050,7 +1052,7 @@ const Help = ({ onClose }) => {
 
           <div className="help-mode">
             <h4>Live Voting</h4>
-            <p>Everyone watches the same matchup at the same time. Each round has a countdown timer — vote before it hits zero. One vote per wallet per matchup. Tournament votes don't count against your daily 55 limit.</p>
+            <p>Everyone watches the same matchup at the same time. Each round has a countdown timer — vote before it hits zero. Connect your wallet to cast your vote — one vote per wallet per matchup. Tournament votes don't count against your daily 55 limit.</p>
           </div>
 
           <div className="help-mode">
@@ -1060,7 +1062,7 @@ const Help = ({ onClose }) => {
 
           <div className="help-mode">
             <h4>Results</h4>
-            <p>Tournament battles feed into the main stats system. View the full bracket at any time, click any NOID to see their profile. Top 3 finishers get podium recognition.</p>
+            <p>Tournament battles feed into the main stats system. View the full bracket at any time, click any NOID to see their profile. Top 3 finishers get podium recognition and you can share results to X.</p>
           </div>
         </div>
 
