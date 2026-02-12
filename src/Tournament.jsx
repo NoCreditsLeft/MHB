@@ -192,6 +192,41 @@ const CountdownOverlay = ({ seconds, title, subtitle, onComplete }) => {
 };
 
 // ============================================
+// COIN FLIP OVERLAY
+// ============================================
+
+const CoinFlipOverlay = ({ winnerId, getImg }) => {
+  const [phase, setPhase] = useState('flip'); // flip, reveal
+
+  useEffect(() => {
+    const timer = setTimeout(() => setPhase('reveal'), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className="coinflip-overlay">
+      <div className="coinflip-content glass-panel">
+        {phase === 'flip' ? (
+          <>
+            <div className="coinflip-coin">🪙</div>
+            <h2 className="coinflip-title">Coin Flip!</h2>
+            <p className="coinflip-subtitle">0-0 tie — deciding by coin flip...</p>
+          </>
+        ) : (
+          <>
+            <div className="coinflip-winner-img">
+              {getImg(winnerId) && <img src={getImg(winnerId)} alt="" />}
+            </div>
+            <h2 className="coinflip-title" style={{ color: '#ffd700' }}>NOID #{winnerId} wins!</h2>
+            <p className="coinflip-subtitle">Lucky flip 🍀</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================
 // SHARE TOURNAMENT RESULT
 // ============================================
 
@@ -1015,6 +1050,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   const [roundTransition, setRoundTransition] = useState(null);
   const [tournamentComplete, setTournamentComplete] = useState(false);
   const [startingCountdown, setStartingCountdown] = useState(null);
+  const [coinFlipData, setCoinFlipData] = useState(null); // { winnerId, loserId }
   const timerRef = useRef(null);
   const pollRef = useRef(null);
   const activeMatchupIdRef = useRef(null);
@@ -1114,6 +1150,16 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       // Find active matchup
       const active = (allMatchups || []).find(m => m.status === 'active');
       if (active && active.id !== activeMatchupIdRef.current) {
+        // Check if the previous matchup was a coin flip
+        const prevId = activeMatchupIdRef.current;
+        if (prevId) {
+          const prevMatchup = (allMatchups || []).find(m => m.id === prevId && m.status === 'completed' && m.is_coin_flip);
+          if (prevMatchup) {
+            setCoinFlipData({ winnerId: prevMatchup.winner_id, loserId: prevMatchup.winner_id === prevMatchup.noid1_id ? prevMatchup.noid2_id : prevMatchup.noid1_id });
+            // Show for 3 seconds then clear
+            setTimeout(() => setCoinFlipData(null), 3000);
+          }
+        }
         activeMatchupIdRef.current = active.id;
         setActiveMatchup(active);
         setHasVoted(false);
@@ -1480,6 +1526,8 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         <h2 className="tournament-title">{tournament.tournament_name}</h2>
         <button className="bracket-toggle-btn" onClick={() => setShowBracket(true)}>📊 Bracket</button>
       </div>
+
+      {coinFlipData && <CoinFlipOverlay winnerId={coinFlipData.winnerId} getImg={getImg} />}
 
       <div className="live-round-info glass-panel">
         <span className="round-name-live">{activeMatchup ? activeMatchup.round_name : 'Waiting...'}</span>
