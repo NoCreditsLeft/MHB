@@ -474,48 +474,97 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
       )}
 
       {phase === 'voting' && (
-        <div className="h2h-voting-phase">
-          <div className="h2h-voting-header">
-            <h2>⚔️ HEAD TO HEAD</h2>
-            <div className={`h2h-timer ${votingTimeLeft <= 5 ? 'h2h-timer-urgent' : ''}`}>⏱️ {votingTimeLeft}s</div>
+        <>
+          <div className="live-round-info glass-panel">
+            <span className="round-name-live">⚔️ Head to Head</span>
+            <span className="matchup-counter">Match 1 of 1</span>
           </div>
-          <div className="h2h-voting-matchup">
-            <button className={`h2h-vote-btn ${votedFor === battle.noid1_id ? 'h2h-voted' : ''} ${hasVoted && votedFor !== battle.noid1_id ? 'h2h-not-voted' : ''}`} onClick={() => handleVote(battle.noid1_id)} disabled={hasVoted}>
-              {getImage(battle.noid1_id) ? <img src={getImage(battle.noid1_id)} alt="" className="h2h-vote-img" /> : <div className="h2h-vote-placeholder">#{battle.noid1_id}</div>}
-              <span className="h2h-vote-number">#{battle.noid1_id}</span>
-              {hasVoted && <span className="h2h-vote-count">{battle.noid1_votes} votes</span>}
-            </button>
-            <div className="h2h-voting-vs">VS</div>
-            <button className={`h2h-vote-btn ${votedFor === battle.noid2_id ? 'h2h-voted' : ''} ${hasVoted && votedFor !== battle.noid2_id ? 'h2h-not-voted' : ''}`} onClick={() => handleVote(battle.noid2_id)} disabled={hasVoted}>
-              {getImage(battle.noid2_id) ? <img src={getImage(battle.noid2_id)} alt="" className="h2h-vote-img" /> : <div className="h2h-vote-placeholder">#{battle.noid2_id}</div>}
-              <span className="h2h-vote-number">#{battle.noid2_id}</span>
-              {hasVoted && <span className="h2h-vote-count">{battle.noid2_votes} votes</span>}
-            </button>
+
+          <div className={`live-timer ${votingTimeLeft <= 5 ? 'urgent' : ''}`}>
+            <div className="timer-number">{votingTimeLeft}</div>
+            <div className="timer-label">seconds</div>
           </div>
-          {!hasVoted && <p className="h2h-vote-prompt">Tap to vote!</p>}
-          {hasVoted && <p className="h2h-vote-confirm">✅ Vote locked in for NOiD #{votedFor}</p>}
-        </div>
+
+          <div className="battle-arena tournament-arena">
+            <div
+              className={`noid-card glass-card ${hasVoted && votedFor === battle.noid1_id ? 'voted-winner' : ''} ${hasVoted && votedFor !== battle.noid1_id ? 'voted-other' : ''}`}
+              onClick={() => handleVote(battle.noid1_id)}
+              style={{ cursor: hasVoted ? 'default' : 'pointer', border: '3px solid #FFD700' }}
+            >
+              <div className="card-glow"></div>
+              <div className="image-container">
+                {getImage(battle.noid1_id) && <img src={getImage(battle.noid1_id)} alt={`NOiD #${battle.noid1_id}`} />}
+              </div>
+              <div className="noid-info">
+                <h3>NOiD #{battle.noid1_id}</h3>
+                {hasVoted && (
+                  <div className="vote-count"><span className="vote-label">Votes:</span><span className="vote-number">{battle.noid1_votes}</span></div>
+                )}
+              </div>
+            </div>
+
+            <div className="vs-divider"><div className="vs-circle"><span>VS</span></div></div>
+
+            <div
+              className={`noid-card glass-card ${hasVoted && votedFor === battle.noid2_id ? 'voted-winner' : ''} ${hasVoted && votedFor !== battle.noid2_id ? 'voted-other' : ''}`}
+              onClick={() => handleVote(battle.noid2_id)}
+              style={{ cursor: hasVoted ? 'default' : 'pointer', border: '3px solid #FFD700' }}
+            >
+              <div className="card-glow"></div>
+              <div className="image-container">
+                {getImage(battle.noid2_id) && <img src={getImage(battle.noid2_id)} alt={`NOiD #${battle.noid2_id}`} />}
+              </div>
+              <div className="noid-info">
+                <h3>NOiD #{battle.noid2_id}</h3>
+                {hasVoted && (
+                  <div className="vote-count"><span className="vote-label">Votes:</span><span className="vote-number">{battle.noid2_votes}</span></div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {hasVoted && <div className="voted-confirmation glass-panel"><span>✔ Vote recorded — waiting for timer...</span></div>}
+        </>
       )}
 
       {phase === 'completed' && battle.winner_id && (
         <div className="h2h-completed-phase">
           <h2 className="h2h-phase-title">⚔️ BATTLE RESULTS</h2>
-          <div className="h2h-result-matchup">
-            <div className={`h2h-result-noid ${winnerId === battle.noid1_id ? 'h2h-winner' : 'h2h-loser'}`}>
-              {getImage(battle.noid1_id) && <img src={getImage(battle.noid1_id)} alt="" className="h2h-result-img" />}
-              <span className="h2h-result-label">{winnerId === battle.noid1_id ? '🥇' : '🥈'} #{battle.noid1_id}</span>
-              <span className="h2h-result-votes">{battle.noid1_votes} votes</span>
+          <div className="battle-arena tournament-arena">
+            <div className={`noid-card glass-card ${winnerId === battle.noid1_id ? 'voted-winner' : 'voted-other'}`}
+              style={winnerId === battle.noid1_id ? { border: '4px solid #FFD700', boxShadow: '0 0 30px rgba(255,215,0,0.4)' } : {}}
+            >
+              <div className="card-glow"></div>
+              <div className="image-container">
+                {getImage(battle.noid1_id) && <img src={getImage(battle.noid1_id)} alt="" />}
+              </div>
+              <div className="noid-info">
+                <h3>{winnerId === battle.noid1_id ? '🥇' : '🥈'} NOiD #{battle.noid1_id}</h3>
+                <div className="vote-count"><span className="vote-label">Votes:</span><span className="vote-number">{battle.noid1_votes}</span></div>
+              </div>
             </div>
-            <div className="h2h-result-center">
-              <span className="h2h-result-score">{battle.noid1_votes} - {battle.noid2_votes}</span>
+
+            <div className="vs-divider">
+              <div className="vs-circle">
+                <span>{battle.noid1_votes} - {battle.noid2_votes}</span>
+              </div>
               {battle.is_coin_flip && <span className="h2h-coinflip-badge">🪙 Coin Flip</span>}
             </div>
-            <div className={`h2h-result-noid ${winnerId === battle.noid2_id ? 'h2h-winner' : 'h2h-loser'}`}>
-              {getImage(battle.noid2_id) && <img src={getImage(battle.noid2_id)} alt="" className="h2h-result-img" />}
-              <span className="h2h-result-label">{winnerId === battle.noid2_id ? '🥇' : '🥈'} #{battle.noid2_id}</span>
-              <span className="h2h-result-votes">{battle.noid2_votes} votes</span>
+
+            <div className={`noid-card glass-card ${winnerId === battle.noid2_id ? 'voted-winner' : 'voted-other'}`}
+              style={winnerId === battle.noid2_id ? { border: '4px solid #FFD700', boxShadow: '0 0 30px rgba(255,215,0,0.4)' } : {}}
+            >
+              <div className="card-glow"></div>
+              <div className="image-container">
+                {getImage(battle.noid2_id) && <img src={getImage(battle.noid2_id)} alt="" />}
+              </div>
+              <div className="noid-info">
+                <h3>{winnerId === battle.noid2_id ? '🥇' : '🥈'} NOiD #{battle.noid2_id}</h3>
+                <div className="vote-count"><span className="vote-label">Votes:</span><span className="vote-number">{battle.noid2_votes}</span></div>
+              </div>
             </div>
           </div>
+
           <div className="h2h-share-actions">
             <button className="h2h-share-btn" onClick={() => { downloadShareImage(); shareToX(); }}>📸 Share to 𝕏</button>
             <button className="h2h-back-btn" onClick={onClose}>← Back to Lobby</button>
