@@ -6,6 +6,8 @@ import MyNoids from './MyNoids';
 import './App.css';
 import Tournament, { LiveTournamentBanner } from './Tournament';
 import './Tournament.css';
+import HeadToHead from './HeadToHead';
+import './HeadToHead.css';
 
 // Supabase configuration
 const supabaseUrl = 'https://jvmddbqxhfaicyctmmvt.supabase.co';
@@ -3118,7 +3120,6 @@ function App() {
         />
         <p className="subtitle">Which NOID reigns supreme?</p>
       </div>
-
       <TopNoidsScroller 
         onNoidClick={(noidId) => {
           setSelectedNoidId(noidId);
@@ -3192,7 +3193,7 @@ function App() {
           >
             <span className="mode-grid-icon">⚔️</span>
             <div className="mode-grid-text">
-              <h4>H2H Battle</h4>
+              <h4>Head 2 Head</h4>
               <p>1v1 live showdown</p>
             </div>
           </button>
@@ -3366,6 +3367,18 @@ function App() {
             setView('profile');
           }}
           getNoidImage={getNoidImage}
+        />
+      )}
+      {view === 'h2h' && (
+        <HeadToHead
+          walletAddress={address?.toLowerCase()}
+          onClose={() => setView('menu')}
+          showWalletModal={() => setShowWalletModal(true)}
+          onViewNoid={(noidId) => {
+            setSelectedNoidId(noidId);
+            setView('profile');
+          }}
+          parentImageCache={imageCache}
         />
       )}
       {view === 'tournament' && (
