@@ -456,27 +456,103 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
     const canvas = document.createElement('canvas');
     canvas.width = 1200; canvas.height = 630;
     const ctx = canvas.getContext('2d');
+
+    // Background
     ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, 1200, 630);
-    ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 4; ctx.strokeRect(10, 10, 1180, 610);
-    ctx.fillStyle = '#00ff41'; ctx.font = 'bold 42px monospace'; ctx.textAlign = 'center';
-    ctx.fillText('⚔️ HEAD TO HEAD ⚔️', 600, 60);
+
+    // Title
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#00ff41'; ctx.font = 'bold 36px monospace';
+    ctx.fillText('⚔️  BATTLE RESULTS  ⚔️', 600, 50);
+
     const w = battle.winner_id, l = w === battle.noid1_id ? battle.noid2_id : battle.noid1_id;
-    const loadImg = (src) => new Promise((resolve, reject) => { const img = new Image(); img.crossOrigin = 'anonymous'; img.onload = () => resolve(img); img.onerror = reject; img.src = src; });
-    try {
-      const [winImg, loseImg] = await Promise.all([loadImg(getImage(w)), loadImg(getImage(l))]);
-      ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 6; ctx.strokeRect(100, 100, 250, 250); ctx.drawImage(winImg, 100, 100, 250, 250);
-      ctx.fillStyle = '#FFD700'; ctx.font = 'bold 28px monospace'; ctx.fillText(`🥇 #${w}`, 225, 390);
-      ctx.strokeStyle = '#888'; ctx.lineWidth = 4; ctx.strokeRect(850, 120, 200, 200); ctx.drawImage(loseImg, 850, 120, 200, 200);
-      ctx.fillStyle = '#888'; ctx.font = 'bold 24px monospace'; ctx.fillText(`🥈 #${l}`, 950, 360);
-    } catch (e) { console.error('Share image error:', e); }
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 60px monospace'; ctx.fillText('VS', 600, 250);
     const winVotes = w === battle.noid1_id ? battle.noid1_votes : battle.noid2_votes;
     const loseVotes = w === battle.noid1_id ? battle.noid2_votes : battle.noid1_votes;
-    ctx.fillStyle = '#00ff41'; ctx.font = 'bold 48px monospace'; ctx.fillText(`${winVotes} - ${loseVotes}`, 600, 450);
+    const loadImg = (src) => new Promise((resolve, reject) => { const img = new Image(); img.crossOrigin = 'anonymous'; img.onload = () => resolve(img); img.onerror = reject; img.src = src; });
+
+    // Card dimensions - winner bigger
+    const winSize = 280, loseSize = 220;
+    const winX = 140, winY = 90;
+    const loseX = 840, loseY = 120;
+
+    try {
+      const [winImg, loseImg] = await Promise.all([loadImg(getImage(w)), loadImg(getImage(l))]);
+
+      // Winner card - green glow + border
+      ctx.shadowColor = '#00ff41'; ctx.shadowBlur = 30;
+      ctx.strokeStyle = '#00ff41'; ctx.lineWidth = 4;
+      ctx.strokeRect(winX - 4, winY - 4, winSize + 8, winSize + 8);
+      ctx.shadowBlur = 0;
+
+      // Winner card background
+      ctx.fillStyle = 'rgba(0, 255, 65, 0.08)';
+      ctx.fillRect(winX - 20, winY - 20, winSize + 40, winSize + 160);
+      ctx.strokeStyle = '#00ff41'; ctx.lineWidth = 3;
+      ctx.strokeRect(winX - 20, winY - 20, winSize + 40, winSize + 160);
+
+      // Winner image
+      ctx.drawImage(winImg, winX, winY, winSize, winSize);
+
+      // Winner label
+      ctx.fillStyle = '#00ff41'; ctx.font = 'bold 28px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`🥇 NOiD #${w}`, winX + winSize / 2, winY + winSize + 40);
+
+      // Winner votes pill
+      const wPillX = winX + 20, wPillY = winY + winSize + 55, wPillW = winSize - 40, wPillH = 36;
+      ctx.fillStyle = 'rgba(0, 255, 65, 0.15)'; 
+      ctx.beginPath(); ctx.roundRect(wPillX, wPillY, wPillW, wPillH, 18); ctx.fill();
+      ctx.strokeStyle = 'rgba(0, 255, 65, 0.4)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(wPillX, wPillY, wPillW, wPillH, 18); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.font = '16px monospace';
+      ctx.fillText(`VOTES:`, winX + winSize / 2 - 20, wPillY + 24);
+      ctx.fillStyle = '#00ff41'; ctx.font = 'bold 18px monospace';
+      ctx.fillText(`${winVotes}`, winX + winSize / 2 + 30, wPillY + 24);
+
+      // Loser card - dimmer
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.fillRect(loseX - 15, loseY - 15, loseSize + 30, loseSize + 140);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; ctx.lineWidth = 2;
+      ctx.strokeRect(loseX - 15, loseY - 15, loseSize + 30, loseSize + 140);
+      ctx.drawImage(loseImg, loseX, loseY, loseSize, loseSize);
+      ctx.globalAlpha = 1.0;
+
+      // Loser label
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; ctx.font = 'bold 24px monospace';
+      ctx.fillText(`🥈 NOiD #${l}`, loseX + loseSize / 2, loseY + loseSize + 35);
+
+      // Loser votes pill
+      const lPillX = loseX + 15, lPillY = loseY + loseSize + 50, lPillW = loseSize - 30, lPillH = 32;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.beginPath(); ctx.roundRect(lPillX, lPillY, lPillW, lPillH, 16); ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(lPillX, lPillY, lPillW, lPillH, 16); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '14px monospace';
+      ctx.fillText(`VOTES:`, loseX + loseSize / 2 - 16, lPillY + 22);
+      ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = 'bold 16px monospace';
+      ctx.fillText(`${loseVotes}`, loseX + loseSize / 2 + 24, lPillY + 22);
+
+    } catch (e) { console.error('Share image error:', e); }
+
+    // Score circle in center
+    const cx = 600, cy = 280;
+    ctx.strokeStyle = '#00ff41'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(cx, cy, 50, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#00ff41'; ctx.font = 'bold 32px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${winVotes} - ${loseVotes}`, cx, cy + 12);
+
+    // Result text below circle
     const margin = Math.abs(battle.noid1_votes - battle.noid2_votes);
     const result = battle.is_coin_flip ? 'Won by coin flip! 🪙' : margin >= 4 ? 'SMOKED! 💨' : margin >= 2 ? 'Beaten!' : 'Close one!';
-    ctx.fillStyle = '#fff'; ctx.font = '28px monospace'; ctx.fillText(result, 600, 510);
-    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '18px monospace'; ctx.fillText('noidsbattle.com | #NOiDSBattle', 600, 590);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'; ctx.font = '22px monospace';
+    ctx.fillText(result, cx, cy + 70);
+
+    // Footer
+    ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '16px monospace';
+    ctx.fillText('noidsbattle.com | #NOiDSBattle', 600, 610);
+
     const link = document.createElement('a'); link.download = `h2h-${battle.noid1_id}-vs-${battle.noid2_id}.png`; link.href = canvas.toDataURL('image/png'); link.click();
   };
 
