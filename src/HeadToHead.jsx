@@ -547,7 +547,7 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
     const margin = Math.abs(battle.noid1_votes - battle.noid2_votes);
     const result = battle.is_coin_flip ? 'Won by coin flip! 🪙' : margin >= 4 ? 'SMOKED! 💨' : margin >= 2 ? 'Beaten!' : 'Close one!';
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'; ctx.font = '22px monospace';
-    ctx.fillText(result, cx, cy + 70);
+    ctx.fillText(result, cx, cy + 90);
 
     // Footer
     ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '16px monospace';
