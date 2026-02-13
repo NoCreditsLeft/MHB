@@ -538,10 +538,10 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
     // Score circle in center
     const cx = 600, cy = 280;
     ctx.strokeStyle = '#00ff41'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(cx, cy, 50, 0, Math.PI * 2); ctx.stroke();
-    ctx.fillStyle = '#00ff41'; ctx.font = 'bold 32px monospace';
+    ctx.beginPath(); ctx.arc(cx, cy, 65, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#00ff41'; ctx.font = 'bold 40px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(`${winVotes} - ${loseVotes}`, cx, cy + 12);
+    ctx.fillText(`${winVotes} - ${loseVotes}`, cx, cy + 14);
 
     // Result text below circle
     const margin = Math.abs(battle.noid1_votes - battle.noid2_votes);
