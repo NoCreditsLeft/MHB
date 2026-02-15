@@ -3061,7 +3061,7 @@ function App() {
     }, 800);
   };
 
-  const Menu = () => (
+const menuContent = (
     <div className="menu-container">
       <MatrixRain />
       
@@ -3227,7 +3227,7 @@ function App() {
     </div>
   );
 
-  const Battle = () => (
+  const battleContent = (
     <div className="battle-container">
       <MatrixRain />
       
@@ -3355,8 +3355,8 @@ function App() {
 
   return (
     <div className="app">
-      {view === 'menu' && <Menu />}
-      {view === 'battle' && <Battle />}
+      {view === 'menu' && menuContent}
+      {view === 'battle' && battleContent}
       {view === 'help' && <Help onClose={() => setView('menu')} />}
       {view === 'mynoids' && (
         <MyNoids
