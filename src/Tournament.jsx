@@ -1119,6 +1119,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   const timerRef = useRef(null);
   const pollRef = useRef(null);
   const activeMatchupIdRef = useRef(null);
+  const advancingRef = useRef(false);
   const viewerRef = useRef(null);
   const viewerIdRef = useRef(walletAddress?.toLowerCase() || (() => {
     let id = localStorage.getItem('anon_voter_id');
@@ -1335,6 +1336,8 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   };
 
   const advanceMatchup = async (completedMatchup, allMatchups, t) => {
+    if (advancingRef.current) return;
+    advancingRef.current = true;
     try {
       const { data: freshMatchup } = await supabase
         .from('tournament_matchups')
@@ -1371,10 +1374,15 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
 
       const loserId = winnerId === freshMatchup.noid1_id ? freshMatchup.noid2_id : freshMatchup.noid1_id;
 
-      // Step 1: Mark matchup completed in DB
-      await supabase.from('tournament_matchups')
+      // Step 1: ATOMIC — only complete if still active (prevents race with double poll calls)
+      const { data: updated } = await supabase.from('tournament_matchups')
         .update({ winner_id: winnerId, is_coin_flip: isCoinFlip, status: 'completed', completed_at: new Date().toISOString() })
-        .eq('id', freshMatchup.id);
+        .eq('id', freshMatchup.id)
+        .eq('status', 'active')
+        .select();
+
+      // If no rows updated, someone else already completed it — bail
+      if (!updated || updated.length === 0) return;
 
       // Record stats (non-coinflip only)
       if (!isCoinFlip) {
@@ -1440,6 +1448,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
     } catch (err) {
       console.error('Error advancing matchup:', err);
     }
+    advancingRef.current = false;
   };
 
   const feedWinnerToNextRound = async (winnerId, completedMatchup, allMatchups, t) => {
