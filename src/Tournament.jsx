@@ -1098,6 +1098,8 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   const timerRef = useRef(null);
   const pollRef = useRef(null);
   const activeMatchupIdRef = useRef(null);
+  const lastSeenRoundRef = useRef(null);
+  const lastSeenCoinFlipRef = useRef(null);
   const viewerRef = useRef(null);
   const viewerIdRef = useRef(walletAddress?.toLowerCase() || (() => {
     let id = localStorage.getItem('anon_voter_id');
@@ -1194,11 +1196,6 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         }
       }
 
-      if (t.status === 'completed') {
-        setTournamentComplete(true);
-        clearInterval(pollRef.current);
-      }
-
       const { data: allMatchups } = await supabase
         .from('tournament_matchups')
         .select('*')
@@ -1208,7 +1205,44 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
 
       setMatchups(allMatchups || []);
 
-      // Preload images
+      // Viewer-side: detect coin flips they haven't seen
+      const recentCoinFlip = (allMatchups || []).find(m => m.is_coin_flip && m.status === 'completed' && m.id !== lastSeenCoinFlipRef.current);
+      if (recentCoinFlip && lastSeenCoinFlipRef.current !== null) {
+        const cfWinner = recentCoinFlip.winner_id;
+        const cfLoser = cfWinner === recentCoinFlip.noid1_id ? recentCoinFlip.noid2_id : recentCoinFlip.noid1_id;
+        if (!coinFlipData) {
+          setCoinFlipData({ winnerId: cfWinner, loserId: cfLoser });
+          setTimeout(() => setCoinFlipData(null), 6000);
+        }
+      }
+      if (recentCoinFlip) lastSeenCoinFlipRef.current = recentCoinFlip.id;
+
+      // Viewer-side: detect round changes — show bracket for 5s
+      const currentRound = t.current_round || 1;
+      if (lastSeenRoundRef.current !== null && currentRound > lastSeenRoundRef.current && !showBracket) {
+        setShowBracket(true);
+        setTimeout(() => setShowBracket(false), 5000);
+      }
+      lastSeenRoundRef.current = currentRound;
+
+      // Viewer-side: detect tournament completion — show bracket for 5s then podium
+      if (t.status === 'completed') {
+        if (!tournamentComplete) {
+          // If we had an active matchup before, we were watching live — show bracket first
+          if (activeMatchupIdRef.current) {
+            setShowBracket(true);
+            setTimeout(() => {
+              setShowBracket(false);
+              setTournamentComplete(true);
+              clearInterval(pollRef.current);
+            }, 5000);
+          } else {
+            // Late arrival — go straight to podium
+            setTournamentComplete(true);
+            clearInterval(pollRef.current);
+          }
+        }
+      }
       const noidIds = new Set();
       (allMatchups || []).forEach(m => {
         if (m.noid1_id) noidIds.add(m.noid1_id);
