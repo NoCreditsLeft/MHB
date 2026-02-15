@@ -1396,9 +1396,12 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       const isTournamentOver = isLastMatchupInRound && freshMatchup.round >= totalRounds;
 
       if (isCoinFlip) {
-        // Set coin_flip_until so all viewers show the animation
+        // Set coin_flip_until AND winner ID so all viewers show the same result
         await supabase.from('tournaments')
-          .update({ coin_flip_until: new Date(now + coinFlipDuration).toISOString() })
+          .update({ 
+            coin_flip_until: new Date(now + coinFlipDuration).toISOString(),
+            coin_flip_winner_id: winnerId
+          })
           .eq('id', tournamentId);
       }
 
@@ -1430,7 +1433,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         const nextStartTime = new Date(now + coinFlipDuration).toISOString();
         setTimeout(async () => {
           await supabase.from('tournament_matchups').update({ status: 'active', started_at: new Date().toISOString() }).eq('id', nextInRound.id);
-          await supabase.from('tournaments').update({ current_matchup_index: nextInRound.matchup_index, matchup_started_at: new Date().toISOString(), coin_flip_until: null }).eq('id', tournamentId);
+          await supabase.from('tournaments').update({ current_matchup_index: nextInRound.matchup_index, matchup_started_at: new Date().toISOString(), coin_flip_until: null, coin_flip_winner_id: null }).eq('id', tournamentId);
         }, coinFlipDuration);
       }
 
@@ -1463,7 +1466,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       }
 
       await supabase.from('tournaments')
-        .update({ status: 'completed', completed_at: new Date().toISOString(), winner_noid_id: winnerId, runner_up_noid_id: loserId, third_place_noid_id: thirdPlaceId, countdown_until: null, coin_flip_until: null })
+        .update({ status: 'completed', completed_at: new Date().toISOString(), winner_noid_id: winnerId, runner_up_noid_id: loserId, third_place_noid_id: thirdPlaceId, countdown_until: null, coin_flip_until: null, coin_flip_winner_id: null })
         .eq('id', tournamentId);
 
       const results = [
@@ -1563,17 +1566,14 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
 
   // Priority 2: Coin flip animation (DB-driven — all viewers see this)
   const coinFlipRemaining = tournament.coin_flip_until ? Math.max(0, Math.ceil((new Date(tournament.coin_flip_until).getTime() - Date.now()) / 1000)) : 0;
-  if (coinFlipRemaining > 0) {
-    // Find the coin flip matchup to show the winner
-    const coinFlipMatchup = matchups.find(m => m.is_coin_flip && m.status === 'completed' && m.winner_id);
-    const lastCoinFlip = coinFlipMatchup ? [...matchups].filter(m => m.is_coin_flip && m.status === 'completed').pop() : null;
-    if (lastCoinFlip) {
-      return (
-        <div className="tournament-container">
-          <CoinFlipOverlay winnerId={lastCoinFlip.winner_id} votes={lastCoinFlip.noid1_votes + lastCoinFlip.noid2_votes} getImg={getImg} />
-        </div>
-      );
-    }
+  if (coinFlipRemaining > 0 && tournament.coin_flip_winner_id) {
+    const lastCompleted = [...matchups].filter(m => m.status === 'completed' && m.is_coin_flip).pop();
+    const totalVotes = lastCompleted ? (lastCompleted.noid1_votes || 0) + (lastCompleted.noid2_votes || 0) : 0;
+    return (
+      <div className="tournament-container">
+        <CoinFlipOverlay winnerId={tournament.coin_flip_winner_id} votes={totalVotes} getImg={getImg} />
+      </div>
+    );
   }
 
   // Priority 3: Bracket display (DB-driven — all viewers see this)
@@ -1646,7 +1646,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       if (nextRoundMatchups.length > 0) {
         const now = new Date().toISOString();
         supabase.from('tournament_matchups').update({ status: 'active', started_at: now }).eq('id', nextRoundMatchups[0].id)
-          .then(() => supabase.from('tournaments').update({ countdown_until: null, bracket_until: null, coin_flip_until: null, matchup_started_at: now }).eq('id', tournamentId));
+          .then(() => supabase.from('tournaments').update({ countdown_until: null, bracket_until: null, coin_flip_until: null, coin_flip_winner_id: null, matchup_started_at: now }).eq('id', tournamentId));
       }
     }
     return (
