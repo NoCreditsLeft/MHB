@@ -224,7 +224,7 @@ const CoinFlipOverlay = ({ winnerId, getImg }) => {
   const [phase, setPhase] = useState('flip'); // flip, reveal
 
   useEffect(() => {
-    const timer = setTimeout(() => setPhase('reveal'), 1500);
+    const timer = setTimeout(() => setPhase('reveal'), 3000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -599,6 +599,7 @@ const CreateTournament = ({ walletAddress, onClose, onCreated }) => {
   const [gateCode, setGateCode] = useState('');
   const [roundTimer, setRoundTimer] = useState(15);
   const [includeOneOfOne, setIncludeOneOfOne] = useState(true);
+  const [tiebreakMode, setTiebreakMode] = useState('first_vote');
   const [creating, setCreating] = useState(false);
 
   const handleCreate = async () => {
@@ -617,6 +618,7 @@ const CreateTournament = ({ walletAddress, onClose, onCreated }) => {
         gate_code: isGated ? gateCode.trim() : null,
         round_timer: roundTimer,
         include_oneofone: includeOneOfOne,
+        tiebreak_mode: tiebreakMode,
         status: 'open'
       }]).select().single();
 
@@ -699,6 +701,14 @@ const CreateTournament = ({ walletAddress, onClose, onCreated }) => {
           <div className="option-row">
             <button className={`option-btn ${includeOneOfOne ? 'active' : ''}`} onClick={() => setIncludeOneOfOne(true)}>✅ Yes</button>
             <button className={`option-btn ${!includeOneOfOne ? 'active' : ''}`} onClick={() => setIncludeOneOfOne(false)}>❌ No 1:1s</button>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Tiebreak Rule</label>
+          <div className="option-row">
+            <button className={`option-btn ${tiebreakMode === 'first_vote' ? 'active' : ''}`} onClick={() => setTiebreakMode('first_vote')}>⚡ First Vote Wins</button>
+            <button className={`option-btn ${tiebreakMode === 'coin_flip' ? 'active' : ''}`} onClick={() => setTiebreakMode('coin_flip')}>🪙 Coin Flip</button>
           </div>
         </div>
 
@@ -1305,12 +1315,19 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         winnerId = Math.random() < 0.5 ? freshMatchup.noid1_id : freshMatchup.noid2_id;
         isCoinFlip = true;
       } else {
-        if (freshMatchup.noid1_first_vote_at && freshMatchup.noid2_first_vote_at) {
-          winnerId = new Date(freshMatchup.noid1_first_vote_at) <= new Date(freshMatchup.noid2_first_vote_at) ? freshMatchup.noid1_id : freshMatchup.noid2_id;
-        } else if (freshMatchup.noid1_first_vote_at) {
-          winnerId = freshMatchup.noid1_id;
+        // Equal non-zero votes — use tournament's tiebreak setting
+        if (t.tiebreak_mode === 'coin_flip') {
+          winnerId = Math.random() < 0.5 ? freshMatchup.noid1_id : freshMatchup.noid2_id;
+          isCoinFlip = true;
         } else {
-          winnerId = freshMatchup.noid2_id;
+          // Default: first vote wins
+          if (freshMatchup.noid1_first_vote_at && freshMatchup.noid2_first_vote_at) {
+            winnerId = new Date(freshMatchup.noid1_first_vote_at) <= new Date(freshMatchup.noid2_first_vote_at) ? freshMatchup.noid1_id : freshMatchup.noid2_id;
+          } else if (freshMatchup.noid1_first_vote_at) {
+            winnerId = freshMatchup.noid1_id;
+          } else {
+            winnerId = freshMatchup.noid2_id;
+          }
         }
       }
 
@@ -1324,7 +1341,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         recordTournamentBattle(freshMatchup.noid1_id, freshMatchup.noid2_id, winnerId, walletAddress || 'system').catch(console.error);
       } else {
         setCoinFlipData({ winnerId, loserId });
-        setTimeout(() => setCoinFlipData(null), 3000);
+        setTimeout(() => setCoinFlipData(null), 6000);
       }
 
       await feedWinnerToNextRound(winnerId, freshMatchup, allMatchups, t);
@@ -1344,15 +1361,20 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         if (freshMatchup.round >= totalRounds) {
           await completeTournament(t, winnerId, allMatchups, freshMatchup, loserId);
         } else {
-          // Round transition: 20s countdown
+          // Show bracket for 5s, then round transition countdown
           const nextRound = freshMatchup.round + 1;
           const nextRoundName = getRoundName(t.bracket_size, nextRound);
-          setRoundTransition(nextRoundName);
-
-          const countdownEnd = new Date(Date.now() + 20000).toISOString();
-          await supabase.from('tournaments')
-            .update({ current_round: nextRound, current_matchup_index: 0, countdown_until: countdownEnd })
-            .eq('id', tournamentId);
+          
+          // Show bracket overlay for 5 seconds first
+          setShowBracket(true);
+          setTimeout(async () => {
+            setShowBracket(false);
+            setRoundTransition(nextRoundName);
+            const countdownEnd = new Date(Date.now() + 20000).toISOString();
+            await supabase.from('tournaments')
+              .update({ current_round: nextRound, current_matchup_index: 0, countdown_until: countdownEnd })
+              .eq('id', tournamentId);
+          }, 5000);
         }
       }
     } catch (err) {
@@ -1394,7 +1416,12 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       if (thirdPlaceId) results.push({ tournament_id: tournamentId, noid_id: thirdPlaceId, placement: 3, rounds_survived: totalRounds - 1 });
       await supabase.from('tournament_results').insert(results);
 
-      setTournamentComplete(true);
+      // Show bracket for 5s then podium
+      setShowBracket(true);
+      setTimeout(() => {
+        setShowBracket(false);
+        setTournamentComplete(true);
+      }, 5000);
     } catch (err) {
       console.error('Error completing tournament:', err);
     }
