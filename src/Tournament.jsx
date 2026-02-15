@@ -206,10 +206,11 @@ const CountdownOverlay = ({ seconds, title, subtitle, onComplete }) => {
 
   return (
     <div className="countdown-overlay">
-      <div className="countdown-content glass-panel">
-        <h2 className="countdown-title">{title}</h2>
+      <div className="countdown-content">
+        <h2 className="countdown-title">{subtitle || 'STARTING IN'}</h2>
         <div className="countdown-number">{timeLeft}</div>
-        {subtitle && <p className="countdown-subtitle">{subtitle}</p>}
+        <img src="/NOiDS_Battle_Splash.jpg" alt="NOiDS Battle" className="countdown-splash" />
+        <h3 className="countdown-tournament-name">{title}</h3>
       </div>
     </div>
   );
@@ -1130,7 +1131,11 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       if (t.countdown_until) {
         const remaining = Math.max(0, Math.ceil((new Date(t.countdown_until).getTime() - Date.now()) / 1000));
         if (remaining > 0) {
-          setStartingCountdown(remaining);
+          // Only show CountdownOverlay for the very first round start
+          const isFirstStart = (t.current_round || 1) === 1 && (t.current_matchup_index || 0) === 0 && !roundTransition;
+          if (isFirstStart) {
+            setStartingCountdown(remaining);
+          }
           return;
         } else {
           setStartingCountdown(null);
@@ -1501,7 +1506,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
           <div className="complete-actions">
             <ShareTournamentButton tournament={tournament} getImg={getImg} />
             <button className="start-btn" onClick={() => setShowBracket(true)}>View Bracket</button>
-            <button className="back-btn" onClick={onClose}>Back to Tournaments</button>
+            <button className="back-btn" onClick={onClose}><span className="back-arrow">←</span>Back to Tournaments</button>
           </div>
         </div>
       </div>
