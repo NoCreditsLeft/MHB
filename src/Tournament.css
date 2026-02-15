@@ -1275,6 +1275,10 @@
   margin-left: 12px;
 }
 
+.refresh-btn {
+  margin-left: auto;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .countdown-content {
