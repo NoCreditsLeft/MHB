@@ -1181,6 +1181,114 @@
   object-fit: cover;
 }
 
+.countdown-overlay {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+}
+
+.countdown-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+  width: 100%;
+}
+
+.countdown-splash {
+  width: 100%;
+  max-width: 80%;
+  border-radius: 12px;
+  margin: 16px 0;
+}
+
+.countdown-number {
+  font-size: 96px;
+  font-weight: 900;
+  color: #00ff41;
+  text-shadow: 0 0 60px rgba(0, 255, 65, 0.6);
+  margin-bottom: 0;
+}
+
+.countdown-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: #00ff41;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  text-shadow: 0 0 40px rgba(0, 255, 65, 0.5);
+  margin-bottom: 8px;
+}
+
+.countdown-tournament-name {
+  font-size: 36px;
+  font-weight: 800;
+  color: #ffd700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  text-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+  margin-top: 8px;
+}
+
+.round-transition-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  animation: fadeIn 0.5s ease;
+  padding: 20px;
+}
+
+.round-transition-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: #00ff41;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  text-shadow: 0 0 40px rgba(0, 255, 65, 0.5);
+  margin-bottom: 8px;
+}
+
+.round-transition-countdown .countdown-number {
+  font-size: 72px;
+  font-weight: 900;
+  color: #00ff41;
+  text-shadow: 0 0 60px rgba(0, 255, 65, 0.6);
+  margin-bottom: 16px;
+}
+
+.round-transition-splash {
+  width: 100%;
+  max-width: 80%;
+  border-radius: 12px;
+  margin: 16px 0;
+}
+
+.round-transition-round-name {
+  font-size: 36px;
+  font-weight: 800;
+  color: #ffd700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  text-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+  margin-top: 8px;
+ }
+
+.tournament-viewer-count {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin-left: 12px;
+}
+
+.refresh-btn {
+  margin-left: auto;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .countdown-content {
@@ -1206,13 +1314,4 @@
   .ltb-text {
     font-size: 14px;
   }
-}
-
-/* Splash images for countdown/transition screens */
-.countdown-splash,
-.round-transition-splash {
-  width: 100%;
-  max-width: 80%;
-  border-radius: 12px;
-  margin: 16px 0;
 }
