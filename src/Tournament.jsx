@@ -1501,7 +1501,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
           <div className="complete-actions">
             <ShareTournamentButton tournament={tournament} getImg={getImg} />
             <button className="start-btn" onClick={() => setShowBracket(true)}>View Bracket</button>
-            <button className="back-btn" onClick={onClose}><span className="back-arrow">←</span>Back to Tournaments</button>
+            <button className="back-btn" onClick={onClose}>Back to Tournaments</button>
           </div>
         </div>
       </div>
@@ -1522,14 +1522,12 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
             <div className="spacer"></div>
           </div>
           <div className="round-transition-screen">
-            <h2 className="round-transition-title">{roundTransition || getRoundName(tournament.bracket_size, tournament.current_round)}</h2>
-            <div className="round-transition-bracket">
-              <TournamentBracketInline tournament={tournament} matchups={matchups} getImg={getImg} />
-            </div>
+            <h2 className="round-transition-title">NEXT ROUND STARTING IN</h2>
             <div className="round-transition-countdown">
               <div className="countdown-number">{remaining}</div>
-              <div className="countdown-label">Starting in...</div>
             </div>
+            <img src="/NOiDS_Battle_Splash.jpg" alt="NOiDS Battle" className="round-transition-splash" />
+            <h3 className="round-transition-round-name">{roundTransition || getRoundName(tournament.bracket_size, tournament.current_round)}</h3>
           </div>
         </div>
       );
