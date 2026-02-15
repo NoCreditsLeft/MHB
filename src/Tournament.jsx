@@ -1501,7 +1501,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
           <div className="complete-actions">
             <ShareTournamentButton tournament={tournament} getImg={getImg} />
             <button className="start-btn" onClick={() => setShowBracket(true)}>View Bracket</button>
-            <button className="back-btn" onClick={onClose}>Back to Tournaments</button>
+            <button className="back-btn" onClick={onClose}><span className="back-arrow">←</span>Back to Tournaments</button>
           </div>
         </div>
       </div>
