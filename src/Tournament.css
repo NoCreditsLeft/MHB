@@ -1191,7 +1191,7 @@
 
 .countdown-splash {
   width: 100%;
-  max-width: 100%;
+  max-width: 80%;
   border-radius: 12px;
   margin: 16px 0;
 }
@@ -1254,7 +1254,7 @@
 
 .round-transition-splash {
   width: 100%;
-  max-width: 100%;
+  max-width: 80%;
   border-radius: 12px;
   margin: 16px 0;
 }
