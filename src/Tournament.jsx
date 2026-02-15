@@ -220,7 +220,7 @@ const CountdownOverlay = ({ seconds, title, subtitle, onComplete }) => {
 // COIN FLIP OVERLAY
 // ============================================
 
-const CoinFlipOverlay = ({ winnerId, getImg }) => {
+const CoinFlipOverlay = ({ winnerId, votes, getImg }) => {
   const [phase, setPhase] = useState('flip'); // flip, reveal
 
   useEffect(() => {
@@ -235,7 +235,7 @@ const CoinFlipOverlay = ({ winnerId, getImg }) => {
           <>
             <div className="coinflip-coin">🪙</div>
             <h2 className="coinflip-title">Coin Flip!</h2>
-            <p className="coinflip-subtitle">0-0 tie — deciding by coin flip...</p>
+            <p className="coinflip-subtitle">{votes === 0 ? '0-0 tie' : 'Tied votes'} — deciding by coin flip...</p>
           </>
         ) : (
           <>
@@ -1225,10 +1225,25 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       setMatchups(allMatchups || []);
 
       // Detect tournament completion (late arrivals go straight to podium)
-      if (t.status === 'completed' && !t.bracket_until) {
+      const bracketExpired = !t.bracket_until || new Date(t.bracket_until).getTime() <= Date.now();
+      if (t.status === 'completed' && bracketExpired) {
         if (!tournamentComplete) {
           setTournamentComplete(true);
           clearInterval(pollRef.current);
+        }
+      }
+
+      // Creator: complete tournament after bracket expires if all final round matchups done
+      if (t.status === 'active' && bracketExpired && t.creator_wallet === walletAddress?.toLowerCase()) {
+        const totalRounds = TOTAL_ROUNDS[t.bracket_size];
+        const finalMatchups = (allMatchups || []).filter(m => m.round === totalRounds);
+        const allFinalsDone = finalMatchups.length > 0 && finalMatchups.every(m => m.status === 'completed');
+        if (allFinalsDone) {
+          const finalMatchup = finalMatchups[0];
+          const winnerId = finalMatchup.winner_id;
+          const loserId = winnerId === finalMatchup.noid1_id ? finalMatchup.noid2_id : finalMatchup.noid1_id;
+          await completeTournament(t, winnerId, allMatchups, finalMatchup, loserId);
+          return loadTournamentState();
         }
       }
 
@@ -1388,16 +1403,12 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       }
 
       if (isTournamentOver) {
-        // Tournament over: coinflip (if any) → bracket 5s → complete
+        // Tournament over: coinflip (if any) → bracket 5s → complete happens in polling
         const bracketStart = now + coinFlipDuration;
         const bracketEnd = bracketStart + 5000;
         await supabase.from('tournaments')
           .update({ bracket_until: new Date(bracketEnd).toISOString() })
           .eq('id', tournamentId);
-        // Complete after bracket
-        setTimeout(async () => {
-          await completeTournament(t, winnerId, allMatchups, freshMatchup, loserId);
-        }, coinFlipDuration + 5000);
 
       } else if (isLastMatchupInRound) {
         // End of round: coinflip (if any) → bracket 5s → countdown 20s
@@ -1559,7 +1570,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
     if (lastCoinFlip) {
       return (
         <div className="tournament-container">
-          <CoinFlipOverlay winnerId={lastCoinFlip.winner_id} getImg={getImg} />
+          <CoinFlipOverlay winnerId={lastCoinFlip.winner_id} votes={lastCoinFlip.noid1_votes + lastCoinFlip.noid2_votes} getImg={getImg} />
         </div>
       );
     }
