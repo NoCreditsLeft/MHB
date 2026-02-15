@@ -1084,10 +1084,31 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   const [tournamentComplete, setTournamentComplete] = useState(false);
   const [startingCountdown, setStartingCountdown] = useState(null);
   const [coinFlipData, setCoinFlipData] = useState(null); // { winnerId, loserId }
+  const [viewerCount, setViewerCount] = useState(0);
   const timerRef = useRef(null);
   const pollRef = useRef(null);
   const activeMatchupIdRef = useRef(null);
+  const viewerRef = useRef(null);
+  const viewerIdRef = useRef(walletAddress?.toLowerCase() || (() => {
+    let id = localStorage.getItem('anon_voter_id');
+    if (!id) { id = 'anon-' + Math.random().toString(36).substr(2, 12); localStorage.setItem('anon_voter_id', id); }
+    return id;
+  })());
   const { ensureImages, getImg, forceRefreshImages } = useImageLoader(parentImageCache);
+
+  // Ping viewer presence every 5 seconds
+  useEffect(() => {
+    if (!tournamentId) return;
+    const ping = async () => {
+      try {
+        const { data } = await supabase.rpc('tournament_ping_viewer', { p_tournament_id: tournamentId, p_viewer_id: viewerIdRef.current });
+        if (typeof data === 'number') setViewerCount(data);
+      } catch {}
+    };
+    ping();
+    viewerRef.current = setInterval(ping, 5000);
+    return () => clearInterval(viewerRef.current);
+  }, [tournamentId]);
 
   useEffect(() => {
     loadTournamentState();
@@ -1095,6 +1116,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
     return () => {
       clearInterval(pollRef.current);
       clearInterval(timerRef.current);
+      clearInterval(viewerRef.current);
     };
   }, [tournamentId]);
 
@@ -1571,6 +1593,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       <div className="live-round-info glass-panel">
         <span className="round-name-live">{activeMatchup ? activeMatchup.round_name : 'Waiting...'}</span>
         {activeMatchup && <span className="matchup-counter">Match {activeMatchup.matchup_index + 1} of {matchups.filter(m => m.round === activeMatchup.round).length}</span>}
+        {viewerCount > 0 && <span className="tournament-viewer-count">👁 {viewerCount} watching</span>}
       </div>
 
       {activeMatchup && (

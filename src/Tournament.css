@@ -1269,6 +1269,12 @@
   margin-top: 8px;
  }
 
+.tournament-viewer-count {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin-left: 12px;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .countdown-content {
