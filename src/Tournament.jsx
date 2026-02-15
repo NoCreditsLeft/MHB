@@ -1099,7 +1099,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   const pollRef = useRef(null);
   const activeMatchupIdRef = useRef(null);
   const lastSeenRoundRef = useRef(null);
-  const lastSeenCoinFlipRef = useRef(null);
+  const seenCoinFlipsRef = useRef(new Set());
   const viewerRef = useRef(null);
   const viewerIdRef = useRef(walletAddress?.toLowerCase() || (() => {
     let id = localStorage.getItem('anon_voter_id');
@@ -1206,16 +1206,20 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       setMatchups(allMatchups || []);
 
       // Viewer-side: detect coin flips they haven't seen
-      const recentCoinFlip = (allMatchups || []).find(m => m.is_coin_flip && m.status === 'completed' && m.id !== lastSeenCoinFlipRef.current);
-      if (recentCoinFlip && lastSeenCoinFlipRef.current !== null) {
-        const cfWinner = recentCoinFlip.winner_id;
-        const cfLoser = cfWinner === recentCoinFlip.noid1_id ? recentCoinFlip.noid2_id : recentCoinFlip.noid1_id;
-        if (!coinFlipData) {
+      const coinFlips = (allMatchups || []).filter(m => m.is_coin_flip && m.status === 'completed');
+      if (seenCoinFlipsRef.current.size === 0 && coinFlips.length > 0) {
+        // First poll — seed with existing flips so we don't replay old ones
+        coinFlips.forEach(m => seenCoinFlipsRef.current.add(m.id));
+      } else {
+        const unseenFlip = coinFlips.find(m => !seenCoinFlipsRef.current.has(m.id));
+        if (unseenFlip && !coinFlipData) {
+          const cfWinner = unseenFlip.winner_id;
+          const cfLoser = cfWinner === unseenFlip.noid1_id ? unseenFlip.noid2_id : unseenFlip.noid1_id;
           setCoinFlipData({ winnerId: cfWinner, loserId: cfLoser });
           setTimeout(() => setCoinFlipData(null), 6000);
         }
+        coinFlips.forEach(m => seenCoinFlipsRef.current.add(m.id));
       }
-      if (recentCoinFlip) lastSeenCoinFlipRef.current = recentCoinFlip.id;
 
       // Viewer-side: detect round changes — show bracket for 5s
       const currentRound = t.current_round || 1;
