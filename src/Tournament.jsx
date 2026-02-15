@@ -533,7 +533,7 @@ const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTourn
             {f === 'all' ? '📋 All' : f === 'open' ? '🟢 Open' : f === 'active' ? '🔴 Live' : '✅ Finished'}
           </button>
         ))}
-        <button className="tab-btn refresh-btn" onClick={loadTournaments} title="Refresh list">🔄 Refresh List</button>
+        <button className="tab-btn refresh-btn" onClick={loadTournaments} title="Refresh list">🔄</button>
       </div>
 
       <div className="tournament-list">
@@ -1091,16 +1091,12 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   const [votedFor, setVotedFor] = useState(null);
   const [isVoting, setIsVoting] = useState(false);
   const [showBracket, setShowBracket] = useState(false);
-  const [roundTransition, setRoundTransition] = useState(null);
   const [tournamentComplete, setTournamentComplete] = useState(false);
   const [startingCountdown, setStartingCountdown] = useState(null);
-  const [coinFlipData, setCoinFlipData] = useState(null); // { winnerId, loserId }
   const [viewerCount, setViewerCount] = useState(0);
   const timerRef = useRef(null);
   const pollRef = useRef(null);
   const activeMatchupIdRef = useRef(null);
-  const lastSeenRoundRef = useRef(null);
-  const seenCoinFlipsRef = useRef(new Set());
   const viewerRef = useRef(null);
   const viewerIdRef = useRef(walletAddress?.toLowerCase() || (() => {
     let id = localStorage.getItem('anon_voter_id');
@@ -1167,7 +1163,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         const remaining = Math.max(0, Math.ceil((new Date(t.countdown_until).getTime() - Date.now()) / 1000));
         if (remaining > 0) {
           // Only show CountdownOverlay for the very first round start
-          const isFirstStart = (t.current_round || 1) === 1 && (t.current_matchup_index || 0) === 0 && !roundTransition;
+          const isFirstStart = (t.current_round || 1) === 1 && (t.current_matchup_index || 0) === 0;
           if (isFirstStart) {
             setStartingCountdown(remaining);
           }
@@ -1206,48 +1202,14 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
 
       setMatchups(allMatchups || []);
 
-      // Viewer-side: detect coin flips they haven't seen
-      const coinFlips = (allMatchups || []).filter(m => m.is_coin_flip && m.status === 'completed');
-      if (seenCoinFlipsRef.current.size === 0 && coinFlips.length > 0) {
-        // First poll — seed with existing flips so we don't replay old ones
-        coinFlips.forEach(m => seenCoinFlipsRef.current.add(m.id));
-      } else {
-        const unseenFlip = coinFlips.find(m => !seenCoinFlipsRef.current.has(m.id));
-        if (unseenFlip && !coinFlipData) {
-          const cfWinner = unseenFlip.winner_id;
-          const cfLoser = cfWinner === unseenFlip.noid1_id ? unseenFlip.noid2_id : unseenFlip.noid1_id;
-          setCoinFlipData({ winnerId: cfWinner, loserId: cfLoser });
-          setTimeout(() => setCoinFlipData(null), 6000);
-        }
-        coinFlips.forEach(m => seenCoinFlipsRef.current.add(m.id));
-      }
-
-      // Viewer-side: detect round changes — show bracket for 5s
-      const currentRound = t.current_round || 1;
-      if (lastSeenRoundRef.current !== null && currentRound > lastSeenRoundRef.current && !showBracket) {
-        setShowBracket(true);
-        setTimeout(() => setShowBracket(false), 5000);
-      }
-      lastSeenRoundRef.current = currentRound;
-
-      // Viewer-side: detect tournament completion — show bracket for 5s then podium
-      if (t.status === 'completed') {
+      // Detect tournament completion (late arrivals go straight to podium)
+      if (t.status === 'completed' && !t.bracket_until) {
         if (!tournamentComplete) {
-          // If we had an active matchup before, we were watching live — show bracket first
-          if (activeMatchupIdRef.current) {
-            setShowBracket(true);
-            setTimeout(() => {
-              setShowBracket(false);
-              setTournamentComplete(true);
-              clearInterval(pollRef.current);
-            }, 5000);
-          } else {
-            // Late arrival — go straight to podium
-            setTournamentComplete(true);
-            clearInterval(pollRef.current);
-          }
+          setTournamentComplete(true);
+          clearInterval(pollRef.current);
         }
       }
+
       const noidIds = new Set();
       (allMatchups || []).forEach(m => {
         if (m.noid1_id) noidIds.add(m.noid1_id);
@@ -1262,7 +1224,6 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         setActiveMatchup(active);
         setHasVoted(false);
         setVotedFor(null);
-        setRoundTransition(null);
 
         if (walletAddress || localStorage.getItem('anon_voter_id')) {
           const voterId = walletAddress?.toLowerCase() || localStorage.getItem('anon_voter_id');
@@ -1359,7 +1320,6 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
           winnerId = Math.random() < 0.5 ? freshMatchup.noid1_id : freshMatchup.noid2_id;
           isCoinFlip = true;
         } else {
-          // Default: first vote wins
           if (freshMatchup.noid1_first_vote_at && freshMatchup.noid2_first_vote_at) {
             winnerId = new Date(freshMatchup.noid1_first_vote_at) <= new Date(freshMatchup.noid2_first_vote_at) ? freshMatchup.noid1_id : freshMatchup.noid2_id;
           } else if (freshMatchup.noid1_first_vote_at) {
@@ -1372,50 +1332,73 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
 
       const loserId = winnerId === freshMatchup.noid1_id ? freshMatchup.noid2_id : freshMatchup.noid1_id;
 
+      // Step 1: Mark matchup completed in DB
       await supabase.from('tournament_matchups')
         .update({ winner_id: winnerId, is_coin_flip: isCoinFlip, status: 'completed', completed_at: new Date().toISOString() })
         .eq('id', freshMatchup.id);
 
+      // Record stats (non-coinflip only)
       if (!isCoinFlip) {
         recordTournamentBattle(freshMatchup.noid1_id, freshMatchup.noid2_id, winnerId, walletAddress || 'system').catch(console.error);
-      } else {
-        setCoinFlipData({ winnerId, loserId });
-        setTimeout(() => setCoinFlipData(null), 6000);
       }
 
       await feedWinnerToNextRound(winnerId, freshMatchup, allMatchups, t);
 
+      // Step 2: Calculate the timeline — all DB-driven so every viewer sees the same thing
+      const now = Date.now();
+      const coinFlipDuration = isCoinFlip ? 6000 : 0;
+      
       const currentRoundMatchups = allMatchups
         .filter(m => m.round === freshMatchup.round)
         .sort((a, b) => a.matchup_index - b.matchup_index);
-
       const nextInRound = currentRoundMatchups.find(m => m.matchup_index > freshMatchup.matchup_index && m.status === 'pending');
+      const totalRounds = TOTAL_ROUNDS[t.bracket_size];
+      const isLastMatchupInRound = !nextInRound;
+      const isTournamentOver = isLastMatchupInRound && freshMatchup.round >= totalRounds;
 
-      if (nextInRound) {
-        const now = new Date().toISOString();
-        await supabase.from('tournament_matchups').update({ status: 'active', started_at: now }).eq('id', nextInRound.id);
-        await supabase.from('tournaments').update({ current_matchup_index: nextInRound.matchup_index, matchup_started_at: now }).eq('id', tournamentId);
-      } else {
-        const totalRounds = TOTAL_ROUNDS[t.bracket_size];
-        if (freshMatchup.round >= totalRounds) {
-          await completeTournament(t, winnerId, allMatchups, freshMatchup, loserId);
-        } else {
-          // Show bracket for 5s, then round transition countdown
-          const nextRound = freshMatchup.round + 1;
-          const nextRoundName = getRoundName(t.bracket_size, nextRound);
-          
-          // Show bracket overlay for 5 seconds first
-          setShowBracket(true);
-          setTimeout(async () => {
-            setShowBracket(false);
-            setRoundTransition(nextRoundName);
-            const countdownEnd = new Date(Date.now() + 20000).toISOString();
-            await supabase.from('tournaments')
-              .update({ current_round: nextRound, current_matchup_index: 0, countdown_until: countdownEnd })
-              .eq('id', tournamentId);
-          }, 5000);
-        }
+      if (isCoinFlip) {
+        // Set coin_flip_until so all viewers show the animation
+        await supabase.from('tournaments')
+          .update({ coin_flip_until: new Date(now + coinFlipDuration).toISOString() })
+          .eq('id', tournamentId);
       }
+
+      if (isTournamentOver) {
+        // Tournament over: coinflip (if any) → bracket 5s → complete
+        const bracketStart = now + coinFlipDuration;
+        const bracketEnd = bracketStart + 5000;
+        await supabase.from('tournaments')
+          .update({ bracket_until: new Date(bracketEnd).toISOString() })
+          .eq('id', tournamentId);
+        // Complete after bracket
+        setTimeout(async () => {
+          await completeTournament(t, winnerId, allMatchups, freshMatchup, loserId);
+        }, coinFlipDuration + 5000);
+
+      } else if (isLastMatchupInRound) {
+        // End of round: coinflip (if any) → bracket 5s → countdown 20s
+        const bracketStart = now + coinFlipDuration;
+        const bracketEnd = bracketStart + 5000;
+        const countdownEnd = bracketEnd + 20000;
+        const nextRound = freshMatchup.round + 1;
+        await supabase.from('tournaments')
+          .update({
+            bracket_until: new Date(bracketEnd).toISOString(),
+            countdown_until: new Date(countdownEnd).toISOString(),
+            current_round: nextRound,
+            current_matchup_index: 0
+          })
+          .eq('id', tournamentId);
+
+      } else {
+        // More matchups in round: coinflip (if any) → activate next
+        const nextStartTime = new Date(now + coinFlipDuration).toISOString();
+        setTimeout(async () => {
+          await supabase.from('tournament_matchups').update({ status: 'active', started_at: new Date().toISOString() }).eq('id', nextInRound.id);
+          await supabase.from('tournaments').update({ current_matchup_index: nextInRound.matchup_index, matchup_started_at: new Date().toISOString(), coin_flip_until: null }).eq('id', tournamentId);
+        }, coinFlipDuration);
+      }
+
     } catch (err) {
       console.error('Error advancing matchup:', err);
     }
@@ -1445,7 +1428,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       }
 
       await supabase.from('tournaments')
-        .update({ status: 'completed', completed_at: new Date().toISOString(), winner_noid_id: winnerId, runner_up_noid_id: loserId, third_place_noid_id: thirdPlaceId, countdown_until: null })
+        .update({ status: 'completed', completed_at: new Date().toISOString(), winner_noid_id: winnerId, runner_up_noid_id: loserId, third_place_noid_id: thirdPlaceId, countdown_until: null, coin_flip_until: null })
         .eq('id', tournamentId);
 
       const results = [
@@ -1454,13 +1437,6 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       ];
       if (thirdPlaceId) results.push({ tournament_id: tournamentId, noid_id: thirdPlaceId, placement: 3, rounds_survived: totalRounds - 1 });
       await supabase.from('tournament_results').insert(results);
-
-      // Show bracket for 5s then podium
-      setShowBracket(true);
-      setTimeout(() => {
-        setShowBracket(false);
-        setTournamentComplete(true);
-      }, 5000);
     } catch (err) {
       console.error('Error completing tournament:', err);
     }
@@ -1541,7 +1517,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
     return (<div className="tournament-container"><div className="loading-state"><div className="loading-spinner"></div><p>Loading tournament...</p></div></div>);
   }
 
-  // Starting countdown (15s)
+  // Priority 1: Starting countdown (first round only)
   if (startingCountdown && startingCountdown > 0) {
     return (
       <div className="tournament-container">
@@ -1550,11 +1526,34 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
     );
   }
 
+  // Priority 2: Coin flip animation (DB-driven — all viewers see this)
+  const coinFlipRemaining = tournament.coin_flip_until ? Math.max(0, Math.ceil((new Date(tournament.coin_flip_until).getTime() - Date.now()) / 1000)) : 0;
+  if (coinFlipRemaining > 0) {
+    // Find the coin flip matchup to show the winner
+    const coinFlipMatchup = matchups.find(m => m.is_coin_flip && m.status === 'completed' && m.winner_id);
+    const lastCoinFlip = coinFlipMatchup ? [...matchups].filter(m => m.is_coin_flip && m.status === 'completed').pop() : null;
+    if (lastCoinFlip) {
+      return (
+        <div className="tournament-container">
+          <CoinFlipOverlay winnerId={lastCoinFlip.winner_id} getImg={getImg} />
+        </div>
+      );
+    }
+  }
+
+  // Priority 3: Bracket display (DB-driven — all viewers see this)
+  const bracketRemaining = tournament.bracket_until ? Math.max(0, Math.ceil((new Date(tournament.bracket_until).getTime() - Date.now()) / 1000)) : 0;
+  if (bracketRemaining > 0) {
+    return <TournamentBracket tournament={tournament} matchups={matchups} getImg={getImg} onClose={() => {}} onViewNoid={onViewNoid} forceRefreshImages={forceRefreshImages} />;
+  }
+
+  // Priority 4: Manual bracket view
   if (showBracket) {
     return <TournamentBracket tournament={tournament} matchups={matchups} getImg={getImg} onClose={() => setShowBracket(false)} onViewNoid={onViewNoid} forceRefreshImages={forceRefreshImages} />;
   }
 
-  if (tournamentComplete) {
+  // Priority 5: Tournament complete — podium
+  if (tournamentComplete || (tournament.status === 'completed' && !tournament.bracket_until)) {
     return (
       <div className="tournament-container">
         <div className="tournament-header glass-panel">
@@ -1601,41 +1600,37 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
     );
   }
 
-  // Round transition with bracket + countdown
-  if (roundTransition || (tournament.countdown_until && !startingCountdown)) {
-    const countdownEnd = tournament.countdown_until ? new Date(tournament.countdown_until).getTime() : 0;
-    const remaining = Math.max(0, Math.ceil((countdownEnd - Date.now()) / 1000));
-
-    if (remaining > 0) {
-      return (
-        <div className="tournament-container">
-          <div className="tournament-header glass-panel">
-            <button className="back-btn" onClick={onClose}><span className="back-arrow">←</span>Back</button>
-            <h2 className="tournament-title">{tournament.tournament_name}</h2>
-            <div className="spacer"></div>
-          </div>
-          <div className="round-transition-screen">
-            <h2 className="round-transition-title">NEXT ROUND STARTING IN</h2>
-            <div className="round-transition-countdown">
-              <div className="countdown-number">{remaining}</div>
-            </div>
-            <img src="/NOiDS_Battle_Splash.jpg" alt="NOiDS Battle" className="round-transition-splash" />
-            <h3 className="round-transition-round-name">{roundTransition || getRoundName(tournament.bracket_size, tournament.current_round)}</h3>
-          </div>
-        </div>
-      );
-    } else if (roundTransition && tournament.creator_wallet === walletAddress?.toLowerCase()) {
+  // Priority 6: Round transition countdown (DB-driven)
+  const countdownRemaining = tournament.countdown_until ? Math.max(0, Math.ceil((new Date(tournament.countdown_until).getTime() - Date.now()) / 1000)) : 0;
+  if (countdownRemaining > 0 && !startingCountdown) {
+    // Creator activates first matchup of new round when countdown hits 0
+    if (countdownRemaining <= 1 && tournament.creator_wallet === walletAddress?.toLowerCase()) {
       const nextRoundMatchups = matchups
         .filter(m => m.round === tournament.current_round && m.status === 'pending')
         .sort((a, b) => a.matchup_index - b.matchup_index);
-
       if (nextRoundMatchups.length > 0) {
         const now = new Date().toISOString();
         supabase.from('tournament_matchups').update({ status: 'active', started_at: now }).eq('id', nextRoundMatchups[0].id)
-          .then(() => supabase.from('tournaments').update({ countdown_until: null, matchup_started_at: now }).eq('id', tournamentId))
-          .then(() => setRoundTransition(null));
+          .then(() => supabase.from('tournaments').update({ countdown_until: null, bracket_until: null, coin_flip_until: null, matchup_started_at: now }).eq('id', tournamentId));
       }
     }
+    return (
+      <div className="tournament-container">
+        <div className="tournament-header glass-panel">
+          <button className="back-btn" onClick={onClose}><span className="back-arrow">←</span>Back</button>
+          <h2 className="tournament-title">{tournament.tournament_name}</h2>
+          <div className="spacer"></div>
+        </div>
+        <div className="round-transition-screen">
+          <h2 className="round-transition-title">NEXT ROUND STARTING IN</h2>
+          <div className="round-transition-countdown">
+            <div className="countdown-number">{countdownRemaining}</div>
+          </div>
+          <img src="/NOiDS_Battle_Splash.jpg" alt="NOiDS Battle" className="round-transition-splash" />
+          <h3 className="round-transition-round-name">{getRoundName(tournament.bracket_size, tournament.current_round)}</h3>
+        </div>
+      </div>
+    );
   }
 
   const roundBorder = getRoundBorderStyle();
@@ -1654,7 +1649,6 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         </div>
       </div>
 
-      {coinFlipData && <CoinFlipOverlay winnerId={coinFlipData.winnerId} getImg={getImg} />}
 
       <div className="live-round-info glass-panel">
         <span className="round-name-live">{activeMatchup ? activeMatchup.round_name : 'Waiting...'}</span>
