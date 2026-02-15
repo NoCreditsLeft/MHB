@@ -734,7 +734,28 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
   const [gateInput, setGateInput] = useState('');
   const [gateUnlocked, setGateUnlocked] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [viewerCount, setViewerCount] = useState(0);
+  const viewerRef = useRef(null);
+  const viewerIdRef = useRef(walletAddress?.toLowerCase() || (() => {
+    let id = localStorage.getItem('anon_voter_id');
+    if (!id) { id = 'anon-' + Math.random().toString(36).substr(2, 12); localStorage.setItem('anon_voter_id', id); }
+    return id;
+  })());
   const { ensureImages, getImg, forceRefreshImages } = useImageLoader(parentImageCache);
+
+  // Ping viewer presence
+  useEffect(() => {
+    if (!tournamentId) return;
+    const ping = async () => {
+      try {
+        const { data } = await supabase.rpc('tournament_ping_viewer', { p_tournament_id: tournamentId, p_viewer_id: viewerIdRef.current });
+        if (typeof data === 'number') setViewerCount(data);
+      } catch {}
+    };
+    ping();
+    viewerRef.current = setInterval(ping, 5000);
+    return () => clearInterval(viewerRef.current);
+  }, [tournamentId]);
 
   useEffect(() => {
     loadLobby();
@@ -978,6 +999,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
         <div className="lobby-info-row"><span>Access</span><strong>{tournament.is_gated ? '🔒 Code-Gated' : '🌐 Open'}</strong></div>
         <div className="lobby-info-row"><span>1:1 NOiDS</span><strong>{tournament.include_oneofone === false ? '❌ Excluded' : '✅ Allowed'}</strong></div>
         <div className="lobby-info-row"><span>Entries</span><strong className="entries-count">{entries.length} / {tournament.bracket_size}</strong></div>
+        {viewerCount > 0 && <div className="lobby-info-row"><span>👁 Watching</span><strong>{viewerCount}</strong></div>}
       </div>
 
       {needsGateCode && (
@@ -1247,6 +1269,8 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         const elapsed = (Date.now() - new Date(active.started_at).getTime()) / 1000;
         if (elapsed >= t.round_timer) {
           await advanceMatchup(active, allMatchups, t);
+          // Force immediate re-poll to pick up new DB state
+          return loadTournamentState();
         }
       }
     } catch (err) {
