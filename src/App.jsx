@@ -2419,13 +2419,19 @@ const MusicPlayer = () => {
   const tracks = [
     { id: 'CmYgWhTI7bA', title: 'Cooling Down' },
     { id: 'FxI2kSAQMZA', title: 'Nightsky' },
-    { id: '7RlxwBpzm6k', title: 'Come On (Light it Upp)' },
+    { id: '7RlxwBpzm6k', title: 'Come On (Light it Up - Instrumental)' },
     { id: 'oFUUTx7_m1s', title: 'Dont be frightened, Run' },
     { id: 'IQX0Ly8yWqI', title: 'Hidden Meaning' },
     { id: 'rrik48YzNGE', title: 'Loosen Up' },
     { id: 'VA4-t8BDJ6Y', title: 'Slide Away' },
     { id: 'R_67sxcPPuQ', title: 'Vibing Out' },
     { id: 'tVl9klJs_fM', title: 'Wind' },
+    { id: '7Otzl5GBYf8', title: 'I Found You (Dubstep on your face Remix)' },
+    { id: '17mlzBd3_ZE', title: 'I Found You' },
+    { id: '5f9goZOMnLg', title: 'Neon Lights' },
+    { id: 'ntFOXW7BOMY', title: 'RCADIA' },
+    { id: 'cnlNxHXURQ4', title: 'Resurexion (D&B)' },
+    { id: 'FV8BXfZyWJI', title: 'Come on (Light it Up)' },
   ];
 
   const [isPlaying, setIsPlaying] = useState(false);
