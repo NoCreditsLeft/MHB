@@ -2432,6 +2432,7 @@ const MusicPlayer = () => {
   const [currentTrack, setCurrentTrack] = useState(() => Math.floor(Math.random() * tracks.length));  
   const [showPlayer, setShowPlayer] = useState(false);
   const playerRef = useRef(null);
+  const playedHistory = useRef([]);
 
   useEffect(() => {
     // Check if user had music enabled last time
@@ -2464,7 +2465,7 @@ const MusicPlayer = () => {
           onStateChange: (event) => {
             if (event.data === window.YT.PlayerState.ENDED) {
               // Move to next track
-              const nextTrack = (currentTrack + 1) % tracks.length;
+              const nextTrack = getNextTrack();
               setCurrentTrack(nextTrack);
               playerRef.current.loadVideoById(tracks[nextTrack].id);
             }
@@ -2472,7 +2473,7 @@ const MusicPlayer = () => {
         }
       });
     };
-}, [currentTrack]);  // <-- Add this dependency
+}, [currentTrack]);
 
 
 
@@ -2497,13 +2498,21 @@ const MusicPlayer = () => {
     }
   };
 
-  const skipTrack = () => {
-    const nextTrack = (currentTrack + 1) % tracks.length;
-    setCurrentTrack(nextTrack);
-    if (playerRef.current) {
-      playerRef.current.loadVideoById(tracks[nextTrack].id);
-    }
-  };
+const getNextTrack = () => {
+  const available = tracks.map((_, i) => i).filter(i => !playedHistory.current.includes(i));
+  const pool = available.length > 0 ? available : tracks.map((_, i) => i);
+  const next = pool[Math.floor(Math.random() * pool.length)];
+  playedHistory.current = [...playedHistory.current, next].slice(-5);
+  return next;
+};
+
+const skipTrack = () => {
+  const nextTrack = getNextTrack();
+  setCurrentTrack(nextTrack);
+  if (playerRef.current) {
+    playerRef.current.loadVideoById(tracks[nextTrack].id);
+  }
+};
 
   return (
     <>
