@@ -1410,7 +1410,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         const bracketStart = now + coinFlipDuration;
         const bracketEnd = bracketStart + 5000;
         await supabase.from('tournaments')
-          .update({ bracket_until: new Date(bracketEnd).toISOString() })
+          .update({ bracket_until: new Date(bracketEnd).toISOString(), countdown_until: null })
           .eq('id', tournamentId);
 
       } else if (isLastMatchupInRound) {
@@ -1654,7 +1654,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         <div className="tournament-header glass-panel">
           <button className="back-btn" onClick={onClose}><span className="back-arrow">←</span>Back</button>
           <h2 className="tournament-title">{tournament.tournament_name}</h2>
-          <div className="spacer"></div>
+          <button className="bracket-toggle-btn" onClick={() => setShowBracket(true)}>📊 Bracket</button>
         </div>
         <div className="round-transition-screen">
           <h2 className="round-transition-title">NEXT ROUND STARTING IN</h2>
@@ -1789,7 +1789,7 @@ const TournamentBracketInline = ({ tournament, matchups, getImg }) => {
 
 const getRoundClass = (roundName) => {
   if (roundName === 'Quarter Finals') return 'bracket-round-qf';
-  if (roundName === 'Semi-Finals') return 'bracket-round-sf';
+  if (roundName === 'Semi-Finals') return 'bracket-round-semis';
   if (roundName === 'Final') return 'bracket-round-final';
   return '';
 };
