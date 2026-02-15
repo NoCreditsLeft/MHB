@@ -54,7 +54,7 @@ const fetchAndCacheImage = async (noidId) => {
 };
 
 // ============================================
-// HOOK: useImageLoader — batch loads images, ONE re-render per batch
+// HOOK: useImageLoader â€” batch loads images, ONE re-render per batch
 // ============================================
 
 const useImageLoader = (parentImageCache) => {
@@ -232,9 +232,9 @@ const CoinFlipOverlay = ({ winnerId, getImg }) => {
       <div className="coinflip-content glass-panel">
         {phase === 'flip' ? (
           <>
-            <div className="coinflip-coin">🪙</div>
+            <div className="coinflip-coin">ðŸª™</div>
             <h2 className="coinflip-title">Coin Flip!</h2>
-            <p className="coinflip-subtitle">0-0 tie — deciding by coin flip...</p>
+            <p className="coinflip-subtitle">0-0 tie â€” deciding by coin flip...</p>
           </>
         ) : (
           <>
@@ -242,7 +242,7 @@ const CoinFlipOverlay = ({ winnerId, getImg }) => {
               {getImg(winnerId) && <img src={getImg(winnerId)} alt="" />}
             </div>
             <h2 className="coinflip-title" style={{ color: '#ffd700' }}>NOID #{winnerId} wins!</h2>
-            <p className="coinflip-subtitle">Lucky flip 🍀</p>
+            <p className="coinflip-subtitle">Lucky flip ðŸ€</p>
           </>
         )}
       </div>
@@ -294,7 +294,7 @@ const generateTournamentShareCard = async (tournament, getImg) => {
     loadImg(getImg(tournament.third_place_noid_id))
   ]);
 
-  // 1st — center large
+  // 1st â€” center large
   if (winnerImg) {
     ctx.save();
     ctx.strokeStyle = '#ffd700';
@@ -309,7 +309,7 @@ const generateTournamentShareCard = async (tournament, getImg) => {
   ctx.fillStyle = '#ffd700';
   ctx.font = 'bold 48px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('🥇', 600, 520);
+  ctx.fillText('ðŸ¥‡', 600, 520);
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 28px monospace';
   ctx.fillText(`NOID #${tournament.winner_noid_id}`, 600, 555);
@@ -317,7 +317,7 @@ const generateTournamentShareCard = async (tournament, getImg) => {
   ctx.font = '18px monospace';
   ctx.fillText('CHAMPION', 600, 580);
 
-  // 2nd — left
+  // 2nd â€” left
   if (runnerImg) {
     ctx.save();
     ctx.strokeStyle = '#c0c0c0';
@@ -332,12 +332,12 @@ const generateTournamentShareCard = async (tournament, getImg) => {
   ctx.fillStyle = '#c0c0c0';
   ctx.font = 'bold 32px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('🥈', 170, 460);
+  ctx.fillText('ðŸ¥ˆ', 170, 460);
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 20px monospace';
   ctx.fillText(`#${tournament.runner_up_noid_id}`, 170, 490);
 
-  // 3rd — right
+  // 3rd â€” right
   if (thirdImg && tournament.third_place_noid_id) {
     ctx.save();
     ctx.strokeStyle = '#cd7f32';
@@ -353,7 +353,7 @@ const generateTournamentShareCard = async (tournament, getImg) => {
     ctx.fillStyle = '#cd7f32';
     ctx.font = 'bold 32px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('🥉', 1030, 460);
+    ctx.fillText('ðŸ¥‰', 1030, 460);
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 20px monospace';
     ctx.fillText(`#${tournament.third_place_noid_id}`, 1030, 490);
@@ -363,7 +363,7 @@ const generateTournamentShareCard = async (tournament, getImg) => {
   ctx.fillStyle = '#339933';
   ctx.font = '14px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('NOiDS Battle — noids-battle.vercel.app', 600, 615);
+  ctx.fillText('NOiDS Battle â€” noids-battle.vercel.app', 600, 615);
 
   return canvas.toDataURL('image/png');
 };
@@ -383,7 +383,7 @@ const ShareTournamentButton = ({ tournament, getImg }) => {
       link.click();
 
       // Open Twitter intent with pre-written post
-      const tweetText = `"${tournament.tournament_name}" Tournament Results!\n\n🥇 NOID #${tournament.winner_noid_id}\n🥈 NOID #${tournament.runner_up_noid_id}${tournament.third_place_noid_id ? `\n🥉 NOID #${tournament.third_place_noid_id}` : ''}\n\nBattle it out at noidsbattle.com\n\n#NOiDSBattle @thehumanoids`;
+      const tweetText = `"${tournament.tournament_name}" Tournament Results!\n\nðŸ¥‡ NOID #${tournament.winner_noid_id}\nðŸ¥ˆ NOID #${tournament.runner_up_noid_id}${tournament.third_place_noid_id ? `\nðŸ¥‰ NOID #${tournament.third_place_noid_id}` : ''}\n\nBattle it out at noidsbattle.com\n\n#NOiDSBattle @thehumanoids`;
 
       setTimeout(() => {
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank');
@@ -396,7 +396,7 @@ const ShareTournamentButton = ({ tournament, getImg }) => {
 
   return (
     <button className="start-btn share-tournament-btn" onClick={handleShare} disabled={sharing}>
-      {sharing ? 'Generating...' : '📤 Share Results to X'}
+      {sharing ? 'Generating...' : 'ðŸ“¤ Share Results to X'}
     </button>
   );
 };
@@ -435,8 +435,8 @@ export const LiveTournamentBanner = ({ onClick }) => {
   return (
     <button className="live-tournament-banner" onClick={onClick}>
       <span className="ltb-pulse"></span>
-      <span className="ltb-text">🔴 {liveCount} Live Tournament{liveCount > 1 ? 's' : ''}</span>
-      <span className="ltb-arrow">→</span>
+      <span className="ltb-text">ðŸ”´ {liveCount} Live Tournament{liveCount > 1 ? 's' : ''}</span>
+      <span className="ltb-arrow">â†’</span>
     </button>
   );
 };
@@ -513,10 +513,10 @@ const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTourn
     <div className="tournament-container">
       <div className="tournament-header glass-panel">
         <button className="back-btn" onClick={onClose}>
-          <span className="back-arrow">←</span>
+          <span className="back-arrow">â†</span>
           Back to Menu
         </button>
-        <h2 className="tournament-title">🏟️ Tournaments</h2>
+        <h2 className="tournament-title">ðŸŸï¸ Tournaments</h2>
         <button className="create-tournament-btn" onClick={() => walletAddress ? onCreateTournament() : showWalletModal()}>
           + Create
         </button>
@@ -529,7 +529,7 @@ const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTourn
             className={`tab-btn ${filter === f ? 'active' : ''}`}
             onClick={() => setFilter(f)}
           >
-            {f === 'all' ? '📋 All' : f === 'open' ? '🟢 Open' : f === 'active' ? '🔴 Live' : '✅ Finished'}
+            {f === 'all' ? 'ðŸ“‹ All' : f === 'open' ? 'ðŸŸ¢ Open' : f === 'active' ? 'ðŸ”´ Live' : 'âœ… Finished'}
           </button>
         ))}
       </div>
@@ -562,11 +562,11 @@ const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTourn
                     <span className="tl-creator">
                       by {t.creator_name || `${t.creator_wallet.slice(0, 6)}...${t.creator_wallet.slice(-4)}`}
                     </span>
-                    <span className="tl-divider">•</span>
+                    <span className="tl-divider">â€¢</span>
                     <span>{t.bracket_size}-bracket</span>
-                    <span className="tl-divider">•</span>
+                    <span className="tl-divider">â€¢</span>
                     <span>{t.round_timer}s rounds</span>
-                    {t.is_gated && <span className="tl-gated">🔒</span>}
+                    {t.is_gated && <span className="tl-gated">ðŸ”’</span>}
                   </div>
                 </div>
                 <div className="tl-right">
@@ -632,7 +632,7 @@ const CreateTournament = ({ walletAddress, onClose, onCreated }) => {
     <div className="tournament-container">
       <div className="tournament-header glass-panel">
         <button className="back-btn" onClick={onClose}>
-          <span className="back-arrow">←</span>
+          <span className="back-arrow">â†</span>
           Back
         </button>
         <h2 className="tournament-title">Create Tournament</h2>
@@ -665,7 +665,7 @@ const CreateTournament = ({ walletAddress, onClose, onCreated }) => {
             {[1, 2, 3, 4, 5].map(n => (
               <button key={n} className={`option-btn ${!unlimitedEntries && maxEntriesPerPlayer === n ? 'active' : ''}`} onClick={() => { setMaxEntriesPerPlayer(n); setUnlimitedEntries(false); }}>{n}</button>
             ))}
-            <button className={`option-btn ${unlimitedEntries ? 'active' : ''}`} onClick={() => setUnlimitedEntries(true)}>∞</button>
+            <button className={`option-btn ${unlimitedEntries ? 'active' : ''}`} onClick={() => setUnlimitedEntries(true)}>âˆž</button>
           </div>
         </div>
 
@@ -681,14 +681,14 @@ const CreateTournament = ({ walletAddress, onClose, onCreated }) => {
         <div className="form-group">
           <label>Access</label>
           <div className="option-row">
-            <button className={`option-btn ${!isGated ? 'active' : ''}`} onClick={() => setIsGated(false)}>🌐 Open</button>
-            <button className={`option-btn ${isGated ? 'active' : ''}`} onClick={() => { setIsGated(true); if (!gateCode) setGateCode(generateTournamentCode()); }}>🔒 Code-Gated</button>
+            <button className={`option-btn ${!isGated ? 'active' : ''}`} onClick={() => setIsGated(false)}>ðŸŒ Open</button>
+            <button className={`option-btn ${isGated ? 'active' : ''}`} onClick={() => { setIsGated(true); if (!gateCode) setGateCode(generateTournamentCode()); }}>ðŸ”’ Code-Gated</button>
           </div>
           {isGated && (
             <div className="gate-code-display">
               <span>Entry Code: </span>
               <strong>{gateCode}</strong>
-              <button className="copy-btn" onClick={() => navigator.clipboard.writeText(gateCode)}>📋</button>
+              <button className="copy-btn" onClick={() => navigator.clipboard.writeText(gateCode)}>ðŸ“‹</button>
             </div>
           )}
         </div>
@@ -696,8 +696,8 @@ const CreateTournament = ({ walletAddress, onClose, onCreated }) => {
         <div className="form-group">
           <label>Include 1:1s?</label>
           <div className="option-row">
-            <button className={`option-btn ${includeOneOfOne ? 'active' : ''}`} onClick={() => setIncludeOneOfOne(true)}>✅ Yes</button>
-            <button className={`option-btn ${!includeOneOfOne ? 'active' : ''}`} onClick={() => setIncludeOneOfOne(false)}>❌ No 1:1s</button>
+            <button className={`option-btn ${includeOneOfOne ? 'active' : ''}`} onClick={() => setIncludeOneOfOne(true)}>âœ… Yes</button>
+            <button className={`option-btn ${!includeOneOfOne ? 'active' : ''}`} onClick={() => setIncludeOneOfOne(false)}>âŒ No 1:1s</button>
           </div>
         </div>
 
@@ -953,7 +953,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
   return (
     <div className="tournament-container">
       <div className="tournament-header glass-panel">
-        <button className="back-btn" onClick={onClose}><span className="back-arrow">←</span>Back</button>
+        <button className="back-btn" onClick={onClose}><span className="back-arrow">â†</span>Back</button>
         <h2 className="tournament-title">{tournament.tournament_name}</h2>
         <div className="spacer"></div>
       </div>
@@ -962,9 +962,9 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
         <div className="lobby-info-row"><span>Created by</span><strong>{tournament.creator_name || `${tournament.creator_wallet.slice(0, 6)}...${tournament.creator_wallet.slice(-4)}`}</strong></div>
         <div className="lobby-info-row"><span>Bracket</span><strong>{tournament.bracket_size} NOiDS</strong></div>
         <div className="lobby-info-row"><span>Round Timer</span><strong>{tournament.round_timer}s</strong></div>
-        <div className="lobby-info-row"><span>Max Per Player</span><strong>{tournament.max_entries_per_player || '∞'}</strong></div>
-        <div className="lobby-info-row"><span>Access</span><strong>{tournament.is_gated ? '🔒 Code-Gated' : '🌐 Open'}</strong></div>
-        <div className="lobby-info-row"><span>1:1 NOiDS</span><strong>{tournament.include_oneofone === false ? '❌ Excluded' : '✅ Allowed'}</strong></div>
+        <div className="lobby-info-row"><span>Max Per Player</span><strong>{tournament.max_entries_per_player || 'âˆž'}</strong></div>
+        <div className="lobby-info-row"><span>Access</span><strong>{tournament.is_gated ? 'ðŸ”’ Code-Gated' : 'ðŸŒ Open'}</strong></div>
+        <div className="lobby-info-row"><span>1:1 NOiDS</span><strong>{tournament.include_oneofone === false ? 'âŒ Excluded' : 'âœ… Allowed'}</strong></div>
         <div className="lobby-info-row"><span>Entries</span><strong className="entries-count">{entries.length} / {tournament.bracket_size}</strong></div>
       </div>
 
@@ -983,7 +983,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
           <h3 className="section-title">Bracket Slots</h3>
           {entries.length > 0 && (
             <button className="refresh-images-btn" onClick={() => forceRefreshImages(entries.map(e => e.noid_id))}>
-              🔄 Refresh Images
+              ðŸ”„ Refresh Images
             </button>
           )}
         </div>
@@ -999,11 +999,11 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
                     <span className="entry-slot-id">#{entry.noid_id}</span>
                     {entry.is_random_fill && <span className="entry-slot-random">RNG</span>}
                     {isMyEntry && tournament.status === 'open' && (
-                      <button className="entry-remove-btn" onClick={() => handleRemoveEntry(entry.id)}>✕</button>
+                      <button className="entry-remove-btn" onClick={() => handleRemoveEntry(entry.id)}>âœ•</button>
                     )}
                   </>
                 ) : (
-                  <span className="entry-slot-empty">—</span>
+                  <span className="entry-slot-empty">â€”</span>
                 )}
               </div>
             );
@@ -1018,13 +1018,13 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
           </button>
         )}
         {isCreator && tournament.status === 'open' && isFull && (
-          <button className="start-btn fill-start-btn" onClick={handleStartTournament}>🚀 Start Tournament</button>
+          <button className="start-btn fill-start-btn" onClick={handleStartTournament}>ðŸš€ Start Tournament</button>
         )}
         {isCreator && tournament.status === 'open' && !isFull && (
-          <button className="start-btn fill-start-btn" onClick={handleFillRemaining}>🎲 Fill Remaining ({tournament.bracket_size - entries.length} random)</button>
+          <button className="start-btn fill-start-btn" onClick={handleFillRemaining}>ðŸŽ² Fill Remaining ({tournament.bracket_size - entries.length} random)</button>
         )}
         {isCreator && tournament.status === 'open' && (
-          <button className="delete-tournament-btn" onClick={handleDeleteTournament}>🗑️ Delete Tournament</button>
+          <button className="delete-tournament-btn" onClick={handleDeleteTournament}>ðŸ—‘ï¸ Delete Tournament</button>
         )}
       </div>
 
@@ -1033,8 +1033,8 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
           <div className="noid-picker-modal glass-panel" onClick={e => e.stopPropagation()}>
             <div className="picker-header">
               <h3>Select NOiDS to Enter</h3>
-              <button className="refresh-images-btn" onClick={() => forceRefreshImages(ownedNoids)}>🔄</button>
-              <button className="modal-close" onClick={() => setShowEntryPicker(false)}>×</button>
+              <button className="refresh-images-btn" onClick={() => forceRefreshImages(ownedNoids)}>ðŸ”„</button>
+              <button className="modal-close" onClick={() => setShowEntryPicker(false)}>Ã—</button>
             </div>
             <div className="picker-info">
               {tournament.max_entries_per_player ? `You can enter ${tournament.max_entries_per_player - myEntries.length} more` : 'Unlimited entries'}
@@ -1053,7 +1053,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
                       <button key={noidId} className={`picker-item has-image ${alreadyIn ? 'entered' : ''}`} onClick={() => !alreadyIn && !atLimit && handleEnterNoid(noidId)} disabled={alreadyIn || atLimit}>
                         {imgUrl && <img src={imgUrl} alt={`#${noidId}`} className="picker-item-img" />}
                         <span>#{noidId}</span>
-                        {alreadyIn && <span className="picker-check">✓</span>}
+                        {alreadyIn && <span className="picker-check">âœ“</span>}
                       </button>
                     );
                   })
@@ -1182,28 +1182,19 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       // Find active matchup
       const active = (allMatchups || []).find(m => m.status === 'active');
       if (active && active.id !== activeMatchupIdRef.current) {
-        // Check if the previous matchup was a coin flip
-        const prevId = activeMatchupIdRef.current;
-        if (prevId) {
-          const prevMatchup = (allMatchups || []).find(m => m.id === prevId && m.status === 'completed' && m.is_coin_flip);
-          if (prevMatchup) {
-            setCoinFlipData({ winnerId: prevMatchup.winner_id, loserId: prevMatchup.winner_id === prevMatchup.noid1_id ? prevMatchup.noid2_id : prevMatchup.noid1_id });
-            // Show for 3 seconds then clear
-            setTimeout(() => setCoinFlipData(null), 3000);
-          }
-        }
         activeMatchupIdRef.current = active.id;
         setActiveMatchup(active);
         setHasVoted(false);
         setVotedFor(null);
         setRoundTransition(null);
 
-        if (walletAddress) {
+        if (walletAddress || localStorage.getItem('anon_voter_id')) {
+          const voterId = walletAddress?.toLowerCase() || localStorage.getItem('anon_voter_id');
           const { data: existingVote } = await supabase
             .from('tournament_votes')
             .select('voted_for_noid_id')
             .eq('matchup_id', active.id)
-            .eq('voter_wallet', walletAddress.toLowerCase())
+            .eq('voter_wallet', voterId)
             .single();
           if (existingVote) {
             setHasVoted(true);
@@ -1214,7 +1205,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         setActiveMatchup(active);
       }
 
-      // Timer expired — creator advances
+      // Timer expired â€” creator advances
       if (active && t.creator_wallet === walletAddress?.toLowerCase()) {
         const elapsed = (Date.now() - new Date(active.started_at).getTime()) / 1000;
         if (elapsed >= t.round_timer) {
@@ -1228,7 +1219,11 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
 
   const handleVote = async (noidId) => {
     if (hasVoted || isVoting || !activeMatchup) return;
-    if (!walletAddress) { showWalletModal && showWalletModal(); return; }
+    const voterId = walletAddress?.toLowerCase() || (() => {
+      let id = localStorage.getItem('anon_voter_id');
+      if (!id) { id = 'anon-' + Math.random().toString(36).substr(2, 12); localStorage.setItem('anon_voter_id', id); }
+      return id;
+    })();
     setIsVoting(true);
     setVotedFor(noidId);
 
@@ -1236,7 +1231,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       const { error: voteError } = await supabase.from('tournament_votes').insert([{
         matchup_id: activeMatchup.id,
         tournament_id: tournamentId,
-        voter_wallet: walletAddress.toLowerCase(),
+        voter_wallet: voterId,
         voted_for_noid_id: noidId
       }]);
 
@@ -1245,7 +1240,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         throw voteError;
       }
 
-      // ATOMIC increment — fixes race condition
+      // ATOMIC increment â€” fixes race condition
       const field = noidId === activeMatchup.noid1_id ? 'noid1_votes' : 'noid2_votes';
       const firstVoteField = noidId === activeMatchup.noid1_id ? 'noid1_first_vote_at' : 'noid2_first_vote_at';
 
@@ -1299,7 +1294,11 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         .eq('id', freshMatchup.id);
 
       if (!isCoinFlip) {
-        recordTournamentBattle(freshMatchup.noid1_id, freshMatchup.noid2_id, winnerId, walletAddress).catch(console.error);
+        recordTournamentBattle(freshMatchup.noid1_id, freshMatchup.noid2_id, winnerId, walletAddress || 'system').catch(console.error);
+      } else {
+        // Show coin flip overlay immediately
+        setCoinFlipData({ winnerId, loserId });
+        setTimeout(() => setCoinFlipData(null), 3000);
       }
 
       await feedWinnerToNextRound(winnerId, freshMatchup, allMatchups, t);
@@ -1431,8 +1430,8 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
     if (!activeMatchup) return {};
     const roundName = activeMatchup.round_name || '';
     if (roundName === 'Final') return { border: '20px solid #ffd700' };
-    if (roundName === 'Semi-Finals') return { border: '10px solid #00ff41' };
-    if (roundName === 'Quarter Finals') return { border: '3px solid #ff4444' };
+    if (roundName === 'Semi-Finals') return { border: '10px solid #4488ff' };
+    if (roundName === 'Quarter Finals') return { border: '3px solid #9944ff' };
     return {};
   };
 
@@ -1467,17 +1466,17 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
     return (
       <div className="tournament-container">
         <div className="tournament-header glass-panel">
-          <button className="back-btn" onClick={onClose}><span className="back-arrow">←</span>Back</button>
+          <button className="back-btn" onClick={onClose}><span className="back-arrow">â†</span>Back</button>
           <h2 className="tournament-title">{tournament.tournament_name}</h2>
           <div className="spacer"></div>
         </div>
         <div className="tournament-complete glass-panel">
-          <div className="trophy-icon">🏆</div>
+          <div className="trophy-icon">ðŸ†</div>
           <h2>Tournament Complete!</h2>
           <div className="podium">
             {tournament.winner_noid_id && (
               <div className="podium-place first" onClick={() => onViewNoid && onViewNoid(tournament.winner_noid_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
-                <span className="podium-medal">🥇</span>
+                <span className="podium-medal">ðŸ¥‡</span>
                 {getImg(tournament.winner_noid_id) && <img src={getImg(tournament.winner_noid_id)} alt="" className="podium-img" />}
                 <span className="podium-noid">NOID #{tournament.winner_noid_id}</span>
                 <span className="podium-label">Champion</span>
@@ -1485,7 +1484,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
             )}
             {tournament.runner_up_noid_id && (
               <div className="podium-place second" onClick={() => onViewNoid && onViewNoid(tournament.runner_up_noid_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
-                <span className="podium-medal">🥈</span>
+                <span className="podium-medal">ðŸ¥ˆ</span>
                 {getImg(tournament.runner_up_noid_id) && <img src={getImg(tournament.runner_up_noid_id)} alt="" className="podium-img" />}
                 <span className="podium-noid">NOID #{tournament.runner_up_noid_id}</span>
                 <span className="podium-label">Runner-up</span>
@@ -1493,7 +1492,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
             )}
             {tournament.third_place_noid_id && (
               <div className="podium-place third" onClick={() => onViewNoid && onViewNoid(tournament.third_place_noid_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
-                <span className="podium-medal">🥉</span>
+                <span className="podium-medal">ðŸ¥‰</span>
                 {getImg(tournament.third_place_noid_id) && <img src={getImg(tournament.third_place_noid_id)} alt="" className="podium-img" />}
                 <span className="podium-noid">NOID #{tournament.third_place_noid_id}</span>
                 <span className="podium-label">3rd Place</span>
@@ -1519,7 +1518,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       return (
         <div className="tournament-container">
           <div className="tournament-header glass-panel">
-            <button className="back-btn" onClick={onClose}><span className="back-arrow">←</span>Back</button>
+            <button className="back-btn" onClick={onClose}><span className="back-arrow">â†</span>Back</button>
             <h2 className="tournament-title">{tournament.tournament_name}</h2>
             <div className="spacer"></div>
           </div>
@@ -1554,14 +1553,14 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   return (
     <div className="tournament-container">
       <div className="tournament-header glass-panel">
-        <button className="back-btn" onClick={onClose}><span className="back-arrow">←</span>Back</button>
+        <button className="back-btn" onClick={onClose}><span className="back-arrow">â†</span>Back</button>
         <h2 className="tournament-title">{tournament.tournament_name}</h2>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button className="refresh-images-btn" onClick={() => {
             const allIds = matchups.flatMap(m => [m.noid1_id, m.noid2_id]).filter(Boolean);
             forceRefreshImages([...new Set(allIds)]);
-          }}>🔄</button>
-          <button className="bracket-toggle-btn" onClick={() => setShowBracket(true)}>📊 Bracket</button>
+          }}>ðŸ”„</button>
+          <button className="bracket-toggle-btn" onClick={() => setShowBracket(true)}>ðŸ“Š Bracket</button>
         </div>
       </div>
 
@@ -1621,7 +1620,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         <div className="loading-state"><div className="loading-spinner"></div><p>Waiting for next matchup...</p></div>
       )}
 
-      {hasVoted && <div className="voted-confirmation glass-panel"><span>✓ Vote recorded — waiting for timer...</span></div>}
+      {hasVoted && <div className="voted-confirmation glass-panel"><span>âœ“ Vote recorded â€” waiting for timer...</span></div>}
     </div>
   );
 };
@@ -1655,7 +1654,7 @@ const TournamentBracketInline = ({ tournament, matchups, getImg }) => {
                       <span className="bracket-noid-id">{m.noid2_id ? `#${m.noid2_id}` : 'TBD'}</span>
                       {m.status === 'completed' && <span className="bracket-votes">{m.noid2_votes}</span>}
                     </div>
-                    {m.is_coin_flip && <span className="bracket-coinflip">🪙</span>}
+                    {m.is_coin_flip && <span className="bracket-coinflip">ðŸª™</span>}
                     {m.status === 'active' && <span className="bracket-live">LIVE</span>}
                   </div>
                 ))}
@@ -1685,12 +1684,12 @@ const TournamentBracket = ({ tournament, matchups, getImg, onClose, onViewNoid, 
   return (
     <div className="tournament-container">
       <div className="tournament-header glass-panel">
-        <button className="back-btn" onClick={onClose}><span className="back-arrow">←</span>Back</button>
-        <h2 className="tournament-title">{tournament.tournament_name} — Bracket</h2>
+        <button className="back-btn" onClick={onClose}><span className="back-arrow">â†</span>Back</button>
+        <h2 className="tournament-title">{tournament.tournament_name} â€” Bracket</h2>
         <button className="refresh-images-btn" onClick={() => {
           const allIds = matchups.flatMap(m => [m.noid1_id, m.noid2_id]).filter(Boolean);
           forceRefreshImages && forceRefreshImages([...new Set(allIds)]);
-        }}>🔄 Refresh Images</button>
+        }}>ðŸ”„ Refresh Images</button>
       </div>
       <div className="bracket-view">
         <div className="bracket-scroll">
@@ -1714,7 +1713,7 @@ const TournamentBracket = ({ tournament, matchups, getImg, onClose, onViewNoid, 
                         <span className="bracket-noid-id clickable" onClick={(e) => { if (m.noid2_id && onViewNoid) { e.stopPropagation(); onViewNoid(m.noid2_id); } }}>{m.noid2_id ? `#${m.noid2_id}` : 'TBD'}</span>
                         {m.status === 'completed' && <span className="bracket-votes">{m.noid2_votes}</span>}
                       </div>
-                      {m.is_coin_flip && <span className="bracket-coinflip">🪙</span>}
+                      {m.is_coin_flip && <span className="bracket-coinflip">ðŸª™</span>}
                       {m.status === 'active' && <span className="bracket-live">LIVE</span>}
                     </div>
                   ))}
