@@ -533,7 +533,7 @@ const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTourn
             {f === 'all' ? '📋 All' : f === 'open' ? '🟢 Open' : f === 'active' ? '🔴 Live' : '✅ Finished'}
           </button>
         ))}
-        <button className="tab-btn refresh-btn" onClick={loadTournaments} title="Refresh list">🔄</button>
+        <button className="tab-btn refresh-btn" onClick={loadTournaments} title="Refresh list">🔄 Refresh List</button>
       </div>
 
       <div className="tournament-list">
