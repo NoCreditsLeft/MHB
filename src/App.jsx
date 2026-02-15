@@ -2432,6 +2432,7 @@ const MusicPlayer = () => {
     { id: 'ntFOXW7BOMY', title: 'RCADIA' },
     { id: 'cnlNxHXURQ4', title: 'Resurexion (D&B)' },
     { id: 'FV8BXfZyWJI', title: 'Come on (Light it Up)' },
+    { id: 'qhGq-Qqu6Ug', title: 'Chrome Veins' },
   ];
 
   const [isPlaying, setIsPlaying] = useState(false);
