@@ -2569,6 +2569,10 @@ function App() {
   // Get wallet connection status and address
   const { isConnected, address } = useAccount();
 
+useEffect(() => {
+  window.scrollTo(0, 0);
+}, [view]);
+
   useEffect(() => {
     // Use wallet address as user ID if connected, otherwise generate random ID
     if (isConnected && address) {
