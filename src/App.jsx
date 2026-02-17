@@ -1130,7 +1130,7 @@ const Help = ({ onClose }) => {
         <div className="help-section glass-panel">
           <h3>❓ Questions?</h3>
           <p>NOiDs Battle is a community-driven platform built for the NOiDs collection. All battles, votes, and statistics are transparent and verifiable.</p>
-          <p className="help-footer">Built by @NoCredits | Version 0.84 (Beta)</p>
+          <p className="help-footer">Built by @NoCredits | Version 0.91 (Beta)</p>
         </div>
       </div>
     </div>
