@@ -7,9 +7,9 @@ import { supabase } from './App';
 
 const CONTRACT_ADDRESS = '0x9aea7d84fc8d359f09493b75c68e6f2880c3dd7b';
 const OPENSEA_API_KEY = 'f6662070d18f4d54936bdd66b94c3f11';
-const TOTAL_NOIDS = 5000;
+const TOTAL_BADGERS = 5000;
 
-const ONE_OF_ONE_NOIDS = [
+const ONE_OF_ONE_BADGERS = [
   3399, 4550, 46, 3421, 5521, 4200, 814, 1587, 4234, 1601,
   2480, 1046, 4999, 2290, 1401, 2148, 3921, 4900, 4699, 1187,
   2225, 948, 2214, 1448, 3321, 4221, 4111, 2281, 2231, 2014,
@@ -31,24 +31,24 @@ const TOTAL_ROUNDS = { 8: 3, 16: 4, 32: 5 };
 
 const globalImageCache = {};
 
-const fetchAndCacheImage = async (noidId) => {
-  if (globalImageCache[noidId]) return globalImageCache[noidId];
+const fetchAndCacheImage = async (badgerId) => {
+  if (globalImageCache[badgerId]) return globalImageCache[badgerId];
   try {
     const response = await fetch(
-      `https://api.opensea.io/api/v2/chain/ethereum/contract/${CONTRACT_ADDRESS}/nfts/${noidId}`,
+      `https://api.opensea.io/api/v2/chain/ethereum/contract/${CONTRACT_ADDRESS}/nfts/${badgerId}`,
       { headers: { 'x-api-key': OPENSEA_API_KEY } }
     );
     if (!response.ok) throw new Error('Failed');
     const data = await response.json();
     const url = data.nft?.image_url || data.nft?.display_image_url;
     if (url) {
-      globalImageCache[noidId] = url;
+      globalImageCache[badgerId] = url;
       return url;
     }
     throw new Error('No URL');
   } catch {
-    const fallback = `https://gateway.pinata.cloud/ipfs/QmcXuDARMGMv59Q4ZZuoN5rjdM9GQrmp8NjLH5PDLixgAE/${noidId}`;
-    globalImageCache[noidId] = fallback;
+    const fallback = `https://gateway.pinata.cloud/ipfs/QmcXuDARMGMv59Q4ZZuoN5rjdM9GQrmp8NjLH5PDLixgAE/${badgerId}`;
+    globalImageCache[badgerId] = fallback;
     return fallback;
   }
 };
@@ -84,14 +84,14 @@ const useImageLoader = (parentImageCache) => {
     }
   }, [parentImageCache]);
 
-  const ensureImages = useCallback((noidIds) => {
-    const toFetch = noidIds.filter(id => id && !globalImageCache[id] && !pendingRef.current.has(id));
+  const ensureImages = useCallback((badgerIds) => {
+    const toFetch = badgerIds.filter(id => id && !globalImageCache[id] && !pendingRef.current.has(id));
     if (toFetch.length === 0) {
       // Sync local state with global cache
       setImages(prev => {
         const updated = { ...prev };
         let changed = false;
-        noidIds.forEach(id => {
+        badgerIds.forEach(id => {
           if (id && globalImageCache[id] && !prev[id]) {
             updated[id] = globalImageCache[id];
             changed = true;
@@ -116,12 +116,12 @@ const useImageLoader = (parentImageCache) => {
     });
   }, []);
 
-  const getImg = useCallback((noidId) => {
-    return images[noidId] || globalImageCache[noidId] || null;
+  const getImg = useCallback((badgerId) => {
+    return images[badgerId] || globalImageCache[badgerId] || null;
   }, [images]);
 
-  const forceRefreshImages = useCallback((noidIds) => {
-    const toFetch = noidIds.filter(id => id);
+  const forceRefreshImages = useCallback((badgerIds) => {
+    const toFetch = badgerIds.filter(id => id);
     if (toFetch.length === 0) return;
 
     // Clear from cache so they re-fetch
@@ -151,8 +151,8 @@ const useImageLoader = (parentImageCache) => {
 // HELPER FUNCTIONS
 // ============================================
 
-const fetchOwnedNoids = async (walletAddress) => {
-  const noids = [];
+const fetchOwnedBadgers = async (walletAddress) => {
+  const badgers = [];
   let next = null;
   try {
     do {
@@ -165,7 +165,7 @@ const fetchOwnedNoids = async (walletAddress) => {
       if (data.nfts) {
         data.nfts.forEach(nft => {
           const id = parseInt(nft.identifier);
-          if (!isNaN(id)) noids.push(id);
+          if (!isNaN(id)) badgers.push(id);
         });
       }
       next = data.next ? `https://api.opensea.io/api/v2/chain/ethereum/account/${walletAddress}/nfts?collection=megahoneybadgers&limit=50&next=${data.next}` : null;
@@ -173,7 +173,7 @@ const fetchOwnedNoids = async (walletAddress) => {
   } catch (err) {
     console.error('Error fetching owned Badgers:', err);
   }
-  return noids.sort((a, b) => a - b);
+  return badgers.sort((a, b) => a - b);
 };
 
 const generateTournamentCode = () => {
@@ -646,7 +646,7 @@ const CreateTournament = ({ walletAddress, onClose, onCreated }) => {
       <div className="create-form glass-panel">
         <div className="form-group">
           <label>Tournament Name</label>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. NOiDS Royal Rumble" className="form-input" maxLength={50} />
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Badger Royal Rumble" className="form-input" maxLength={50} />
         </div>
 
         <div className="form-group">
@@ -728,7 +728,7 @@ const CreateTournament = ({ walletAddress, onClose, onCreated }) => {
 const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parentImageCache }) => {
   const [tournament, setTournament] = useState(null);
   const [entries, setEntries] = useState([]);
-  const [ownedNoids, setOwnedNoids] = useState([]);
+  const [ownedBadgers, setOwnedBadgers] = useState([]);
   const [loadingOwned, setLoadingOwned] = useState(false);
   const [showEntryPicker, setShowEntryPicker] = useState(false);
   const [gateInput, setGateInput] = useState('');
@@ -797,27 +797,27 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
     setLoading(false);
   };
 
-  const loadOwnedNoids = async () => {
+  const loadOwnedBadgers = async () => {
     setLoadingOwned(true);
-    const noids = await fetchOwnedNoids(walletAddress);
-    setOwnedNoids(noids);
+    const badgers = await fetchOwnedBadgers(walletAddress);
+    setOwnedBadgers(badgers);
     setShowEntryPicker(true);
     setLoadingOwned(false);
-    ensureImages(noids);
+    ensureImages(badgers);
   };
 
-  const handleEnterNoid = async (noidId) => {
+  const handleEnterBadger = async (badgerId) => {
     if (!tournament) return;
     const alreadyEntered = entries.filter(e => e.entered_by_wallet === walletAddress.toLowerCase());
     const maxEntries = tournament.max_entries_per_player;
     if (maxEntries && alreadyEntered.length >= maxEntries) { alert(`Max ${maxEntries} entries per player`); return; }
-    if (entries.some(e => e.noid_id === noidId)) { alert(`Badger #${noidId} is already entered`); return; }
+    if (entries.some(e => e.noid_id === badgerId)) { alert(`Badger #${badgerId} is already entered`); return; }
     if (entries.length >= tournament.bracket_size) { alert('Tournament is full'); return; }
 
     try {
       const { error } = await supabase.from('noid_tournament_entries').insert([{
         tournament_id: tournamentId,
-        noid_id: noidId,
+        noid_id: badgerId,
         entered_by_wallet: walletAddress.toLowerCase()
       }]);
       if (error) throw error;
@@ -829,8 +829,8 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
         setShowEntryPicker(false);
       }
     } catch (err) {
-      console.error('Error entering NOID:', err);
-      alert('Failed to enter NOID');
+      console.error('Error entering Badger:', err);
+      alert('Failed to enter Badger');
     }
   };
 
@@ -858,13 +858,13 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
     if (!tournament) return;
     const remaining = tournament.bracket_size - entries.length;
     if (remaining <= 0) return;
-    if (!window.confirm(`Fill ${remaining} empty slots with random NOiDS?`)) return;
+    if (!window.confirm(`Fill ${remaining} empty slots with random Badgers?`)) return;
 
     try {
       const existingIds = entries.map(e => e.noid_id);
       const randomEntries = [];
       while (randomEntries.length < remaining) {
-        const randId = Math.floor(Math.random() * TOTAL_NOIDS) + 1;
+        const randId = Math.floor(Math.random() * TOTAL_BADGERS) + 1;
         if (!existingIds.includes(randId) && !randomEntries.some(r => r.noid_id === randId)) {
           randomEntries.push({
             tournament_id: tournamentId,
@@ -914,8 +914,8 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
           round: 1,
           round_name: getRoundName(tournament.bracket_size, 1),
           matchup_index: i / 2,
-          noid1_id: shuffled[i].noid_id,
-          noid2_id: shuffled[i + 1].noid_id,
+          token1_id: shuffled[i].noid_id,
+          token2_id: shuffled[i + 1].noid_id,
           status: 'pending'
         });
       }
@@ -930,8 +930,8 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
             round: round,
             round_name: getRoundName(tournament.bracket_size, round),
             matchup_index: i,
-            noid1_id: null,
-            noid2_id: null,
+            token1_id: null,
+            token2_id: null,
             status: 'pending'
           });
         }
@@ -993,11 +993,11 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
 
       <div className="lobby-info glass-panel">
         <div className="lobby-info-row"><span>Created by</span><strong>{tournament.creator_name || `${tournament.creator_wallet.slice(0, 6)}...${tournament.creator_wallet.slice(-4)}`}</strong></div>
-        <div className="lobby-info-row"><span>Bracket</span><strong>{tournament.bracket_size} NOiDS</strong></div>
+        <div className="lobby-info-row"><span>Bracket</span><strong>{tournament.bracket_size} Badgers</strong></div>
         <div className="lobby-info-row"><span>Round Timer</span><strong>{tournament.round_timer}s</strong></div>
         <div className="lobby-info-row"><span>Max Per Player</span><strong>{tournament.max_entries_per_player || '∞'}</strong></div>
         <div className="lobby-info-row"><span>Access</span><strong>{tournament.is_gated ? '🔒 Code-Gated' : '🌐 Open'}</strong></div>
-        <div className="lobby-info-row"><span>1:1 NOiDS</span><strong>{tournament.include_oneofone === false ? '❌ Excluded' : '✅ Allowed'}</strong></div>
+        <div className="lobby-info-row"><span>1:1 Badgers</span><strong>{tournament.include_oneofone === false ? '❌ Excluded' : '✅ Allowed'}</strong></div>
         <div className="lobby-info-row"><span>Entries</span><strong className="entries-count">{entries.length} / {tournament.bracket_size}</strong></div>
         {viewerCount > 0 && <div className="lobby-info-row"><span>👁 Watching</span><strong>{viewerCount}</strong></div>}
       </div>
@@ -1047,8 +1047,8 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
 
       <div className="lobby-actions">
         {canEnter && !needsGateCode && walletAddress && (
-          <button className="start-btn" onClick={loadOwnedNoids} disabled={loadingOwned}>
-            {loadingOwned ? 'Loading NOiDS...' : '+ Enter Your NOiDS'}
+          <button className="start-btn" onClick={loadOwnedBadgers} disabled={loadingOwned}>
+            {loadingOwned ? 'Loading Badgers...' : '+ Enter Your Badgers'}
           </button>
         )}
         {isCreator && tournament.status === 'open' && isFull && (
@@ -1064,29 +1064,29 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
 
       {showEntryPicker && (
         <div className="modal-overlay" onClick={() => setShowEntryPicker(false)}>
-          <div className="noid-picker-modal glass-panel" onClick={e => e.stopPropagation()}>
+          <div className="badger-picker-modal glass-panel" onClick={e => e.stopPropagation()}>
             <div className="picker-header">
-              <h3>Select NOiDS to Enter</h3>
-              <button className="refresh-images-btn" onClick={() => forceRefreshImages(ownedNoids)}>🔄</button>
+              <h3>Select Badgers to Enter</h3>
+              <button className="refresh-images-btn" onClick={() => forceRefreshImages(ownedBadgers)}>🔄</button>
               <button className="modal-close" onClick={() => setShowEntryPicker(false)}>×</button>
             </div>
             <div className="picker-info">
               {tournament.max_entries_per_player ? `You can enter ${tournament.max_entries_per_player - myEntries.length} more` : 'Unlimited entries'}
             </div>
             <div className="picker-grid">
-              {ownedNoids.length === 0 ? (
-                <p className="picker-empty">No NOiDS found in your wallet</p>
+              {ownedBadgers.length === 0 ? (
+                <p className="picker-empty">No Badgers found in your wallet</p>
               ) : (
-                ownedNoids
-                  .filter(noidId => tournament.include_oneofone !== false || !ONE_OF_ONE_NOIDS.includes(noidId))
-                  .map(noidId => {
-                    const alreadyIn = entries.some(e => e.noid_id === noidId);
+                ownedBadgers
+                  .filter(badgerId => tournament.include_oneofone !== false || !ONE_OF_ONE_BADGERS.includes(badgerId))
+                  .map(badgerId => {
+                    const alreadyIn = entries.some(e => e.noid_id === badgerId);
                     const atLimit = tournament.max_entries_per_player && myEntries.length >= tournament.max_entries_per_player;
-                    const imgUrl = getImg(noidId);
+                    const imgUrl = getImg(badgerId);
                     return (
-                      <button key={noidId} className={`picker-item has-image ${alreadyIn ? 'entered' : ''}`} onClick={() => !alreadyIn && !atLimit && handleEnterNoid(noidId)} disabled={alreadyIn || atLimit}>
-                        {imgUrl && <img src={imgUrl} alt={`#${noidId}`} className="picker-item-img" />}
-                        <span>#{noidId}</span>
+                      <button key={badgerId} className={`picker-item has-image ${alreadyIn ? 'entered' : ''}`} onClick={() => !alreadyIn && !atLimit && handleEnterBadger(badgerId)} disabled={alreadyIn || atLimit}>
+                        {imgUrl && <img src={imgUrl} alt={`#${badgerId}`} className="picker-item-img" />}
+                        <span>#{badgerId}</span>
                         {alreadyIn && <span className="picker-check">✔</span>}
                       </button>
                     );
@@ -1104,7 +1104,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
 // LIVE TOURNAMENT
 // ============================================
 
-const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, parentImageCache, showWalletModal }) => {
+const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewBadger, parentImageCache, showWalletModal }) => {
   const [tournament, setTournament] = useState(null);
   const [matchups, setMatchups] = useState([]);
   const [activeMatchup, setActiveMatchup] = useState(null);
@@ -1262,18 +1262,18 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         if (allFinalsDone) {
           const finalMatchup = finalMatchups[0];
           const winnerId = finalMatchup.winner_id;
-          const loserId = winnerId === finalMatchup.noid1_id ? finalMatchup.noid2_id : finalMatchup.noid1_id;
+          const loserId = winnerId === finalMatchup.token1_id ? finalMatchup.token2_id : finalMatchup.token1_id;
           await completeTournament(t, winnerId, allMatchups, finalMatchup, loserId);
           return loadTournamentState();
         }
       }
 
-      const noidIds = new Set();
+      const badgerIds = new Set();
       (allMatchups || []).forEach(m => {
-        if (m.noid1_id) noidIds.add(m.noid1_id);
-        if (m.noid2_id) noidIds.add(m.noid2_id);
+        if (m.token1_id) badgerIds.add(m.token1_id);
+        if (m.token2_id) badgerIds.add(m.token2_id);
       });
-      if (noidIds.size > 0) ensureImages([...noidIds]);
+      if (badgerIds.size > 0) ensureImages([...badgerIds]);
 
       // Find active matchup
       const active = (allMatchups || []).find(m => m.status === 'active');
@@ -1314,7 +1314,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
     }
   };
 
-  const handleVote = async (noidId) => {
+  const handleVote = async (badgerId) => {
     if (hasVoted || isVoting || !activeMatchup) return;
     const voterId = walletAddress?.toLowerCase() || (() => {
       let id = localStorage.getItem('anon_voter_id');
@@ -1322,14 +1322,14 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       return id;
     })();
     setIsVoting(true);
-    setVotedFor(noidId);
+    setVotedFor(badgerId);
 
     try {
       const { error: voteError } = await supabase.from('noid_tournament_votes').insert([{
         matchup_id: activeMatchup.id,
         tournament_id: tournamentId,
         voter_wallet: voterId,
-        voted_for_noid_id: noidId
+        voted_for_noid_id: badgerId
       }]);
 
       if (voteError) {
@@ -1338,8 +1338,8 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       }
 
       // ATOMIC increment — fixes race condition
-      const field = noidId === activeMatchup.noid1_id ? 'noid1_votes' : 'noid2_votes';
-      const firstVoteField = noidId === activeMatchup.noid1_id ? 'noid1_first_vote_at' : 'noid2_first_vote_at';
+      const field = badgerId === activeMatchup.token1_id ? 'token1_votes' : 'token2_votes';
+      const firstVoteField = badgerId === activeMatchup.token1_id ? 'token1_first_vote_at' : 'token2_first_vote_at';
 
       await supabase.rpc('increment_matchup_votes', {
         p_matchup_id: activeMatchup.id,
@@ -1369,30 +1369,30 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
 
       let winnerId, isCoinFlip = false;
 
-      if (freshMatchup.noid1_votes > freshMatchup.noid2_votes) {
-        winnerId = freshMatchup.noid1_id;
-      } else if (freshMatchup.noid2_votes > freshMatchup.noid1_votes) {
-        winnerId = freshMatchup.noid2_id;
-      } else if (freshMatchup.noid1_votes === 0 && freshMatchup.noid2_votes === 0) {
-        winnerId = Math.random() < 0.5 ? freshMatchup.noid1_id : freshMatchup.noid2_id;
+      if (freshMatchup.token1_votes > freshMatchup.token2_votes) {
+        winnerId = freshMatchup.token1_id;
+      } else if (freshMatchup.token2_votes > freshMatchup.token1_votes) {
+        winnerId = freshMatchup.token2_id;
+      } else if (freshMatchup.token1_votes === 0 && freshMatchup.token2_votes === 0) {
+        winnerId = Math.random() < 0.5 ? freshMatchup.token1_id : freshMatchup.token2_id;
         isCoinFlip = true;
       } else {
         // Equal non-zero votes — use tournament's tiebreak setting
         if (t.tiebreak_mode === 'coin_flip') {
-          winnerId = Math.random() < 0.5 ? freshMatchup.noid1_id : freshMatchup.noid2_id;
+          winnerId = Math.random() < 0.5 ? freshMatchup.token1_id : freshMatchup.token2_id;
           isCoinFlip = true;
         } else {
-          if (freshMatchup.noid1_first_vote_at && freshMatchup.noid2_first_vote_at) {
-            winnerId = new Date(freshMatchup.noid1_first_vote_at) <= new Date(freshMatchup.noid2_first_vote_at) ? freshMatchup.noid1_id : freshMatchup.noid2_id;
-          } else if (freshMatchup.noid1_first_vote_at) {
-            winnerId = freshMatchup.noid1_id;
+          if (freshMatchup.token1_first_vote_at && freshMatchup.token2_first_vote_at) {
+            winnerId = new Date(freshMatchup.token1_first_vote_at) <= new Date(freshMatchup.token2_first_vote_at) ? freshMatchup.token1_id : freshMatchup.token2_id;
+          } else if (freshMatchup.token1_first_vote_at) {
+            winnerId = freshMatchup.token1_id;
           } else {
-            winnerId = freshMatchup.noid2_id;
+            winnerId = freshMatchup.token2_id;
           }
         }
       }
 
-      const loserId = winnerId === freshMatchup.noid1_id ? freshMatchup.noid2_id : freshMatchup.noid1_id;
+      const loserId = winnerId === freshMatchup.token1_id ? freshMatchup.token2_id : freshMatchup.token1_id;
 
       // Step 1: ATOMIC — only complete if still active (prevents race with double poll calls)
       const { data: updated } = await supabase.from('noid_tournament_matchups')
@@ -1406,7 +1406,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
 
       // Record stats (non-coinflip only)
       if (!isCoinFlip) {
-        recordTournamentBattle(freshMatchup.noid1_id, freshMatchup.noid2_id, winnerId, walletAddress || 'system').catch(console.error);
+        recordTournamentBattle(freshMatchup.token1_id, freshMatchup.token2_id, winnerId, walletAddress || 'system').catch(console.error);
       }
 
       await feedWinnerToNextRound(winnerId, freshMatchup, allMatchups, t);
@@ -1476,7 +1476,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
     if (completedMatchup.round >= totalRounds) return;
     const nextRound = completedMatchup.round + 1;
     const nextMatchupIndex = Math.floor(completedMatchup.matchup_index / 2);
-    const slot = completedMatchup.matchup_index % 2 === 0 ? 'noid1_id' : 'noid2_id';
+    const slot = completedMatchup.matchup_index % 2 === 0 ? 'token1_id' : 'token2_id';
     const nextMatchup = allMatchups.find(m => m.round === nextRound && m.matchup_index === nextMatchupIndex);
     if (nextMatchup) {
       await supabase.from('noid_tournament_matchups').update({ [slot]: winnerId }).eq('id', nextMatchup.id);
@@ -1490,7 +1490,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       const semiFinals = allMatchups.filter(m => m.round === semiFinalRound && m.status === 'completed');
       let thirdPlaceId = null;
       for (const sf of semiFinals) {
-        const sfLoser = sf.winner_id === sf.noid1_id ? sf.noid2_id : sf.noid1_id;
+        const sfLoser = sf.winner_id === sf.token1_id ? sf.token2_id : sf.token1_id;
         if (sfLoser !== loserId) { thirdPlaceId = sfLoser; break; }
       }
 
@@ -1509,21 +1509,21 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
     }
   };
 
-  const recordTournamentBattle = async (noid1Id, noid2Id, winnerId, userId) => {
+  const recordTournamentBattle = async (token1Id, token2Id, winnerId, userId) => {
     try {
-      const loserId = winnerId === noid1Id ? noid2Id : noid1Id;
+      const loserId = winnerId === token1Id ? token2Id : token1Id;
       const now = new Date().toISOString();
 
       await supabase.from('battle_history').insert([{
-        noid1_id: noid1Id, noid2_id: noid2Id, winner_id: winnerId, loser_id: loserId,
+        token1_id: token1Id, token2_id: token2Id, winner_id: winnerId, loser_id: loserId,
         game_mode: 'tournament', user_id: userId || 'tournament', is_daily_battle: false
       }]);
 
-      for (const [noidId, won] of [[noid1Id, winnerId === noid1Id], [noid2Id, winnerId === noid2Id]]) {
-        const { data: current } = await supabase.from('noid_stats').select('*').eq('noid_id', noidId).single();
+      for (const [badgerId, won] of [[token1Id, winnerId === token1Id], [token2Id, winnerId === token2Id]]) {
+        const { data: current } = await supabase.from('noid_stats').select('*').eq('noid_id', badgerId).single();
         if (!current) {
           await supabase.from('noid_stats').insert([{
-            noid_id: noidId, total_battles: 1, total_wins: won ? 1 : 0, total_losses: won ? 0 : 1,
+            noid_id: badgerId, total_battles: 1, total_wins: won ? 1 : 0, total_losses: won ? 0 : 1,
             current_streak: won ? 1 : -1, best_streak: won ? 1 : 0,
             first_battle_date: now, last_battle_date: now,
             last_win_date: won ? now : null, last_loss_date: won ? null : now, underdog_wins: 0
@@ -1536,14 +1536,14 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
             best_streak: won ? Math.max(current.best_streak, newStreak) : current.best_streak,
             last_battle_date: now, last_win_date: won ? now : current.last_win_date,
             last_loss_date: won ? current.last_loss_date : now, updated_at: now
-          }).eq('noid_id', noidId);
+          }).eq('noid_id', badgerId);
         }
 
-        const { data: ms } = await supabase.from('noid_gamemode_stats').select('*').eq('noid_id', noidId).eq('game_mode', 'tournament').single();
+        const { data: ms } = await supabase.from('noid_gamemode_stats').select('*').eq('noid_id', badgerId).eq('game_mode', 'tournament').single();
         if (!ms) {
-          await supabase.from('noid_gamemode_stats').insert([{ noid_id: noidId, game_mode: 'tournament', battles: 1, wins: won ? 1 : 0, losses: won ? 0 : 1 }]);
+          await supabase.from('noid_gamemode_stats').insert([{ noid_id: badgerId, game_mode: 'tournament', battles: 1, wins: won ? 1 : 0, losses: won ? 0 : 1 }]);
         } else {
-          await supabase.from('noid_gamemode_stats').update({ battles: ms.battles + 1, wins: ms.wins + (won ? 1 : 0), losses: ms.losses + (won ? 0 : 1) }).eq('noid_id', noidId).eq('game_mode', 'tournament');
+          await supabase.from('noid_gamemode_stats').update({ battles: ms.battles + 1, wins: ms.wins + (won ? 1 : 0), losses: ms.losses + (won ? 0 : 1) }).eq('noid_id', badgerId).eq('game_mode', 'tournament');
         }
       }
 
@@ -1597,7 +1597,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   const coinFlipRemaining = tournament.coin_flip_until ? Math.max(0, Math.ceil((new Date(tournament.coin_flip_until).getTime() - getServerNow()) / 1000)) : 0;
   if (coinFlipRemaining > 0 && tournament.coin_flip_winner_id) {
     const lastCompleted = [...matchups].filter(m => m.status === 'completed' && m.is_coin_flip).pop();
-    const totalVotes = lastCompleted ? (lastCompleted.noid1_votes || 0) + (lastCompleted.noid2_votes || 0) : 0;
+    const totalVotes = lastCompleted ? (lastCompleted.token1_votes || 0) + (lastCompleted.token2_votes || 0) : 0;
     return (
       <div className="tournament-container">
         <CoinFlipOverlay winnerId={tournament.coin_flip_winner_id} votes={totalVotes} getImg={getImg} />
@@ -1608,12 +1608,12 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   // Priority 3: Bracket display (DB-driven — all viewers see this)
   const bracketRemaining = tournament.bracket_until ? Math.max(0, Math.ceil((new Date(tournament.bracket_until).getTime() - getServerNow()) / 1000)) : 0;
   if (bracketRemaining > 0) {
-    return <TournamentBracket tournament={tournament} matchups={matchups} getImg={getImg} onClose={() => {}} onViewNoid={onViewNoid} forceRefreshImages={forceRefreshImages} />;
+    return <TournamentBracket tournament={tournament} matchups={matchups} getImg={getImg} onClose={() => {}} onViewBadger={onViewBadger} forceRefreshImages={forceRefreshImages} />;
   }
 
   // Priority 4: Manual bracket view
   if (showBracket) {
-    return <TournamentBracket tournament={tournament} matchups={matchups} getImg={getImg} onClose={() => setShowBracket(false)} onViewNoid={onViewNoid} forceRefreshImages={forceRefreshImages} />;
+    return <TournamentBracket tournament={tournament} matchups={matchups} getImg={getImg} onClose={() => setShowBracket(false)} onViewBadger={onViewBadger} forceRefreshImages={forceRefreshImages} />;
   }
 
   // Priority 5: Tournament complete — podium
@@ -1630,26 +1630,26 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
           <h2>Tournament Complete!</h2>
           <div className="podium">
             {tournament.winner_token_id && (
-              <div className="podium-place first" onClick={() => onViewNoid && onViewNoid(tournament.winner_token_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
+              <div className="podium-place first" onClick={() => onViewBadger && onViewBadger(tournament.winner_token_id)} style={{ cursor: onViewBadger ? 'pointer' : 'default' }}>
                 <span className="podium-medal">🥇</span>
                 {getImg(tournament.winner_token_id) && <img src={getImg(tournament.winner_token_id)} alt="" className="podium-img" />}
-                <span className="podium-noid">Badger #{tournament.winner_token_id}</span>
+                <span className="podium-badger">Badger #{tournament.winner_token_id}</span>
                 <span className="podium-label">Champion</span>
               </div>
             )}
             {tournament.runner_up_token_id && (
-              <div className="podium-place second" onClick={() => onViewNoid && onViewNoid(tournament.runner_up_token_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
+              <div className="podium-place second" onClick={() => onViewBadger && onViewBadger(tournament.runner_up_token_id)} style={{ cursor: onViewBadger ? 'pointer' : 'default' }}>
                 <span className="podium-medal">🥈</span>
                 {getImg(tournament.runner_up_token_id) && <img src={getImg(tournament.runner_up_token_id)} alt="" className="podium-img" />}
-                <span className="podium-noid">Badger #{tournament.runner_up_token_id}</span>
+                <span className="podium-badger">Badger #{tournament.runner_up_token_id}</span>
                 <span className="podium-label">Runner-up</span>
               </div>
             )}
             {tournament.third_place_token_id && (
-              <div className="podium-place third" onClick={() => onViewNoid && onViewNoid(tournament.third_place_token_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
+              <div className="podium-place third" onClick={() => onViewBadger && onViewBadger(tournament.third_place_token_id)} style={{ cursor: onViewBadger ? 'pointer' : 'default' }}>
                 <span className="podium-medal">🥉</span>
                 {getImg(tournament.third_place_token_id) && <img src={getImg(tournament.third_place_token_id)} alt="" className="podium-img" />}
-                <span className="podium-noid">Badger #{tournament.third_place_token_id}</span>
+                <span className="podium-badger">Badger #{tournament.third_place_token_id}</span>
                 <span className="podium-label">3rd Place</span>
               </div>
             )}
@@ -1706,7 +1706,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         <h2 className="tournament-title">{tournament.tournament_name}</h2>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button className="refresh-images-btn" onClick={() => {
-            const allIds = matchups.flatMap(m => [m.noid1_id, m.noid2_id]).filter(Boolean);
+            const allIds = matchups.flatMap(m => [m.token1_id, m.token2_id]).filter(Boolean);
             forceRefreshImages([...new Set(allIds)]);
           }}>🔄</button>
           <button className="bracket-toggle-btn" onClick={() => setShowBracket(true)}>📊 Bracket</button>
@@ -1730,18 +1730,18 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       {activeMatchup ? (
         <div className="battle-arena tournament-arena">
           <div
-            className={`noid-card glass-card ${hasVoted && votedFor === activeMatchup.noid1_id ? 'voted-winner' : ''} ${hasVoted && votedFor !== activeMatchup.noid1_id && hasVoted ? 'voted-other' : ''}`}
-            onClick={() => handleVote(activeMatchup.noid1_id)}
+            className={`badger-card glass-card ${hasVoted && votedFor === activeMatchup.token1_id ? 'voted-winner' : ''} ${hasVoted && votedFor !== activeMatchup.token1_id && hasVoted ? 'voted-other' : ''}`}
+            onClick={() => handleVote(activeMatchup.token1_id)}
             style={{ cursor: hasVoted ? 'default' : 'pointer', ...roundBorder }}
           >
             <div className="card-glow"></div>
             <div className="image-container">
-              {getImg(activeMatchup.noid1_id) && <img src={getImg(activeMatchup.noid1_id)} alt={`Badger #${activeMatchup.noid1_id}`} />}
+              {getImg(activeMatchup.token1_id) && <img src={getImg(activeMatchup.token1_id)} alt={`Badger #${activeMatchup.token1_id}`} />}
             </div>
             <div className="noid-info">
-              <h3>Badger #{activeMatchup.noid1_id}</h3>
+              <h3>Badger #{activeMatchup.token1_id}</h3>
               {hasVoted && (
-                <div className="vote-count"><span className="vote-label">Votes:</span><span className="vote-number">{activeMatchup.noid1_votes}</span></div>
+                <div className="vote-count"><span className="vote-label">Votes:</span><span className="vote-number">{activeMatchup.token1_votes}</span></div>
               )}
             </div>
           </div>
@@ -1749,18 +1749,18 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
           <div className="vs-divider"><div className="vs-circle"><span>VS</span></div></div>
 
           <div
-            className={`noid-card glass-card ${hasVoted && votedFor === activeMatchup.noid2_id ? 'voted-winner' : ''} ${hasVoted && votedFor !== activeMatchup.noid2_id && hasVoted ? 'voted-other' : ''}`}
-            onClick={() => handleVote(activeMatchup.noid2_id)}
+            className={`badger-card glass-card ${hasVoted && votedFor === activeMatchup.token2_id ? 'voted-winner' : ''} ${hasVoted && votedFor !== activeMatchup.token2_id && hasVoted ? 'voted-other' : ''}`}
+            onClick={() => handleVote(activeMatchup.token2_id)}
             style={{ cursor: hasVoted ? 'default' : 'pointer', ...roundBorder }}
           >
             <div className="card-glow"></div>
             <div className="image-container">
-              {getImg(activeMatchup.noid2_id) && <img src={getImg(activeMatchup.noid2_id)} alt={`Badger #${activeMatchup.noid2_id}`} />}
+              {getImg(activeMatchup.token2_id) && <img src={getImg(activeMatchup.token2_id)} alt={`Badger #${activeMatchup.token2_id}`} />}
             </div>
             <div className="noid-info">
-              <h3>Badger #{activeMatchup.noid2_id}</h3>
+              <h3>Badger #{activeMatchup.token2_id}</h3>
               {hasVoted && (
-                <div className="vote-count"><span className="vote-label">Votes:</span><span className="vote-number">{activeMatchup.noid2_votes}</span></div>
+                <div className="vote-count"><span className="vote-label">Votes:</span><span className="vote-number">{activeMatchup.token2_votes}</span></div>
               )}
             </div>
           </div>
@@ -1793,15 +1793,15 @@ const TournamentBracketInline = ({ tournament, matchups, getImg }) => {
               <div className="bracket-matchups">
                 {roundMatchups.map(m => (
                   <div key={m.id} className={`bracket-matchup ${m.status}`}>
-                    <div className={`bracket-noid ${m.winner_id === m.noid1_id ? 'winner' : ''} ${m.winner_id === m.noid2_id ? 'loser' : ''}`}>
-                      {m.noid1_id && getImg(m.noid1_id) && <img src={getImg(m.noid1_id)} alt="" className="bracket-noid-img" />}
-                      <span className="bracket-noid-id">{m.noid1_id ? `#${m.noid1_id}` : 'TBD'}</span>
-                      {m.status === 'completed' && <span className="bracket-votes">{m.noid1_votes}</span>}
+                    <div className={`bracket-noid ${m.winner_id === m.token1_id ? 'winner' : ''} ${m.winner_id === m.token2_id ? 'loser' : ''}`}>
+                      {m.token1_id && getImg(m.token1_id) && <img src={getImg(m.token1_id)} alt="" className="bracket-noid-img" />}
+                      <span className="bracket-noid-id">{m.token1_id ? `#${m.token1_id}` : 'TBD'}</span>
+                      {m.status === 'completed' && <span className="bracket-votes">{m.token1_votes}</span>}
                     </div>
-                    <div className={`bracket-noid ${m.winner_id === m.noid2_id ? 'winner' : ''} ${m.winner_id === m.noid1_id ? 'loser' : ''}`}>
-                      {m.noid2_id && getImg(m.noid2_id) && <img src={getImg(m.noid2_id)} alt="" className="bracket-noid-img" />}
-                      <span className="bracket-noid-id">{m.noid2_id ? `#${m.noid2_id}` : 'TBD'}</span>
-                      {m.status === 'completed' && <span className="bracket-votes">{m.noid2_votes}</span>}
+                    <div className={`bracket-noid ${m.winner_id === m.token2_id ? 'winner' : ''} ${m.winner_id === m.token1_id ? 'loser' : ''}`}>
+                      {m.token2_id && getImg(m.token2_id) && <img src={getImg(m.token2_id)} alt="" className="bracket-noid-img" />}
+                      <span className="bracket-noid-id">{m.token2_id ? `#${m.token2_id}` : 'TBD'}</span>
+                      {m.status === 'completed' && <span className="bracket-votes">{m.token2_votes}</span>}
                     </div>
                     {m.is_coin_flip && <span className="bracket-coinflip">🪙</span>}
                     {m.status === 'active' && <span className="bracket-live">LIVE</span>}
@@ -1827,7 +1827,7 @@ const getRoundClass = (roundName) => {
 // BRACKET VIEW (full page)
 // ============================================
 
-const TournamentBracket = ({ tournament, matchups, getImg, onClose, onViewNoid, forceRefreshImages }) => {
+const TournamentBracket = ({ tournament, matchups, getImg, onClose, onViewBadger, forceRefreshImages }) => {
   const totalRounds = TOTAL_ROUNDS[tournament.bracket_size];
 
   return (
@@ -1836,7 +1836,7 @@ const TournamentBracket = ({ tournament, matchups, getImg, onClose, onViewNoid, 
         <button className="back-btn" onClick={onClose}><span className="back-arrow">←</span>Back</button>
         <h2 className="tournament-title">{tournament.tournament_name} — Bracket</h2>
         <button className="refresh-images-btn" onClick={() => {
-          const allIds = matchups.flatMap(m => [m.noid1_id, m.noid2_id]).filter(Boolean);
+          const allIds = matchups.flatMap(m => [m.token1_id, m.token2_id]).filter(Boolean);
           forceRefreshImages && forceRefreshImages([...new Set(allIds)]);
         }}>🔄 Refresh Images</button>
       </div>
@@ -1852,15 +1852,15 @@ const TournamentBracket = ({ tournament, matchups, getImg, onClose, onViewNoid, 
                 <div className="bracket-matchups">
                   {roundMatchups.map(m => (
                     <div key={m.id} className={`bracket-matchup ${m.status}`}>
-                      <div className={`bracket-noid ${m.winner_id === m.noid1_id ? 'winner' : ''} ${m.winner_id === m.noid2_id ? 'loser' : ''}`}>
-                        {m.noid1_id && getImg(m.noid1_id) && <img src={getImg(m.noid1_id)} alt="" className="bracket-noid-img" />}
-                        <span className="bracket-noid-id clickable" onClick={(e) => { if (m.noid1_id && onViewNoid) { e.stopPropagation(); onViewNoid(m.noid1_id); } }}>{m.noid1_id ? `#${m.noid1_id}` : 'TBD'}</span>
-                        {m.status === 'completed' && <span className="bracket-votes">{m.noid1_votes}</span>}
+                      <div className={`bracket-noid ${m.winner_id === m.token1_id ? 'winner' : ''} ${m.winner_id === m.token2_id ? 'loser' : ''}`}>
+                        {m.token1_id && getImg(m.token1_id) && <img src={getImg(m.token1_id)} alt="" className="bracket-noid-img" />}
+                        <span className="bracket-noid-id clickable" onClick={(e) => { if (m.token1_id && onViewBadger) { e.stopPropagation(); onViewBadger(m.token1_id); } }}>{m.token1_id ? `#${m.token1_id}` : 'TBD'}</span>
+                        {m.status === 'completed' && <span className="bracket-votes">{m.token1_votes}</span>}
                       </div>
-                      <div className={`bracket-noid ${m.winner_id === m.noid2_id ? 'winner' : ''} ${m.winner_id === m.noid1_id ? 'loser' : ''}`}>
-                        {m.noid2_id && getImg(m.noid2_id) && <img src={getImg(m.noid2_id)} alt="" className="bracket-noid-img" />}
-                        <span className="bracket-noid-id clickable" onClick={(e) => { if (m.noid2_id && onViewNoid) { e.stopPropagation(); onViewNoid(m.noid2_id); } }}>{m.noid2_id ? `#${m.noid2_id}` : 'TBD'}</span>
-                        {m.status === 'completed' && <span className="bracket-votes">{m.noid2_votes}</span>}
+                      <div className={`bracket-noid ${m.winner_id === m.token2_id ? 'winner' : ''} ${m.winner_id === m.token1_id ? 'loser' : ''}`}>
+                        {m.token2_id && getImg(m.token2_id) && <img src={getImg(m.token2_id)} alt="" className="bracket-noid-img" />}
+                        <span className="bracket-noid-id clickable" onClick={(e) => { if (m.token2_id && onViewBadger) { e.stopPropagation(); onViewBadger(m.token2_id); } }}>{m.token2_id ? `#${m.token2_id}` : 'TBD'}</span>
+                        {m.status === 'completed' && <span className="bracket-votes">{m.token2_votes}</span>}
                       </div>
                       {m.is_coin_flip && <span className="bracket-coinflip">🪙</span>}
                       {m.status === 'active' && <span className="bracket-live">LIVE</span>}
@@ -1880,7 +1880,7 @@ const TournamentBracket = ({ tournament, matchups, getImg, onClose, onViewNoid, 
 // MAIN TOURNAMENT COMPONENT (Router)
 // ============================================
 
-const Tournament = ({ walletAddress, onClose, showWalletModal, onViewNoid, parentImageCache }) => {
+const Tournament = ({ walletAddress, onClose, showWalletModal, onViewBadger, parentImageCache }) => {
   const [tournamentView, setTournamentView] = useState('hub');
   const [activeTournamentId, setActiveTournamentId] = useState(null);
 
@@ -1908,7 +1908,7 @@ const Tournament = ({ walletAddress, onClose, showWalletModal, onViewNoid, paren
     case 'lobby':
       return <TournamentLobby tournamentId={activeTournamentId} walletAddress={walletAddress} onClose={() => setTournamentView('hub')} onStart={(id) => { setActiveTournamentId(id); setTournamentView('live'); }} parentImageCache={parentImageCache} />;
     case 'live':
-      return <LiveTournament tournamentId={activeTournamentId} walletAddress={walletAddress} onClose={() => setTournamentView('hub')} onViewNoid={onViewNoid} parentImageCache={parentImageCache} showWalletModal={showWalletModal} />;
+      return <LiveTournament tournamentId={activeTournamentId} walletAddress={walletAddress} onClose={() => setTournamentView('hub')} onViewBadger={onViewBadger} parentImageCache={parentImageCache} showWalletModal={showWalletModal} />;
     default:
       return null;
   }
