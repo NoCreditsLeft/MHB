@@ -209,7 +209,7 @@ const CountdownOverlay = ({ seconds, title, subtitle, onComplete }) => {
       <div className="countdown-content">
         <h2 className="countdown-title">{subtitle || 'STARTING IN'}</h2>
         <div className="countdown-number">{timeLeft}</div>
-        <img src="/public/Badgers_Battle_Splash.jpg" alt="Badger Battle" className="countdown-splash" />
+        <img src="../public/Badgers_Battle_Splash.jpg" alt="Badger Battle" className="countdown-splash" />
         <h3 className="countdown-tournament-name">{title}</h3>
       </div>
     </div>
@@ -1690,7 +1690,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewBadger, pa
           <div className="round-transition-countdown">
             <div className="countdown-number">{countdownRemaining}</div>
           </div>
-          <img src="/public/Badgers_Battle_Splash.jpg" alt="Badger Battle" className="round-transition-splash" />
+          <img src="../public/Badgers_Battle_Splash.jpg" alt="Badger Battle" className="round-transition-splash" />
           <h3 className="round-transition-round-name">{getRoundName(tournament.bracket_size, tournament.current_round)}</h3>
         </div>
       </div>
