@@ -15,7 +15,7 @@ body {
 
 .app {
   min-height: 100vh;
-  background: #000000 url('/NOiDS_Battle_Faded.png') center center / cover no-repeat fixed;
+  background: #000000 url('/Badgers_Battle_Faded.png') center center / cover no-repeat fixed;
   color: #ffffff;
   position: relative;
   overflow-x: hidden;
