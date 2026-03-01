@@ -3,7 +3,7 @@ import { supabase } from './App';
 import { useAccount } from 'wagmi';
 import './MyNoids.css';
 
-const NOIDS_CONTRACT = '0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902';
+const NOIDS_CONTRACT = '0x9aea7d84fc8d359f09493b75c68e6f2880c3dd7b';
 const OPENSEA_API_KEY = 'f6662070d18f4d54936bdd66b94c3f11';
 
 function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
@@ -23,9 +23,9 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
     setError(null);
 
     try {
-      // Fetch NOIDs owned by wallet from OpenSea API
+      // Fetch Badgers owned by wallet from OpenSea API
       const response = await fetch(
-        `https://api.opensea.io/api/v2/chain/ethereum/account/${walletAddress}/nfts?collection=noidsofficial&limit=200`,
+        `https://api.opensea.io/api/v2/chain/ethereum/account/${walletAddress}/nfts?collection=megahoneybadgers&limit=200`,
         {
           headers: {
             'Accept': 'application/json',
@@ -35,7 +35,7 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
       );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch NOIDs from OpenSea');
+        throw new Error('Failed to fetch Badgers from OpenSea');
       }
 
       const data = await response.json();
@@ -93,7 +93,7 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
 
       setNoids(noidsWithStats);
     } catch (err) {
-      console.error('Error fetching wallet NOIDs:', err);
+      console.error('Error fetching wallet Badgers:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -107,7 +107,7 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
           <span className="back-arrow">←</span>
           Back to Menu
         </button>
-        <h1 className="my-noids-title">My NOIDs</h1>
+        <h1 className="my-noids-title">My Badgers</h1>
         <div className="header-right">
           <div className="wallet-address">
             {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
@@ -146,7 +146,7 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
       {loading && (
         <div className="loading-state">
           <div className="loading-spinner"></div>
-          <p>Loading your NOIDs...</p>
+          <p>Loading your Badgers...</p>
         </div>
       )}
 
@@ -163,8 +163,8 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
       {!loading && !error && noids.length === 0 && (
         <div className="empty-state glass-panel">
           <span className="empty-icon">🔍</span>
-          <h2>No NOIDs Found</h2>
-          <p>This wallet doesn't own any NOIDs yet.</p>
+          <h2>No Badgers Found</h2>
+          <p>This wallet doesn't own any Badgers yet.</p>
         </div>
       )}
 
@@ -172,7 +172,7 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
         <>
           <div className="noids-summary glass-panel">
             <div className="summary-stat">
-              <span className="stat-label">Total NOIDs</span>
+              <span className="stat-label">Total Badgers</span>
               <span className="stat-value">{noids.length}</span>
             </div>
             <div className="summary-stat">
@@ -209,13 +209,13 @@ function MyNoids({ walletAddress, onClose, onViewNoid, getNoidImage }) {
               >
                 <div className="card-glow"></div>
                 <div className="noid-image-container">
-                  <img src={noid.image} alt={`NOID #${noid.id}`} />
+                  <img src={noid.image} alt={`Badger #${noid.id}`} />
                   {noid.current_rank && (
                     <div className="rank-badge">#{noid.current_rank}</div>
                   )}
                 </div>
                 <div className="noid-card-info">
-                  <h3>NOID #{noid.id}</h3>
+                  <h3>Badger #{noid.id}</h3>
                   
                   {noid.total_battles > 0 ? (
                     <div className="noid-stats">
