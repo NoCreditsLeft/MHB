@@ -3131,7 +3131,7 @@ const menuContent = (
       
       <div className="logo-section">
         <img 
-          src="/Badgers_Battle.png" 
+          src="/public/Badgers_Battle.png" 
           alt="Badgers Battle Logo" 
           className="main-logo"
         />
