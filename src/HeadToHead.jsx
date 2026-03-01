@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from './App';
 
-const CONTRACT_ADDRESS = '0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902';
+const CONTRACT_ADDRESS = '0x9aea7d84fc8d359f09493b75c68e6f2880c3dd7b';
 const OPENSEA_API_KEY = 'f6662070d18f4d54936bdd66b94c3f11';
-const TOTAL_NOIDS = 5555;
+const TOTAL_NOIDS = 5000;
 const VOTING_DURATION = 30;
 const COUNTDOWN_DURATION = 20;
 
@@ -70,7 +70,7 @@ const CoinFlipOverlay = ({ winnerId, onDismiss, getImage }) => {
         ) : (
           <>
             <img src={getImage(winnerId)} alt="" className="h2h-coinflip-winner-img" />
-            <h2 className="h2h-coinflip-title" style={{ color: '#FFD700' }}>NOiD #{winnerId} wins!</h2>
+            <h2 className="h2h-coinflip-title" style={{ color: '#FFD700' }}>Badger #{winnerId} wins!</h2>
             <p className="h2h-coinflip-subtitle">Lucky flip 🍀</p>
           </>
         )}
@@ -259,7 +259,7 @@ const CreateH2H = ({ walletAddress, onCancel, onCreated, getImage, ensureImages 
           {validOpponent && getImage(oppId) && (
             <div className="h2h-opponent-preview">
               <img src={getImage(oppId)} alt="" className="h2h-preview-img" />
-              <span>NOiD #{oppId}</span>
+              <span>Badger #{oppId}</span>
             </div>
           )}
         </div>
@@ -444,11 +444,11 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
     const w = battle.winner_id, l = w === battle.noid1_id ? battle.noid2_id : battle.noid1_id;
     const margin = Math.abs(battle.noid1_votes - battle.noid2_votes);
     let headline;
-    if (battle.is_coin_flip) headline = `NOiD #${l} was edged out by NOiD #${w}`;
-    else if (margin >= 4) headline = `NOiD #${l} just got absolutely SMOKED by NOiD #${w}`;
-    else if (margin >= 2) headline = `NOiD #${l} was beaten by NOiD #${w}`;
-    else headline = `NOiD #${l} was edged out by NOiD #${w}`;
-    const text = `Head to Head Battle Results!\n${headline}\n\n🥇 NOiD #${w}\n🥈 NOiD #${l}\n\nThink your NOiD has what it takes?\nBattle it out at noidsbattle.com\n\n#NOiDSBattle @thehumanoids`;
+    if (battle.is_coin_flip) headline = `Badger #${l} was edged out by Badger #${w}`;
+    else if (margin >= 4) headline = `Badger #${l} just got absolutely SMOKED by Badger #${w}`;
+    else if (margin >= 2) headline = `Badger #${l} was beaten by Badger #${w}`;
+    else headline = `Badger #${l} was edged out by Badger #${w}`;
+    const text = `Head to Head Battle Results!\n${headline}\n\n🥇 Badger #${w}\n🥈 Badger #${l}\n\nThink your NOiD has what it takes?\nBattle it out at noidsbattle.com\n\n#NOiDSBattle @thehumanoids`;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -496,7 +496,7 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
       // Winner label
       ctx.fillStyle = '#00ff41'; ctx.font = 'bold 28px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(`🥇 NOiD #${w}`, winX + winSize / 2, winY + winSize + 40);
+      ctx.fillText(`🥇 Badger #${w}`, winX + winSize / 2, winY + winSize + 40);
 
       // Winner votes pill
       const wPillX = winX + 20, wPillY = winY + winSize + 55, wPillW = winSize - 40, wPillH = 36;
@@ -520,7 +520,7 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
 
       // Loser label
       ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; ctx.font = 'bold 24px monospace';
-      ctx.fillText(`🥈 NOiD #${l}`, loseX + loseSize / 2, loseY + loseSize + 35);
+      ctx.fillText(`🥈 Badger #${l}`, loseX + loseSize / 2, loseY + loseSize + 35);
 
       // Loser votes pill
       const lPillX = loseX + 15, lPillY = loseY + loseSize + 50, lPillW = loseSize - 30, lPillH = 32;
@@ -574,12 +574,12 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
           <div className="h2h-splash-matchup">
             <div className="h2h-splash-noid">
               {getImage(battle.noid1_id) ? <img src={getImage(battle.noid1_id)} alt="" className="h2h-splash-img" /> : <div className="h2h-splash-placeholder">#{battle.noid1_id}</div>}
-              <span className="h2h-splash-number">NOiD #{battle.noid1_id}</span>
+              <span className="h2h-splash-number">Badger #{battle.noid1_id}</span>
             </div>
             <div className="h2h-splash-vs">VS</div>
             <div className="h2h-splash-noid">
               {getImage(battle.noid2_id) ? <img src={getImage(battle.noid2_id)} alt="" className="h2h-splash-img" /> : <div className="h2h-splash-placeholder">#{battle.noid2_id}</div>}
-              <span className="h2h-splash-number">NOiD #{battle.noid2_id}</span>
+              <span className="h2h-splash-number">Badger #{battle.noid2_id}</span>
             </div>
           </div>
           {isCreator ? (
@@ -599,12 +599,12 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
           <div className="h2h-splash-matchup">
             <div className="h2h-splash-noid">
               {getImage(battle.noid1_id) ? <img src={getImage(battle.noid1_id)} alt="" className="h2h-splash-img" /> : <div className="h2h-splash-placeholder">#{battle.noid1_id}</div>}
-              <span className="h2h-splash-number">NOiD #{battle.noid1_id}</span>
+              <span className="h2h-splash-number">Badger #{battle.noid1_id}</span>
             </div>
             <div className="h2h-splash-vs">VS</div>
             <div className="h2h-splash-noid">
               {getImage(battle.noid2_id) ? <img src={getImage(battle.noid2_id)} alt="" className="h2h-splash-img" /> : <div className="h2h-splash-placeholder">#{battle.noid2_id}</div>}
-              <span className="h2h-splash-number">NOiD #{battle.noid2_id}</span>
+              <span className="h2h-splash-number">Badger #{battle.noid2_id}</span>
             </div>
           </div>
           <div className="h2h-countdown-timer">
@@ -634,10 +634,10 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
             >
               <div className="card-glow"></div>
               <div className="image-container">
-                {getImage(battle.noid1_id) && <img src={getImage(battle.noid1_id)} alt={`NOiD #${battle.noid1_id}`} />}
+                {getImage(battle.noid1_id) && <img src={getImage(battle.noid1_id)} alt={`Badger #${battle.noid1_id}`} />}
               </div>
               <div className="noid-info">
-                <h3>NOiD #{battle.noid1_id}</h3>
+                <h3>Badger #{battle.noid1_id}</h3>
                 {hasVoted && (
                   <div className="vote-count"><span className="vote-label">Votes:</span><span className="vote-number">{battle.noid1_votes}</span></div>
                 )}
@@ -653,10 +653,10 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
             >
               <div className="card-glow"></div>
               <div className="image-container">
-                {getImage(battle.noid2_id) && <img src={getImage(battle.noid2_id)} alt={`NOiD #${battle.noid2_id}`} />}
+                {getImage(battle.noid2_id) && <img src={getImage(battle.noid2_id)} alt={`Badger #${battle.noid2_id}`} />}
               </div>
               <div className="noid-info">
-                <h3>NOiD #{battle.noid2_id}</h3>
+                <h3>Badger #{battle.noid2_id}</h3>
                 {hasVoted && (
                   <div className="vote-count"><span className="vote-label">Votes:</span><span className="vote-number">{battle.noid2_votes}</span></div>
                 )}
@@ -680,7 +680,7 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
                 {getImage(battle.noid1_id) && <img src={getImage(battle.noid1_id)} alt="" />}
               </div>
               <div className="noid-info">
-                <h3>{winnerId === battle.noid1_id ? '🥇' : '🥈'} NOiD #{battle.noid1_id}</h3>
+                <h3>{winnerId === battle.noid1_id ? '🥇' : '🥈'} Badger #{battle.noid1_id}</h3>
                 <div className="vote-count"><span className="vote-label">Votes:</span><span className="vote-number">{battle.noid1_votes}</span></div>
               </div>
             </div>
@@ -700,7 +700,7 @@ const LiveH2H = ({ battle: initialBattle, walletAddress, showWalletModal, getIma
                 {getImage(battle.noid2_id) && <img src={getImage(battle.noid2_id)} alt="" />}
               </div>
               <div className="noid-info">
-                <h3>{winnerId === battle.noid2_id ? '🥇' : '🥈'} NOiD #{battle.noid2_id}</h3>
+                <h3>{winnerId === battle.noid2_id ? '🥇' : '🥈'} Badger #{battle.noid2_id}</h3>
                 <div className="vote-count"><span className="vote-label">Votes:</span><span className="vote-number">{battle.noid2_votes}</span></div>
               </div>
             </div>

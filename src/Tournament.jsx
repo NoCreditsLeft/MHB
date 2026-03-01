@@ -5,9 +5,9 @@ import { supabase } from './App';
 // CONSTANTS
 // ============================================
 
-const CONTRACT_ADDRESS = '0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902';
+const CONTRACT_ADDRESS = '0x9aea7d84fc8d359f09493b75c68e6f2880c3dd7b';
 const OPENSEA_API_KEY = 'f6662070d18f4d54936bdd66b94c3f11';
-const TOTAL_NOIDS = 5555;
+const TOTAL_NOIDS = 5000;
 
 const ONE_OF_ONE_NOIDS = [
   3399, 4550, 46, 3421, 5521, 4200, 814, 1587, 4234, 1601,
@@ -156,7 +156,7 @@ const fetchOwnedNoids = async (walletAddress) => {
   let next = null;
   try {
     do {
-      const url = next || `https://api.opensea.io/api/v2/chain/ethereum/account/${walletAddress}/nfts?collection=noidsofficial&limit=50`;
+      const url = next || `https://api.opensea.io/api/v2/chain/ethereum/account/${walletAddress}/nfts?collection=megahoneybadgers&limit=50`;
       const response = await fetch(url, {
         headers: { 'x-api-key': OPENSEA_API_KEY }
       });
@@ -168,10 +168,10 @@ const fetchOwnedNoids = async (walletAddress) => {
           if (!isNaN(id)) noids.push(id);
         });
       }
-      next = data.next ? `https://api.opensea.io/api/v2/chain/ethereum/account/${walletAddress}/nfts?collection=noidsofficial&limit=50&next=${data.next}` : null;
+      next = data.next ? `https://api.opensea.io/api/v2/chain/ethereum/account/${walletAddress}/nfts?collection=megahoneybadgers&limit=50&next=${data.next}` : null;
     } while (next);
   } catch (err) {
-    console.error('Error fetching owned NOIDs:', err);
+    console.error('Error fetching owned Badgers:', err);
   }
   return noids.sort((a, b) => a - b);
 };
@@ -242,7 +242,7 @@ const CoinFlipOverlay = ({ winnerId, votes, getImg }) => {
             <div className="coinflip-winner-img">
               {getImg(winnerId) && <img src={getImg(winnerId)} alt="" />}
             </div>
-            <h2 className="coinflip-title" style={{ color: '#ffd700' }}>NOID #{winnerId} wins!</h2>
+            <h2 className="coinflip-title" style={{ color: '#ffd700' }}>Badger #{winnerId} wins!</h2>
             <p className="coinflip-subtitle">Lucky flip 🍀</p>
           </>
         )}
@@ -313,7 +313,7 @@ const generateTournamentShareCard = async (tournament, getImg) => {
   ctx.fillText('🥇', 600, 520);
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 28px monospace';
-  ctx.fillText(`NOID #${tournament.winner_noid_id}`, 600, 555);
+  ctx.fillText(`Badger #${tournament.winner_noid_id}`, 600, 555);
   ctx.fillStyle = '#ffd700';
   ctx.font = '18px monospace';
   ctx.fillText('CHAMPION', 600, 580);
@@ -384,7 +384,7 @@ const ShareTournamentButton = ({ tournament, getImg }) => {
       link.click();
 
       // Open Twitter intent with pre-written post
-      const tweetText = `"${tournament.tournament_name}" Tournament Results!\n\n🥇 NOID #${tournament.winner_noid_id}\n🥈 NOID #${tournament.runner_up_noid_id}${tournament.third_place_noid_id ? `\n🥉 NOID #${tournament.third_place_noid_id}` : ''}\n\nBattle it out at noidsbattle.com\n\n#NOiDSBattle @thehumanoids`;
+      const tweetText = `"${tournament.tournament_name}" Tournament Results!\n\n🥇 Badger #${tournament.winner_noid_id}\n🥈 Badger #${tournament.runner_up_noid_id}${tournament.third_place_noid_id ? `\n🥉 Badger #${tournament.third_place_noid_id}` : ''}\n\nBattle it out at mhb.pfpwars.com\n\n#NOiDSBattle @megabadgers`;
 
       setTimeout(() => {
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank');
@@ -811,7 +811,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
     const alreadyEntered = entries.filter(e => e.entered_by_wallet === walletAddress.toLowerCase());
     const maxEntries = tournament.max_entries_per_player;
     if (maxEntries && alreadyEntered.length >= maxEntries) { alert(`Max ${maxEntries} entries per player`); return; }
-    if (entries.some(e => e.noid_id === noidId)) { alert(`NOID #${noidId} is already entered`); return; }
+    if (entries.some(e => e.noid_id === noidId)) { alert(`Badger #${noidId} is already entered`); return; }
     if (entries.length >= tournament.bracket_size) { alert('Tournament is full'); return; }
 
     try {
@@ -1633,7 +1633,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
               <div className="podium-place first" onClick={() => onViewNoid && onViewNoid(tournament.winner_noid_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
                 <span className="podium-medal">🥇</span>
                 {getImg(tournament.winner_noid_id) && <img src={getImg(tournament.winner_noid_id)} alt="" className="podium-img" />}
-                <span className="podium-noid">NOID #{tournament.winner_noid_id}</span>
+                <span className="podium-noid">Badger #{tournament.winner_noid_id}</span>
                 <span className="podium-label">Champion</span>
               </div>
             )}
@@ -1641,7 +1641,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
               <div className="podium-place second" onClick={() => onViewNoid && onViewNoid(tournament.runner_up_noid_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
                 <span className="podium-medal">🥈</span>
                 {getImg(tournament.runner_up_noid_id) && <img src={getImg(tournament.runner_up_noid_id)} alt="" className="podium-img" />}
-                <span className="podium-noid">NOID #{tournament.runner_up_noid_id}</span>
+                <span className="podium-noid">Badger #{tournament.runner_up_noid_id}</span>
                 <span className="podium-label">Runner-up</span>
               </div>
             )}
@@ -1649,7 +1649,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
               <div className="podium-place third" onClick={() => onViewNoid && onViewNoid(tournament.third_place_noid_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
                 <span className="podium-medal">🥉</span>
                 {getImg(tournament.third_place_noid_id) && <img src={getImg(tournament.third_place_noid_id)} alt="" className="podium-img" />}
-                <span className="podium-noid">NOID #{tournament.third_place_noid_id}</span>
+                <span className="podium-noid">Badger #{tournament.third_place_noid_id}</span>
                 <span className="podium-label">3rd Place</span>
               </div>
             )}
@@ -1736,10 +1736,10 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
           >
             <div className="card-glow"></div>
             <div className="image-container">
-              {getImg(activeMatchup.noid1_id) && <img src={getImg(activeMatchup.noid1_id)} alt={`NOID #${activeMatchup.noid1_id}`} />}
+              {getImg(activeMatchup.noid1_id) && <img src={getImg(activeMatchup.noid1_id)} alt={`Badger #${activeMatchup.noid1_id}`} />}
             </div>
             <div className="noid-info">
-              <h3>NOID #{activeMatchup.noid1_id}</h3>
+              <h3>Badger #{activeMatchup.noid1_id}</h3>
               {hasVoted && (
                 <div className="vote-count"><span className="vote-label">Votes:</span><span className="vote-number">{activeMatchup.noid1_votes}</span></div>
               )}
@@ -1755,10 +1755,10 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
           >
             <div className="card-glow"></div>
             <div className="image-container">
-              {getImg(activeMatchup.noid2_id) && <img src={getImg(activeMatchup.noid2_id)} alt={`NOID #${activeMatchup.noid2_id}`} />}
+              {getImg(activeMatchup.noid2_id) && <img src={getImg(activeMatchup.noid2_id)} alt={`Badger #${activeMatchup.noid2_id}`} />}
             </div>
             <div className="noid-info">
-              <h3>NOID #{activeMatchup.noid2_id}</h3>
+              <h3>Badger #{activeMatchup.noid2_id}</h3>
               {hasVoted && (
                 <div className="vote-count"><span className="vote-label">Votes:</span><span className="vote-number">{activeMatchup.noid2_votes}</span></div>
               )}

@@ -14,12 +14,12 @@ const supabaseUrl = 'https://ttdrylkhfhkzrtugfhzo.supabase.co';
 const supabaseKey = 'sb_publishable_4wZyhumj0y8FugBKUdhKNg_agzkl3cY';
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-const TOTAL_MHBs = 5000;
+const TOTAL_Badgers = 5000;
 const DAILY_VOTE_LIMIT = 50;
 
-// 1-of-1 MHBs with unique traits
+// 1-of-1 Badgers with unique traits
 // TODO: Add MHB 1-of-1 token IDs here (26 tokens)
-const ONE_OF_ONE_MHBs = [
+const ONE_OF_ONE_Badgers = [
   2316
 ];
 
@@ -81,7 +81,7 @@ async function recordCompleteBattle({
       vote_margin: voteMargin
     }]);
     
-    // Update both MHBs
+    // Update both Badgers
     await Promise.all([
       updateNoidStats(noid1Id, winnerId === noid1Id, wasUnderdogWin && winnerId === noid1Id),
       updateNoidStats(noid2Id, winnerId === noid2Id, wasUnderdogWin && winnerId === noid2Id)
@@ -99,7 +99,7 @@ async function recordCompleteBattle({
       updateGameModeStats(noid2Id, gameMode, winnerId === noid2Id)
     ]);
     
-// Check and award achievements for both MHBs
+// Check and award achievements for both Badgers
     await checkAndAwardAchievements(noid1Id);
     await checkAndAwardAchievements(noid2Id);
     
@@ -175,7 +175,7 @@ async function updateNoidStats(noidId, won, wasUnderdogWin = false) {
         .eq('noid_id', noidId);
     }
   } catch (error) {
-    console.error(`Error updating stats for MHB #${noidId}:`, error);
+    console.error(`Error updating stats for Badger #${noidId}:`, error);
   }
 }
 async function updateHeadToHead(winnerId, loserId) {
@@ -550,11 +550,11 @@ async function checkAndAwardAchievements(noidId) {
     }
     
     // 7. One-of-One Elite (standalone)
-    if (ONE_OF_ONE_MHBs.includes(noidId)) {
+    if (ONE_OF_ONE_Badgers.includes(noidId)) {
       const { data: oneOfOneStats } = await supabase
         .from('noid_stats')
         .select('noid_id, total_wins, total_battles')
-        .in('noid_id', ONE_OF_ONE_MHBs)
+        .in('noid_id', ONE_OF_ONE_Badgers)
         .gte('total_battles', 3);
       
       if (oneOfOneStats) {
@@ -591,7 +591,7 @@ async function checkAndAwardAchievements(noidId) {
           noid_id: noidId,
           achievement_type: 'elite_status',
           achievement_name: 'Elite Status',
-          achievement_description: 'Ranked in the top 10% of all MHBs'
+          achievement_description: 'Ranked in the top 10% of all Badgers'
         });
       }
     }
@@ -729,7 +729,7 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
     try {
       let query = supabase.from('noid_stats').select('*');
       
-      // For win rate tab, get all MHBs with at least 3 battles, then sort by Wilson Score
+      // For win rate tab, get all Badgers with at least 3 battles, then sort by Wilson Score
       // For other tabs, use existing logic
       switch (view) {
         case 'winrate':
@@ -779,7 +779,7 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
         setLeaderboardData(processedData);
       }
       
-      // Fetch images for all MHBs
+      // Fetch images for all Badgers
       const imagePromises = processedData.slice(0, 50).map(noid => 
         getNoidImage(noid.noid_id).then(img => ({ id: noid.noid_id, img }))
       );
@@ -858,7 +858,7 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
               >
                 <img 
                   src={images[noid.noid_id] || 'https://via.placeholder.com/60x60?text=...'} 
-                  alt={`MHB #${noid.noid_id}`}
+                  alt={`Badger #${noid.noid_id}`}
                   className="leaderboard-noid-image"
                 />
                 
@@ -870,7 +870,7 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
                 </div>
 
                 <div className="noid-preview">
-                  <div className="noid-id">MHB #{noid.noid_id}</div>
+                  <div className="noid-id">Badger #{noid.noid_id}</div>
                   <a 
                     href={`https://opensea.io/assets/ethereum/0x9aea7d84fc8d359f09493b75c68e6f2880c3dd7b/${noid.noid_id}`}
                     target="_blank"
@@ -955,16 +955,16 @@ const Help = ({ onClose }) => {
           
           <div className="help-mode">
             <h4>🎲 Rando Battle</h4>
-            <p>Two completely random MHBs face off. Vote for your favorite! Simple, fast, and unpredictable.</p>
+            <p>Two completely random Badgers face off. Vote for your favorite! Simple, fast, and unpredictable.</p>
             <p className="help-limit">Limit: 55 votes per day</p>
           </div>
 
           <div className="help-mode">
             <h4>🏆 Sticky Winner</h4>
-            <p>The winner stays to fight the next challenger. See how long a MHB can maintain their winning streak!</p>
+            <p>The winner stays to fight the next challenger. See how long a Badger can maintain their winning streak!</p>
             <p className="help-detail"><strong>Fair Play Rules:</strong></p>
             <ul>
-              <li>Your owned MHBs are excluded from appearing in battles</li>
+              <li>Your owned Badgers are excluded from appearing in battles</li>
               <li>Any MHB that wins 10 battles in a row takes a 24-hour break</li>
               <li>This prevents both self-pumping and unstoppable dominance</li>
             </ul>
@@ -973,8 +973,8 @@ const Help = ({ onClose }) => {
 
           <div className="help-mode">
             <h4>👑 One of One Championship</h4>
-            <p>Only the 42 rarest MHBs with unique 1-of-1 traits compete. This is the elite league where legends are made.</p>
-            <p className="help-detail"><strong>Fair Play:</strong> Your owned 1-of-1 MHBs are excluded from battles.</p>
+            <p>Only the 42 rarest Badgers with unique 1-of-1 traits compete. This is the elite league where legends are made.</p>
+            <p className="help-detail"><strong>Fair Play:</strong> Your owned 1-of-1 Badgers are excluded from battles.</p>
             <p className="help-limit">Limit: 55 votes per day</p>
           </div>
 
@@ -991,12 +991,12 @@ const Help = ({ onClose }) => {
           
           <div className="help-detail">
             <h4>Why Wilson Score?</h4>
-            <p>A MHB with 1 win in 1 battle (100% win rate) shouldn't rank above a MHB with 50 wins in 51 battles (98% win rate). Wilson Score solves this by weighing both:</p>
+            <p>A MHB with 1 win in 1 battle (100% win rate) shouldn't rank above a Badger with 50 wins in 51 battles (98% win rate). Wilson Score solves this by weighing both:</p>
             <ul>
               <li><strong>Win Rate</strong> - Your percentage of victories</li>
               <li><strong>Battle Volume</strong> - How many times you've proven it</li>
             </ul>
-            <p>The more battles a MHB wins, the more confident we are in their true skill. This prevents lucky streaks from dominating the leaderboard.</p>
+            <p>The more battles a Badger wins, the more confident we are in their true skill. This prevents lucky streaks from dominating the leaderboard.</p>
           </div>
 
           <div className="help-detail">
@@ -1015,9 +1015,9 @@ const Help = ({ onClose }) => {
           <ul>
             <li>Vote on battles and tournaments</li>
             <li>Create tournaments (holders only)</li>
-            <li>Enter your MHBs into tournaments</li>
+            <li>Enter your Badgers into tournaments</li>
             <li>Track your voting history</li>
-            <li>View your owned MHBs with battle stats</li>
+            <li>View your owned Badgers with battle stats</li>
             <li>Generate shareable stat cards</li>
             <li>Earn bonus votes through sharing</li>
           </ul>
@@ -1026,9 +1026,9 @@ const Help = ({ onClose }) => {
 
         <div className="help-section glass-panel">
           <h3>🔗 Share Profile (Earn +10 Votes!)</h3>
-          <p>On any MHB profile page, click "Share Profile" to:</p>
+          <p>On any Badger profile page, click "Share Profile" to:</p>
           <ul>
-            <li>Generate a custom stat card with the MHB's image and battle record</li>
+            <li>Generate a custom stat card with the Badger's image and battle record</li>
             <li>Share it on Twitter/X with @megabadgers tagged</li>
             <li>Paste your tweet link to claim <strong>+10 bonus votes</strong></li>
           </ul>
@@ -1045,8 +1045,8 @@ const Help = ({ onClose }) => {
           </div>
 
           <div className="help-mode">
-            <h4>Entering MHBs</h4>
-            <p>Only MHBs you own can be entered. Connect your wallet, pick from your collection, and enter them into open slots. The creator can "Fill & Start" to fill remaining slots with random MHBs.</p>
+            <h4>Entering Badgers</h4>
+            <p>Only Badgers you own can be entered. Connect your wallet, pick from your collection, and enter them into open slots. The creator can "Fill & Start" to fill remaining slots with random Badgers.</p>
           </div>
 
           <div className="help-mode">
@@ -1061,26 +1061,26 @@ const Help = ({ onClose }) => {
 
           <div className="help-mode">
             <h4>Results</h4>
-            <p>Tournament battles feed into the main stats system. View the full bracket at any time, click any MHB to see their profile. Top 3 finishers get podium recognition and you can share results to X.</p>
+            <p>Tournament battles feed into the main stats system. View the full bracket at any time, click any Badger to see their profile. Top 3 finishers get podium recognition and you can share results to X.</p>
           </div>
         </div>
 
         <div className="help-section glass-panel">
           <h3>🔒 Fair Play</h3>
-          <p>MHBs Battle uses database-enforced vote limits to ensure fair competition:</p>
+          <p>Badgers Battle uses database-enforced vote limits to ensure fair competition:</p>
           <ul>
             <li>55 votes per day for Rando, Sticky Winner, and One of One</li>
             <li>1 vote per day for Daily Battle</li>
             <li>+10 bonus votes for sharing to X (once per day)</li>
             <li>Limits reset at midnight UTC</li>
             <li>No bypassing via browser switching or private mode</li>
-            <li>Owned MHBs excluded from Sticky Winner and One-of-One modes</li>
+            <li>Owned Badgers excluded from Sticky Winner and One-of-One modes</li>
           </ul>
         </div>
 
         <div className="help-section glass-panel">
           <h3>🔍 Search Function</h3>
-          <p>Click the magnifying glass icon (🔍) in the top-left to search for any MHB by number (1-5000). Instantly view their profile, stats, and battle history.</p>
+          <p>Click the magnifying glass icon (🔍) in the top-left to search for any Badger by number (1-5000). Instantly view their profile, stats, and battle history.</p>
         </div>
 
         <div className="help-section glass-panel">
@@ -1097,7 +1097,7 @@ const Help = ({ onClose }) => {
           <h3>📈 Statistics Tracking</h3>
           <p>Every vote is recorded and contributes to:</p>
           <ul>
-            <li><strong>Total Battles</strong> - How many times a MHB has been voted on</li>
+            <li><strong>Total Battles</strong> - How many times a Badger has been voted on</li>
             <li><strong>Wins & Losses</strong> - Complete battle record</li>
             <li><strong>Win Rate</strong> - Percentage calculated from all battles</li>
             <li><strong>Current Streak</strong> - Consecutive wins or losses</li>
@@ -1108,25 +1108,25 @@ const Help = ({ onClose }) => {
         </div>
 
         <div className="help-section glass-panel">
-          <h3>🖼️ My MHBs</h3>
-          <p>If you own MHBs, connect your wallet to see:</p>
+          <h3>🖼️ My Badgers</h3>
+          <p>If you own Badgers, connect your wallet to see:</p>
           <ul>
-            <li>All MHBs in your wallet</li>
-            <li>Battle statistics for each MHB</li>
+            <li>All Badgers in your wallet</li>
+            <li>Battle statistics for each Badger</li>
             <li>Win rates and records</li>
             <li>Current rankings</li>
           </ul>
-          <p>Click any MHB to view their complete battle history and profile.</p>
+          <p>Click any Badger to view their complete battle history and profile.</p>
         </div>
 
         <div className="help-section glass-panel">
           <h3>🌐 OpenSea Integration</h3>
-          <p>Click the OpenSea logo on any MHB to view them on OpenSea, check their traits, rarity, and marketplace listings.</p>
+          <p>Click the OpenSea logo on any Badger to view them on OpenSea, check their traits, rarity, and marketplace listings.</p>
         </div>
 
         <div className="help-section glass-panel">
           <h3>❓ Questions?</h3>
-          <p>MHBs Battle is a community-driven platform built for the MHBs collection. All battles, votes, and statistics are transparent and verifiable.</p>
+          <p>Badgers Battle is a community-driven platform built for the Badgers collection. All battles, votes, and statistics are transparent and verifiable.</p>
           <p className="help-footer">Built by @NoCredits | Version 0.91 (Beta)</p>
         </div>
       </div>
@@ -1185,7 +1185,7 @@ const generateShareCard = async (noidId, imageUrl, stats) => {
       // MHB number
       ctx.fillStyle = '#00ff41';
       ctx.font = 'bold 80px Arial';
-      ctx.fillText(`MHB #${noidId}`, rightX, 120);
+      ctx.fillText(`Badger #${noidId}`, rightX, 120);
 
       // Stats
       ctx.font = 'bold 48px Arial';
@@ -1216,11 +1216,11 @@ const generateShareCard = async (noidId, imageUrl, stats) => {
       // Branding at bottom
       ctx.fillStyle = '#00ff41';
       ctx.font = 'bold 42px Arial';
-      ctx.fillText('MHBs BATTLE', rightX, 550);
+      ctx.fillText('Badgers BATTLE', rightX, 550);
       
       ctx.fillStyle = '#888888';
       ctx.font = '28px Arial';
-      ctx.fillText('Vote at mhbbattle.com', rightX, 590);
+      ctx.fillText('Vote at mhb.pfpwars.com', rightX, 590);
 
       // Convert to blob
       canvas.toBlob((blob) => {
@@ -1288,7 +1288,7 @@ const generateAchievementsShareCard = async (noidId, achievements, imageUrl) => 
       // Title
       ctx.fillStyle = '#00ff41';
       ctx.font = 'bold 48px Arial';
-      ctx.fillText(`MHB #${noidId}`, 500, 80);
+      ctx.fillText(`Badger #${noidId}`, 500, 80);
 
       // Achievement count
       ctx.fillStyle = '#ffffff';
@@ -1345,7 +1345,7 @@ const generateAchievementsShareCard = async (noidId, achievements, imageUrl) => 
       // Branding at bottom
       ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.font = '20px Arial';
-      ctx.fillText('MHBs Battle • mhbbattle.com', 500, 600);
+      ctx.fillText('Badgers Battle • mhb.pfpwars.com', 500, 600);
 
       // Convert to blob and resolve
       canvas.toBlob((blob) => {
@@ -1386,7 +1386,7 @@ const ShareButton = ({ noidId, imageUrl, stats, walletAddress }) => {
         ? ((stats.total_wins / stats.total_battles) * 100).toFixed(1)
         : 0;
       
-      const tweetText = `MHB #${noidId} is crushing it! ${winRate}% win rate 🔥\nVote and See how your MHBs are doing (and generate stats like this) at https://mhbbattle.com\n@megabadgers`;
+      const tweetText = `Badger #${noidId} is crushing it! ${winRate}% win rate 🔥\nVote and See how your Badgers are doing (and generate stats like this) at https://mhb.pfpwars.com\n@megabadgers`;
       
       // Download image
       const url = URL.createObjectURL(imageBlob);
@@ -1573,7 +1573,7 @@ const ShareAchievementsButton = ({ noidId, achievements, imageUrl, userWallet })
 
       // Generate tweet text
       const achievementNames = achievements.map(a => a.achievement_name).join(', ');
-      const tweetText = `MHB #${noidId} has unlocked ${achievements.length} achievement${achievements.length !== 1 ? 's' : ''}! 🏆\n${achievementNames}\n\nCheck out the stats at https://mhbbattle.com\n@megabadgers`;
+      const tweetText = `Badger #${noidId} has unlocked ${achievements.length} achievement${achievements.length !== 1 ? 's' : ''}! 🏆\n${achievementNames}\n\nCheck out the stats at https://mhb.pfpwars.com\n@megabadgers`;
       
       // Open Twitter
       const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
@@ -1848,7 +1848,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
       <div className="profile-container">
         <MatrixRain />
         <div className="glass-panel empty-state">
-          <h2>MHB #{noidId}</h2>
+          <h2>Badger #{noidId}</h2>
           <p>This MHB hasn't battled yet!</p>
           <button className="back-btn" onClick={onClose}>Back to Menu</button>
         </div>
@@ -1865,18 +1865,18 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
           <span className="back-arrow">←</span>
           Back
         </button>
-        <h2 className="profile-title">MHB #{noidId}</h2>
+        <h2 className="profile-title">Badger #{noidId}</h2>
         <div className="spacer"></div>
       </div>
 
       <div className="profile-content">
         <div className="profile-hero glass-panel">
           <div className="hero-image">
-            {imageUrl && <img src={imageUrl} alt={`MHB #${noidId}`} />}
+            {imageUrl && <img src={imageUrl} alt={`Badger #${noidId}`} />}
           </div>
           <div className="hero-stats">
             <div className="hero-title">
-              <h1>MHB #{noidId}</h1>
+              <h1>Badger #{noidId}</h1>
               <a 
                 href={`https://opensea.io/assets/ethereum/0x9aea7d84fc8d359f09493b75c68e6f2880c3dd7b/${noidId}`}
                 target="_blank"
@@ -2056,7 +2056,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
                         <div className="h2h-opponent">
                           <img 
                             src={imageCache[h2h.opponent_id] || 'https://via.placeholder.com/50x50?text=Loading'} 
-                            alt={`MHB #${h2h.opponent_id}`}
+                            alt={`Badger #${h2h.opponent_id}`}
                             className="h2h-thumbnail"
                             onClick={() => {
                               setSelectedNoidId(h2h.opponent_id);
@@ -2079,7 +2079,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
                                 setView('profile');
                               }}
                             >
-                              MHB #{h2h.opponent_id}
+                              Badger #{h2h.opponent_id}
                             </span>
                             <span className="battles-count">{h2h.battles} battles</span>
                           </div>
@@ -2101,7 +2101,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
                 <div className="beaten-list">
                   {beaten.map(b => (
                     <div key={b.beaten_id} className="beaten-item">
-                      <span className="beaten-id">MHB #{b.beaten_id}</span>
+                      <span className="beaten-id">Badger #{b.beaten_id}</span>
                       <span className="times-beaten">{b.times_beaten}x</span>
                     </div>
                   ))}
@@ -2118,7 +2118,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
                 <div className="beaten-list">
                   {beatenBy.map(b => (
                     <div key={b.beaten_by_id} className="beaten-item nemesis">
-                      <span className="beaten-id">MHB #{b.beaten_by_id}</span>
+                      <span className="beaten-id">Badger #{b.beaten_by_id}</span>
                       <span className="times-beaten">{b.times_beaten}x</span>
                     </div>
                   ))}
@@ -2254,7 +2254,7 @@ const TopNoidsScroller = React.memo(({ onNoidClick }) => {
             }
           }
         } catch (error) {
-          console.error(`Error fetching MHB #${noidId}:`, error);
+          console.error(`Error fetching Badger #${noidId}:`, error);
         }
       }
 
@@ -2317,7 +2317,7 @@ const TopNoidsScroller = React.memo(({ onNoidClick }) => {
               <div className="scroller-rank">#{rank}</div>
               <img 
                 src={images[noid.noid_id] || 'https://via.placeholder.com/100x100?text=Loading'} 
-                alt={`MHB #${noid.noid_id}`}
+                alt={`Badger #${noid.noid_id}`}
                 className="scroller-image"
               />
               <div className="scroller-info">
@@ -2348,7 +2348,7 @@ const SearchModal = ({ isOpen, onClose, onSearch }) => {
     const noidId = parseInt(searchInput);
     
     if (!searchInput || isNaN(noidId)) {
-      setError('Please enter a MHB number');
+      setError('Please enter a Badger number');
       return;
     }
     
@@ -2381,14 +2381,14 @@ const SearchModal = ({ isOpen, onClose, onSearch }) => {
       <div className="search-modal glass-panel" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={handleClose}>×</button>
         
-        <h2>Search for a MHB</h2>
+        <h2>Search for a Badger</h2>
         
         <form onSubmit={handleSubmit}>
           <input
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
-            placeholder="Enter MHB # (1-5000)"
+            placeholder="Enter Badger # (1-5000)"
             value={searchInput}
             onChange={handleInputChange}
             maxLength="4"
@@ -2584,7 +2584,7 @@ useEffect(() => {
       }
       setUserId(id);
       checkDailyVotes(id);
-      setUserOwnedNoids([]); // Clear owned MHBs when wallet disconnects
+      setUserOwnedNoids([]); // Clear owned Badgers when wallet disconnects
     }
   }, [isConnected, address]);
 
@@ -2652,29 +2652,29 @@ useEffect(() => {
       );
 
       if (!response.ok) {
-        console.error('Failed to fetch user MHBs');
+        console.error('Failed to fetch user Badgers');
         return;
       }
 
       const data = await response.json();
       const ownedIds = data.nfts.map(nft => parseInt(nft.identifier));
       setUserOwnedNoids(ownedIds);
-      console.log(`✓ User owns ${ownedIds.length} MHBs:`, ownedIds);
+      console.log(`✓ User owns ${ownedIds.length} Badgers:`, ownedIds);
     } catch (error) {
-      console.error('Error fetching user MHBs:', error);
+      console.error('Error fetching user Badgers:', error);
     }
   };
 
   const getRandomNoid = (exclude = []) => {
     let num;
     do {
-      num = Math.floor(Math.random() * TOTAL_MHBs) + 1;
+      num = Math.floor(Math.random() * TOTAL_Badgers) + 1;
     } while (exclude.includes(num));
     return num;
   };
 
   const getRandomOneOfOne = (exclude = []) => {
-    const available = ONE_OF_ONE_MHBs.filter(id => !exclude.includes(id));
+    const available = ONE_OF_ONE_Badgers.filter(id => !exclude.includes(id));
     if (available.length === 0) return getRandomNoid(exclude);
     return available[Math.floor(Math.random() * available.length)];
   };
@@ -2710,7 +2710,7 @@ useEffect(() => {
 
       throw new Error('No image URL in response');
     } catch (error) {
-      console.error(`Error fetching image for MHB #${tokenId}:`, error);
+      console.error(`Error fetching image for Badger #${tokenId}:`, error);
       // Fallback to IPFS if API fails
       return `https://gateway.pinata.cloud/ipfs/QmcXuDARMGMv59Q4ZZuoN5rjdM9GQrmp8NjLH5PDLixgAE/${tokenId}`;
     }
@@ -2741,7 +2741,7 @@ useEffect(() => {
       setImageCache(prev => ({...prev, [tokenId]: imageUrl}));
       return imageUrl;
     } catch (error) {
-      console.error(`Error fetching image for MHB #${tokenId}:`, error);
+      console.error(`Error fetching image for Badger #${tokenId}:`, error);
       return null;
     }
   }, [imageCache]);
@@ -2777,7 +2777,7 @@ useEffect(() => {
           const currentStreak = parseInt(localStorage.getItem(streakKey) || '0');
           
           if (currentStreak >= 10) {
-            alert(`MHB #${stickyWinner.id} has dominated with 10 wins today! 🔥\nThey're taking a 24hr break. Starting fresh battle...`);
+            alert(`Badger #${stickyWinner.id} has dominated with 10 wins today! 🔥\nThey're taking a 24hr break. Starting fresh battle...`);
             setStickyWinner(null);
             setStickyWinStreak(0);
             // Start fresh battle
@@ -3007,7 +3007,7 @@ useEffect(() => {
             
             // Check if hit 10-win cap
             if (currentStreak >= 10) {
-              alert(`MHB #${newStickyWinner.id} just hit 10 wins in a row! 🔥\nThey're taking a 24hr break. Starting fresh battle...`);
+              alert(`Badger #${newStickyWinner.id} just hit 10 wins in a row! 🔥\nThey're taking a 24hr break. Starting fresh battle...`);
               const id1 = getRandomNoid(userOwnedNoids);
               const id2 = getRandomNoid([id1, ...userOwnedNoids]);
               const [img1, img2] = await Promise.all([
@@ -3094,7 +3094,7 @@ const menuContent = (
         <button 
           className="search-header-btn"
           onClick={() => setShowSearchModal(true)}
-          title="Search for a MHB"
+          title="Search for a Badger"
         >
           <span className="search-icon">🔍</span>
         </button>
@@ -3124,15 +3124,15 @@ const menuContent = (
             onClick={() => setView('mynoids')}
           >
             <span className="noids-icon">🖼️</span>
-            <span className="noids-text">My MHBs</span>
+            <span className="noids-text">My Badgers</span>
           </button>
         )}
       </div>
       
       <div className="logo-section">
         <img 
-          src="/MHBs_Battle.png" 
-          alt="MHBs Battle Logo" 
+          src="/Badgers_Battle.png" 
+          alt="Badgers Battle Logo" 
           className="main-logo"
         />
         <p className="subtitle">Which MHB reigns supreme?</p>
@@ -3164,7 +3164,7 @@ const menuContent = (
             <span className="mode-grid-icon">🎲</span>
             <div className="mode-grid-text">
               <h4>Rando Battle</h4>
-              <p>Two random MHBs face off</p>
+              <p>Two random Badgers face off</p>
             </div>
           </button>
 
@@ -3270,7 +3270,7 @@ const menuContent = (
       {loading ? (
         <div className="loading-state">
           <div className="loading-spinner"></div>
-          <p>Loading MHBs...</p>
+          <p>Loading Badgers...</p>
         </div>
       ) : (
         <>
@@ -3294,10 +3294,10 @@ const menuContent = (
             >
               <div className="card-glow"></div>
               <div className="image-container">
-                <img src={noid1?.image} alt={`MHB #${noid1?.id}`} />
+                <img src={noid1?.image} alt={`Badger #${noid1?.id}`} />
               </div>
               <div className="noid-info">
-                <h3>MHB #{noid1?.id}</h3>
+                <h3>Badger #{noid1?.id}</h3>
                 <a 
                   href={`https://opensea.io/assets/ethereum/0x9aea7d84fc8d359f09493b75c68e6f2880c3dd7b/${noid1?.id}`}
                   target="_blank"
@@ -3336,10 +3336,10 @@ const menuContent = (
           >
             <div className="card-glow"></div>
             <div className="image-container">
-              <img src={noid2?.image} alt={`MHB #${noid2?.id}`} />
+              <img src={noid2?.image} alt={`Badger #${noid2?.id}`} />
             </div>
             <div className="noid-info">
-              <h3>MHB #{noid2?.id}</h3>
+              <h3>Badger #{noid2?.id}</h3>
               <a 
                 href={`https://opensea.io/assets/ethereum/0x9aea7d84fc8d359f09493b75c68e6f2880c3dd7b/${noid2?.id}`}
                 target="_blank"
@@ -3461,7 +3461,7 @@ const menuContent = (
         <div className="footer-content">
           <span className="footer-version">v0.84 (Beta)</span>
           <span className="footer-divider">•</span>
-          <span className="footer-credits">MHBs Battle built and hosted by @NoCredits</span>
+          <span className="footer-credits">Badgers Battle built and hosted by @NoCredits</span>
         </div>
         <MusicPlayer />
       </footer>
