@@ -10,20 +10,17 @@ import HeadToHead from './HeadToHead';
 import './HeadToHead.css';
 
 // Supabase configuration
-const supabaseUrl = 'https://jvmddbqxhfaicyctmmvt.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2bWRkYnF4aGZhaWN5Y3RtbXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyOTg4MDYsImV4cCI6MjA4Mzg3NDgwNn0.SD37h5vkKVQwODXavoRkej6yFsAYhT8nLmxIxs3AoZg';
+const supabaseUrl = 'https://ttdrylkhfhkzrtugfhzo.supabase.co';
+const supabaseKey = 'sb_publishable_4wZyhumj0y8FugBKUdhKNg_agzkl3cY';
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-const TOTAL_NOiDS = 5555;
-const DAILY_VOTE_LIMIT = 55;
+const TOTAL_MHBs = 5000;
+const DAILY_VOTE_LIMIT = 50;
 
-// 1-of-1 NOiDs with unique traits
-const ONE_OF_ONE_NOiDS = [
-  3399, 4550, 46, 3421, 5521, 4200, 814, 1587, 4234, 1601,
-  2480, 1046, 4999, 2290, 1401, 2148, 3921, 4900, 4699, 1187,
-  2225, 948, 2214, 1448, 3321, 4221, 4111, 2281, 2231, 2014,
-  2187, 4800, 4890, 1748, 4601, 1948, 4400, 4981, 412, 4651,
-  3390, 601
+// 1-of-1 MHBs with unique traits
+// TODO: Add MHB 1-of-1 token IDs here (26 tokens)
+const ONE_OF_ONE_MHBs = [
+  2316
 ];
 
 // ============================================
@@ -67,7 +64,7 @@ async function recordCompleteBattle({
     const wasUnderdogWin = wasUpset && rankDifference >= 50;
     
     // Record battle history
-    await supabase.from('battle_history').insert([{
+    await supabase.from('noid_battle_history').insert([{
       noid1_id: noid1Id,
       noid2_id: noid2Id,
       winner_id: winnerId,
@@ -84,7 +81,7 @@ async function recordCompleteBattle({
       vote_margin: voteMargin
     }]);
     
-    // Update both NOiDs
+    // Update both MHBs
     await Promise.all([
       updateNoidStats(noid1Id, winnerId === noid1Id, wasUnderdogWin && winnerId === noid1Id),
       updateNoidStats(noid2Id, winnerId === noid2Id, wasUnderdogWin && winnerId === noid2Id)
@@ -102,7 +99,7 @@ async function recordCompleteBattle({
       updateGameModeStats(noid2Id, gameMode, winnerId === noid2Id)
     ]);
     
-// Check and award achievements for both NOiDs
+// Check and award achievements for both MHBs
     await checkAndAwardAchievements(noid1Id);
     await checkAndAwardAchievements(noid2Id);
     
@@ -126,7 +123,7 @@ async function updateNoidStats(noidId, won, wasUnderdogWin = false) {
     const now = new Date().toISOString();
     
     if (!currentStats) {
-      // New NOiD - first battle
+      // New MHB - first battle
       const initialWins = won ? 1 : 0;
       const initialBattles = 1;
       const initialWinRate = initialBattles > 0 ? (initialWins / initialBattles) : 0.0;
@@ -147,7 +144,7 @@ async function updateNoidStats(noidId, won, wasUnderdogWin = false) {
         updated_at: now
       }]);
     } else {
-      // Existing NOiD - update stats
+      // Existing MHB - update stats
       const newBattles = currentStats.total_battles + 1;
       const newWins = currentStats.total_wins + (won ? 1 : 0);
       const newWinRate = newBattles > 0 ? (newWins / newBattles) : 0.0;  // ← ADDED (floating point division)
@@ -178,7 +175,7 @@ async function updateNoidStats(noidId, won, wasUnderdogWin = false) {
         .eq('noid_id', noidId);
     }
   } catch (error) {
-    console.error(`Error updating stats for NOiD #${noidId}:`, error);
+    console.error(`Error updating stats for MHB #${noidId}:`, error);
   }
 }
 async function updateHeadToHead(winnerId, loserId) {
@@ -187,14 +184,14 @@ async function updateHeadToHead(winnerId, loserId) {
     
     // Winner's record
     const { data: winnerRecord } = await supabase
-      .from('head_to_head')
+      .from('noid_head_to_head')
       .select('*')
       .eq('noid_id', winnerId)
       .eq('opponent_id', loserId)
       .single();
     
     if (!winnerRecord) {
-      await supabase.from('head_to_head').insert([{
+      await supabase.from('noid_head_to_head').insert([{
         noid_id: winnerId,
         opponent_id: loserId,
         battles: 1,
@@ -205,7 +202,7 @@ async function updateHeadToHead(winnerId, loserId) {
       }]);
     } else {
       await supabase
-        .from('head_to_head')
+        .from('noid_head_to_head')
         .update({
           battles: winnerRecord.battles + 1,
           wins: winnerRecord.wins + 1,
@@ -218,14 +215,14 @@ async function updateHeadToHead(winnerId, loserId) {
     
     // Loser's record
     const { data: loserRecord } = await supabase
-      .from('head_to_head')
+      .from('noid_head_to_head')
       .select('*')
       .eq('noid_id', loserId)
       .eq('opponent_id', winnerId)
       .single();
     
     if (!loserRecord) {
-      await supabase.from('head_to_head').insert([{
+      await supabase.from('noid_head_to_head').insert([{
         noid_id: loserId,
         opponent_id: winnerId,
         battles: 1,
@@ -236,7 +233,7 @@ async function updateHeadToHead(winnerId, loserId) {
       }]);
     } else {
       await supabase
-        .from('head_to_head')
+        .from('noid_head_to_head')
         .update({
           battles: loserRecord.battles + 1,
           losses: loserRecord.losses + 1,
@@ -346,7 +343,7 @@ async function updateGameModeStats(noidId, gameMode, won) {
 
 async function checkAndAwardAchievements(noidId) {
   try {
-    // Get current stats for this NOiD
+    // Get current stats for this MHB
     const { data: stats } = await supabase
       .from('noid_stats')
       .select('*')
@@ -553,11 +550,11 @@ async function checkAndAwardAchievements(noidId) {
     }
     
     // 7. One-of-One Elite (standalone)
-    if (ONE_OF_ONE_NOiDS.includes(noidId)) {
+    if (ONE_OF_ONE_MHBs.includes(noidId)) {
       const { data: oneOfOneStats } = await supabase
         .from('noid_stats')
         .select('noid_id, total_wins, total_battles')
-        .in('noid_id', ONE_OF_ONE_NOiDS)
+        .in('noid_id', ONE_OF_ONE_MHBs)
         .gte('total_battles', 3);
       
       if (oneOfOneStats) {
@@ -594,7 +591,7 @@ async function checkAndAwardAchievements(noidId) {
           noid_id: noidId,
           achievement_type: 'elite_status',
           achievement_name: 'Elite Status',
-          achievement_description: 'Ranked in the top 10% of all NOiDs'
+          achievement_description: 'Ranked in the top 10% of all MHBs'
         });
       }
     }
@@ -732,7 +729,7 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
     try {
       let query = supabase.from('noid_stats').select('*');
       
-      // For win rate tab, get all NOiDs with at least 3 battles, then sort by Wilson Score
+      // For win rate tab, get all MHBs with at least 3 battles, then sort by Wilson Score
       // For other tabs, use existing logic
       switch (view) {
         case 'winrate':
@@ -782,7 +779,7 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
         setLeaderboardData(processedData);
       }
       
-      // Fetch images for all NOiDs
+      // Fetch images for all MHBs
       const imagePromises = processedData.slice(0, 50).map(noid => 
         getNoidImage(noid.noid_id).then(img => ({ id: noid.noid_id, img }))
       );
@@ -861,7 +858,7 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
               >
                 <img 
                   src={images[noid.noid_id] || 'https://via.placeholder.com/60x60?text=...'} 
-                  alt={`NOiD #${noid.noid_id}`}
+                  alt={`MHB #${noid.noid_id}`}
                   className="leaderboard-noid-image"
                 />
                 
@@ -873,9 +870,9 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
                 </div>
 
                 <div className="noid-preview">
-                  <div className="noid-id">NOiD #{noid.noid_id}</div>
+                  <div className="noid-id">MHB #{noid.noid_id}</div>
                   <a 
-                    href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid.noid_id}`}
+                    href={`https://opensea.io/assets/ethereum/0x9aea7d84fc8d359f09493b75c68e6f2880c3dd7b/${noid.noid_id}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="opensea-link-leaderboard"
@@ -931,7 +928,7 @@ const Leaderboard = ({ onClose, onViewNoid, getNoidImage }) => {
 };
 
 // ============================================
-// NOiD PROFILE COMPONENT
+// MHB PROFILE COMPONENT
 // ============================================
 
 // ============================================
@@ -958,17 +955,17 @@ const Help = ({ onClose }) => {
           
           <div className="help-mode">
             <h4>🎲 Rando Battle</h4>
-            <p>Two completely random NOiDs face off. Vote for your favorite! Simple, fast, and unpredictable.</p>
+            <p>Two completely random MHBs face off. Vote for your favorite! Simple, fast, and unpredictable.</p>
             <p className="help-limit">Limit: 55 votes per day</p>
           </div>
 
           <div className="help-mode">
             <h4>🏆 Sticky Winner</h4>
-            <p>The winner stays to fight the next challenger. See how long a NOiD can maintain their winning streak!</p>
+            <p>The winner stays to fight the next challenger. See how long a MHB can maintain their winning streak!</p>
             <p className="help-detail"><strong>Fair Play Rules:</strong></p>
             <ul>
-              <li>Your owned NOiDs are excluded from appearing in battles</li>
-              <li>Any NOiD that wins 10 battles in a row takes a 24-hour break</li>
+              <li>Your owned MHBs are excluded from appearing in battles</li>
+              <li>Any MHB that wins 10 battles in a row takes a 24-hour break</li>
               <li>This prevents both self-pumping and unstoppable dominance</li>
             </ul>
             <p className="help-limit">Limit: 55 votes per day</p>
@@ -976,8 +973,8 @@ const Help = ({ onClose }) => {
 
           <div className="help-mode">
             <h4>👑 One of One Championship</h4>
-            <p>Only the 42 rarest NOiDs with unique 1-of-1 traits compete. This is the elite league where legends are made.</p>
-            <p className="help-detail"><strong>Fair Play:</strong> Your owned 1-of-1 NOiDs are excluded from battles.</p>
+            <p>Only the 42 rarest MHBs with unique 1-of-1 traits compete. This is the elite league where legends are made.</p>
+            <p className="help-detail"><strong>Fair Play:</strong> Your owned 1-of-1 MHBs are excluded from battles.</p>
             <p className="help-limit">Limit: 55 votes per day</p>
           </div>
 
@@ -994,12 +991,12 @@ const Help = ({ onClose }) => {
           
           <div className="help-detail">
             <h4>Why Wilson Score?</h4>
-            <p>A NOiD with 1 win in 1 battle (100% win rate) shouldn't rank above a NOiD with 50 wins in 51 battles (98% win rate). Wilson Score solves this by weighing both:</p>
+            <p>A MHB with 1 win in 1 battle (100% win rate) shouldn't rank above a MHB with 50 wins in 51 battles (98% win rate). Wilson Score solves this by weighing both:</p>
             <ul>
               <li><strong>Win Rate</strong> - Your percentage of victories</li>
               <li><strong>Battle Volume</strong> - How many times you've proven it</li>
             </ul>
-            <p>The more battles a NOiD wins, the more confident we are in their true skill. This prevents lucky streaks from dominating the leaderboard.</p>
+            <p>The more battles a MHB wins, the more confident we are in their true skill. This prevents lucky streaks from dominating the leaderboard.</p>
           </div>
 
           <div className="help-detail">
@@ -1018,9 +1015,9 @@ const Help = ({ onClose }) => {
           <ul>
             <li>Vote on battles and tournaments</li>
             <li>Create tournaments (holders only)</li>
-            <li>Enter your NOiDs into tournaments</li>
+            <li>Enter your MHBs into tournaments</li>
             <li>Track your voting history</li>
-            <li>View your owned NOiDs with battle stats</li>
+            <li>View your owned MHBs with battle stats</li>
             <li>Generate shareable stat cards</li>
             <li>Earn bonus votes through sharing</li>
           </ul>
@@ -1029,10 +1026,10 @@ const Help = ({ onClose }) => {
 
         <div className="help-section glass-panel">
           <h3>🔗 Share Profile (Earn +10 Votes!)</h3>
-          <p>On any NOiD profile page, click "Share Profile" to:</p>
+          <p>On any MHB profile page, click "Share Profile" to:</p>
           <ul>
-            <li>Generate a custom stat card with the NOiD's image and battle record</li>
-            <li>Share it on Twitter/X with @thehumanoids tagged</li>
+            <li>Generate a custom stat card with the MHB's image and battle record</li>
+            <li>Share it on Twitter/X with @megabadgers tagged</li>
             <li>Paste your tweet link to claim <strong>+10 bonus votes</strong></li>
           </ul>
           <p className="help-limit">Limit: Once per 24 hours</p>
@@ -1044,12 +1041,12 @@ const Help = ({ onClose }) => {
           
           <div className="help-mode">
             <h4>Creating a Tournament</h4>
-            <p>Only NOiD holders can create tournaments. Connect your wallet, set a name, choose bracket size (8, 16, or 32), round timer (15s, 30s, or 60s), max entries per player, and whether it's open or code-gated (private).</p>
+            <p>Only MHB holders can create tournaments. Connect your wallet, set a name, choose bracket size (8, 16, or 32), round timer (15s, 30s, or 60s), max entries per player, and whether it's open or code-gated (private).</p>
           </div>
 
           <div className="help-mode">
-            <h4>Entering NOiDs</h4>
-            <p>Only NOiDs you own can be entered. Connect your wallet, pick from your collection, and enter them into open slots. The creator can "Fill & Start" to fill remaining slots with random NOiDs.</p>
+            <h4>Entering MHBs</h4>
+            <p>Only MHBs you own can be entered. Connect your wallet, pick from your collection, and enter them into open slots. The creator can "Fill & Start" to fill remaining slots with random MHBs.</p>
           </div>
 
           <div className="help-mode">
@@ -1059,31 +1056,31 @@ const Help = ({ onClose }) => {
 
           <div className="help-mode">
             <h4>Tie-Breaking</h4>
-            <p>If votes are tied, the NOiD that received the first vote wins. If nobody votes (0-0), it's a coin flip and no stats are recorded for that matchup.</p>
+            <p>If votes are tied, the MHB that received the first vote wins. If nobody votes (0-0), it's a coin flip and no stats are recorded for that matchup.</p>
           </div>
 
           <div className="help-mode">
             <h4>Results</h4>
-            <p>Tournament battles feed into the main stats system. View the full bracket at any time, click any NOiD to see their profile. Top 3 finishers get podium recognition and you can share results to X.</p>
+            <p>Tournament battles feed into the main stats system. View the full bracket at any time, click any MHB to see their profile. Top 3 finishers get podium recognition and you can share results to X.</p>
           </div>
         </div>
 
         <div className="help-section glass-panel">
           <h3>🔒 Fair Play</h3>
-          <p>NOiDs Battle uses database-enforced vote limits to ensure fair competition:</p>
+          <p>MHBs Battle uses database-enforced vote limits to ensure fair competition:</p>
           <ul>
             <li>55 votes per day for Rando, Sticky Winner, and One of One</li>
             <li>1 vote per day for Daily Battle</li>
             <li>+10 bonus votes for sharing to X (once per day)</li>
             <li>Limits reset at midnight UTC</li>
             <li>No bypassing via browser switching or private mode</li>
-            <li>Owned NOiDs excluded from Sticky Winner and One-of-One modes</li>
+            <li>Owned MHBs excluded from Sticky Winner and One-of-One modes</li>
           </ul>
         </div>
 
         <div className="help-section glass-panel">
           <h3>🔍 Search Function</h3>
-          <p>Click the magnifying glass icon (🔍) in the top-left to search for any NOiD by number (1-5555). Instantly view their profile, stats, and battle history.</p>
+          <p>Click the magnifying glass icon (🔍) in the top-left to search for any MHB by number (1-5000). Instantly view their profile, stats, and battle history.</p>
         </div>
 
         <div className="help-section glass-panel">
@@ -1100,7 +1097,7 @@ const Help = ({ onClose }) => {
           <h3>📈 Statistics Tracking</h3>
           <p>Every vote is recorded and contributes to:</p>
           <ul>
-            <li><strong>Total Battles</strong> - How many times a NOiD has been voted on</li>
+            <li><strong>Total Battles</strong> - How many times a MHB has been voted on</li>
             <li><strong>Wins & Losses</strong> - Complete battle record</li>
             <li><strong>Win Rate</strong> - Percentage calculated from all battles</li>
             <li><strong>Current Streak</strong> - Consecutive wins or losses</li>
@@ -1111,25 +1108,25 @@ const Help = ({ onClose }) => {
         </div>
 
         <div className="help-section glass-panel">
-          <h3>🖼️ My NOiDs</h3>
-          <p>If you own NOiDs, connect your wallet to see:</p>
+          <h3>🖼️ My MHBs</h3>
+          <p>If you own MHBs, connect your wallet to see:</p>
           <ul>
-            <li>All NOiDs in your wallet</li>
-            <li>Battle statistics for each NOiD</li>
+            <li>All MHBs in your wallet</li>
+            <li>Battle statistics for each MHB</li>
             <li>Win rates and records</li>
             <li>Current rankings</li>
           </ul>
-          <p>Click any NOiD to view their complete battle history and profile.</p>
+          <p>Click any MHB to view their complete battle history and profile.</p>
         </div>
 
         <div className="help-section glass-panel">
           <h3>🌐 OpenSea Integration</h3>
-          <p>Click the OpenSea logo on any NOiD to view them on OpenSea, check their traits, rarity, and marketplace listings.</p>
+          <p>Click the OpenSea logo on any MHB to view them on OpenSea, check their traits, rarity, and marketplace listings.</p>
         </div>
 
         <div className="help-section glass-panel">
           <h3>❓ Questions?</h3>
-          <p>NOiDs Battle is a community-driven platform built for the NOiDs collection. All battles, votes, and statistics are transparent and verifiable.</p>
+          <p>MHBs Battle is a community-driven platform built for the MHBs collection. All battles, votes, and statistics are transparent and verifiable.</p>
           <p className="help-footer">Built by @NoCredits | Version 0.91 (Beta)</p>
         </div>
       </div>
@@ -1166,11 +1163,11 @@ const generateShareCard = async (noidId, imageUrl, stats) => {
       ctx.fillText('01', x, y);
     }
 
-    // Load NOiD image
+    // Load MHB image
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-      // Draw NOiD image (left side, square)
+      // Draw MHB image (left side, square)
       const imgSize = 500;
       const imgX = 50;
       const imgY = 65;
@@ -1185,10 +1182,10 @@ const generateShareCard = async (noidId, imageUrl, stats) => {
       // Right side - Stats
       const rightX = 600;
       
-      // NOiD number
+      // MHB number
       ctx.fillStyle = '#00ff41';
       ctx.font = 'bold 80px Arial';
-      ctx.fillText(`NOiD #${noidId}`, rightX, 120);
+      ctx.fillText(`MHB #${noidId}`, rightX, 120);
 
       // Stats
       ctx.font = 'bold 48px Arial';
@@ -1219,11 +1216,11 @@ const generateShareCard = async (noidId, imageUrl, stats) => {
       // Branding at bottom
       ctx.fillStyle = '#00ff41';
       ctx.font = 'bold 42px Arial';
-      ctx.fillText('NOiDS BATTLE', rightX, 550);
+      ctx.fillText('MHBs BATTLE', rightX, 550);
       
       ctx.fillStyle = '#888888';
       ctx.font = '28px Arial';
-      ctx.fillText('Vote at noidsbattle.com', rightX, 590);
+      ctx.fillText('Vote at mhbbattle.com', rightX, 590);
 
       // Convert to blob
       canvas.toBlob((blob) => {
@@ -1260,7 +1257,7 @@ const generateAchievementsShareCard = async (noidId, achievements, imageUrl) => 
       ctx.fillRect(x, y, 2, height);
     }
 
-    // Left side - NOiD image
+    // Left side - MHB image
     if (imageUrl) {
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -1291,7 +1288,7 @@ const generateAchievementsShareCard = async (noidId, achievements, imageUrl) => 
       // Title
       ctx.fillStyle = '#00ff41';
       ctx.font = 'bold 48px Arial';
-      ctx.fillText(`NOiD #${noidId}`, 500, 80);
+      ctx.fillText(`MHB #${noidId}`, 500, 80);
 
       // Achievement count
       ctx.fillStyle = '#ffffff';
@@ -1348,7 +1345,7 @@ const generateAchievementsShareCard = async (noidId, achievements, imageUrl) => 
       // Branding at bottom
       ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.font = '20px Arial';
-      ctx.fillText('NOiDS Battle • noidsbattle.com', 500, 600);
+      ctx.fillText('MHBs Battle • mhbbattle.com', 500, 600);
 
       // Convert to blob and resolve
       canvas.toBlob((blob) => {
@@ -1389,7 +1386,7 @@ const ShareButton = ({ noidId, imageUrl, stats, walletAddress }) => {
         ? ((stats.total_wins / stats.total_battles) * 100).toFixed(1)
         : 0;
       
-      const tweetText = `NOiD #${noidId} is crushing it! ${winRate}% win rate 🔥\nVote and See how your NOiDS are doing (and generate stats like this) at https://noidsbattle.com\n@thehumanoids`;
+      const tweetText = `MHB #${noidId} is crushing it! ${winRate}% win rate 🔥\nVote and See how your MHBs are doing (and generate stats like this) at https://mhbbattle.com\n@megabadgers`;
       
       // Download image
       const url = URL.createObjectURL(imageBlob);
@@ -1434,7 +1431,7 @@ const ShareButton = ({ noidId, imageUrl, stats, walletAddress }) => {
       // Check if user already shared today
       const today = new Date().toISOString().split('T')[0];
       const { data: existingShare } = await supabase
-        .from('shares')
+        .from('noid_shares')
         .select('*')
         .eq('sharer_wallet', walletAddress.toLowerCase())
         .gte('created_at', `${today}T00:00:00`)
@@ -1449,7 +1446,7 @@ const ShareButton = ({ noidId, imageUrl, stats, walletAddress }) => {
 
       // Record the share
       const { error: insertError } = await supabase
-        .from('shares')
+        .from('noid_shares')
         .insert([{
           sharer_wallet: walletAddress.toLowerCase(),
           noid_id: noidId,
@@ -1461,7 +1458,7 @@ const ShareButton = ({ noidId, imageUrl, stats, walletAddress }) => {
 
       // Award +10 votes
       const { error: updateError } = await supabase
-        .from('user_stats')
+        .from('noid_user_stats')
         .upsert({
           user_id: walletAddress.toLowerCase(),
           daily_votes_remaining: supabase.raw('COALESCE(daily_votes_remaining, 55) + 10'),
@@ -1576,7 +1573,7 @@ const ShareAchievementsButton = ({ noidId, achievements, imageUrl, userWallet })
 
       // Generate tweet text
       const achievementNames = achievements.map(a => a.achievement_name).join(', ');
-      const tweetText = `NOiD #${noidId} has unlocked ${achievements.length} achievement${achievements.length !== 1 ? 's' : ''}! 🏆\n${achievementNames}\n\nCheck out the stats at https://noidsbattle.com\n@thehumanoids`;
+      const tweetText = `MHB #${noidId} has unlocked ${achievements.length} achievement${achievements.length !== 1 ? 's' : ''}! 🏆\n${achievementNames}\n\nCheck out the stats at https://mhbbattle.com\n@megabadgers`;
       
       // Open Twitter
       const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
@@ -1615,7 +1612,7 @@ const ShareAchievementsButton = ({ noidId, achievements, imageUrl, userWallet })
       
       // Check if already shared achievements today
       const { data: existingShare } = await supabase
-        .from('shares')
+        .from('noid_shares')
         .select('*')
         .eq('sharer_wallet', userWallet.toLowerCase())
         .eq('share_type', 'achievements')
@@ -1630,7 +1627,7 @@ const ShareAchievementsButton = ({ noidId, achievements, imageUrl, userWallet })
 
       // Record share
       const { error: shareError } = await supabase
-        .from('shares')
+        .from('noid_shares')
         .insert([{
           sharer_wallet: userWallet.toLowerCase(),
           noid_id: noidId,
@@ -1642,7 +1639,7 @@ const ShareAchievementsButton = ({ noidId, achievements, imageUrl, userWallet })
 
       // Award +10 votes
       const { error: voteError } = await supabase
-        .from('user_stats')
+        .from('noid_user_stats')
         .upsert({
           wallet_address: userWallet.toLowerCase(),
           daily_votes_remaining: supabase.raw('COALESCE(daily_votes_remaining, 55) + 10'),
@@ -1727,7 +1724,7 @@ const ShareAchievementsButton = ({ noidId, achievements, imageUrl, userWallet })
 };
 
 // ============================================
-// NOiD PROFILE COMPONENT
+// MHB PROFILE COMPONENT
 // ============================================
 
 const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetchNoidImage, setSelectedNoidId, setView }) => {
@@ -1765,7 +1762,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
       setImageUrl(img);
 
       const { data: h2hData } = await supabase
-        .from('head_to_head')
+        .from('noid_head_to_head')
         .select('*')
         .eq('noid_id', noidId)
         .order('battles', { ascending: false })
@@ -1840,7 +1837,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
         <MatrixRain />
         <div className="loading-state">
           <div className="loading-spinner"></div>
-          <p>Loading NOiD profile...</p>
+          <p>Loading MHB profile...</p>
         </div>
       </div>
     );
@@ -1851,8 +1848,8 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
       <div className="profile-container">
         <MatrixRain />
         <div className="glass-panel empty-state">
-          <h2>NOiD #{noidId}</h2>
-          <p>This NOiD hasn't battled yet!</p>
+          <h2>MHB #{noidId}</h2>
+          <p>This MHB hasn't battled yet!</p>
           <button className="back-btn" onClick={onClose}>Back to Menu</button>
         </div>
       </div>
@@ -1868,20 +1865,20 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
           <span className="back-arrow">←</span>
           Back
         </button>
-        <h2 className="profile-title">NOiD #{noidId}</h2>
+        <h2 className="profile-title">MHB #{noidId}</h2>
         <div className="spacer"></div>
       </div>
 
       <div className="profile-content">
         <div className="profile-hero glass-panel">
           <div className="hero-image">
-            {imageUrl && <img src={imageUrl} alt={`NOiD #${noidId}`} />}
+            {imageUrl && <img src={imageUrl} alt={`MHB #${noidId}`} />}
           </div>
           <div className="hero-stats">
             <div className="hero-title">
-              <h1>NOiD #{noidId}</h1>
+              <h1>MHB #{noidId}</h1>
               <a 
-                href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noidId}`}
+                href={`https://opensea.io/assets/ethereum/0x9aea7d84fc8d359f09493b75c68e6f2880c3dd7b/${noidId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="opensea-link-external opensea-link-profile-external"
@@ -2059,7 +2056,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
                         <div className="h2h-opponent">
                           <img 
                             src={imageCache[h2h.opponent_id] || 'https://via.placeholder.com/50x50?text=Loading'} 
-                            alt={`NOiD #${h2h.opponent_id}`}
+                            alt={`MHB #${h2h.opponent_id}`}
                             className="h2h-thumbnail"
                             onClick={() => {
                               setSelectedNoidId(h2h.opponent_id);
@@ -2082,7 +2079,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
                                 setView('profile');
                               }}
                             >
-                              NOiD #{h2h.opponent_id}
+                              MHB #{h2h.opponent_id}
                             </span>
                             <span className="battles-count">{h2h.battles} battles</span>
                           </div>
@@ -2104,7 +2101,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
                 <div className="beaten-list">
                   {beaten.map(b => (
                     <div key={b.beaten_id} className="beaten-item">
-                      <span className="beaten-id">NOiD #{b.beaten_id}</span>
+                      <span className="beaten-id">MHB #{b.beaten_id}</span>
                       <span className="times-beaten">{b.times_beaten}x</span>
                     </div>
                   ))}
@@ -2121,7 +2118,7 @@ const NoidProfile = ({ noidId, address, onClose, getNoidImage, imageCache, fetch
                 <div className="beaten-list">
                   {beatenBy.map(b => (
                     <div key={b.beaten_by_id} className="beaten-item nemesis">
-                      <span className="beaten-id">NOiD #{b.beaten_by_id}</span>
+                      <span className="beaten-id">MHB #{b.beaten_by_id}</span>
                       <span className="times-beaten">{b.times_beaten}x</span>
                     </div>
                   ))}
@@ -2238,7 +2235,7 @@ const TopNoidsScroller = React.memo(({ onNoidClick }) => {
           }
           
           const response = await fetch(
-            `https://api.opensea.io/api/v2/chain/ethereum/contract/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/nfts/${noidId}`,
+            `https://api.opensea.io/api/v2/chain/ethereum/contract/0x9aea7d84fc8d359f09493b75c68e6f2880c3dd7b/nfts/${noidId}`,
             { headers: { 'x-api-key': 'f6662070d18f4d54936bdd66b94c3f11' } }
           );
           
@@ -2257,7 +2254,7 @@ const TopNoidsScroller = React.memo(({ onNoidClick }) => {
             }
           }
         } catch (error) {
-          console.error(`Error fetching NOiD #${noidId}:`, error);
+          console.error(`Error fetching MHB #${noidId}:`, error);
         }
       }
 
@@ -2320,7 +2317,7 @@ const TopNoidsScroller = React.memo(({ onNoidClick }) => {
               <div className="scroller-rank">#{rank}</div>
               <img 
                 src={images[noid.noid_id] || 'https://via.placeholder.com/100x100?text=Loading'} 
-                alt={`NOiD #${noid.noid_id}`}
+                alt={`MHB #${noid.noid_id}`}
                 className="scroller-image"
               />
               <div className="scroller-info">
@@ -2351,16 +2348,16 @@ const SearchModal = ({ isOpen, onClose, onSearch }) => {
     const noidId = parseInt(searchInput);
     
     if (!searchInput || isNaN(noidId)) {
-      setError('Please enter a NOiD number');
+      setError('Please enter a MHB number');
       return;
     }
     
-    if (noidId < 1 || noidId > 5555) {
-      setError('That NOiD lives only in your imagination!');
+    if (noidId < 1 || noidId > 5000) {
+      setError('That MHB lives only in your imagination!');
       return;
     }
     
-    // Valid NOiD - open profile
+    // Valid MHB - open profile
     onSearch(noidId);
     setSearchInput('');
     setError('');
@@ -2384,14 +2381,14 @@ const SearchModal = ({ isOpen, onClose, onSearch }) => {
       <div className="search-modal glass-panel" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={handleClose}>×</button>
         
-        <h2>Search for a NOiD</h2>
+        <h2>Search for a MHB</h2>
         
         <form onSubmit={handleSubmit}>
           <input
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
-            placeholder="Enter NOiD # (1-5555)"
+            placeholder="Enter MHB # (1-5000)"
             value={searchInput}
             onChange={handleInputChange}
             maxLength="4"
@@ -2402,7 +2399,7 @@ const SearchModal = ({ isOpen, onClose, onSearch }) => {
           {error && <div className="search-error">{error}</div>}
           
           <button type="submit" className="search-submit-btn">
-            Go to NOiD
+            Go to MHB
           </button>
         </form>
       </div>
@@ -2580,14 +2577,14 @@ useEffect(() => {
       checkDailyVotes(address.toLowerCase());
       fetchUserNoids(address);
     } else {
-      let id = localStorage.getItem('noids_user_id');
+      let id = localStorage.getItem('mhb_user_id');
       if (!id) {
         id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        localStorage.setItem('noids_user_id', id);
+        localStorage.setItem('mhb_user_id', id);
       }
       setUserId(id);
       checkDailyVotes(id);
-      setUserOwnedNoids([]); // Clear owned NOiDs when wallet disconnects
+      setUserOwnedNoids([]); // Clear owned MHBs when wallet disconnects
     }
   }, [isConnected, address]);
 
@@ -2602,7 +2599,7 @@ useEffect(() => {
     try {
       // Get or create user_stats record
       let { data: userStats, error } = await supabase
-        .from('user_stats')
+        .from('noid_user_stats')
         .select('daily_votes_remaining, last_vote_reset_date')
         .eq('user_id', uid)
         .single();
@@ -2616,7 +2613,7 @@ useEffect(() => {
       // If user doesn't exist or it's a new day, reset votes
       if (!userStats || userStats.last_vote_reset_date !== today) {
         const { data: updated, error: updateError } = await supabase
-          .from('user_stats')
+          .from('noid_user_stats')
           .upsert({
             user_id: uid,
             daily_votes_remaining: DAILY_VOTE_LIMIT,
@@ -2646,7 +2643,7 @@ useEffect(() => {
   const fetchUserNoids = async (walletAddress) => {
     try {
       const response = await fetch(
-        `https://api.opensea.io/api/v2/chain/ethereum/account/${walletAddress}/nfts?collection=noidsofficial&limit=200`,
+        `https://api.opensea.io/api/v2/chain/ethereum/account/${walletAddress}/nfts?collection=megahoneybadgers&limit=200`,
         {
           headers: {
             'x-api-key': 'f6662070d18f4d54936bdd66b94c3f11'
@@ -2655,29 +2652,29 @@ useEffect(() => {
       );
 
       if (!response.ok) {
-        console.error('Failed to fetch user NOiDs');
+        console.error('Failed to fetch user MHBs');
         return;
       }
 
       const data = await response.json();
       const ownedIds = data.nfts.map(nft => parseInt(nft.identifier));
       setUserOwnedNoids(ownedIds);
-      console.log(`✓ User owns ${ownedIds.length} NOiDs:`, ownedIds);
+      console.log(`✓ User owns ${ownedIds.length} MHBs:`, ownedIds);
     } catch (error) {
-      console.error('Error fetching user NOiDs:', error);
+      console.error('Error fetching user MHBs:', error);
     }
   };
 
   const getRandomNoid = (exclude = []) => {
     let num;
     do {
-      num = Math.floor(Math.random() * TOTAL_NOiDS) + 1;
+      num = Math.floor(Math.random() * TOTAL_MHBs) + 1;
     } while (exclude.includes(num));
     return num;
   };
 
   const getRandomOneOfOne = (exclude = []) => {
-    const available = ONE_OF_ONE_NOiDS.filter(id => !exclude.includes(id));
+    const available = ONE_OF_ONE_MHBs.filter(id => !exclude.includes(id));
     if (available.length === 0) return getRandomNoid(exclude);
     return available[Math.floor(Math.random() * available.length)];
   };
@@ -2690,7 +2687,7 @@ useEffect(() => {
 
     try {
       const response = await fetch(
-        `https://api.opensea.io/api/v2/chain/ethereum/contract/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/nfts/${tokenId}`,
+        `https://api.opensea.io/api/v2/chain/ethereum/contract/0x9aea7d84fc8d359f09493b75c68e6f2880c3dd7b/nfts/${tokenId}`,
         {
           headers: {
             'X-API-KEY': 'f6662070d18f4d54936bdd66b94c3f11'
@@ -2713,7 +2710,7 @@ useEffect(() => {
 
       throw new Error('No image URL in response');
     } catch (error) {
-      console.error(`Error fetching image for NOiD #${tokenId}:`, error);
+      console.error(`Error fetching image for MHB #${tokenId}:`, error);
       // Fallback to IPFS if API fails
       return `https://gateway.pinata.cloud/ipfs/QmcXuDARMGMv59Q4ZZuoN5rjdM9GQrmp8NjLH5PDLixgAE/${tokenId}`;
     }
@@ -2728,7 +2725,7 @@ useEffect(() => {
 
     try {
       const response = await fetch(
-        `https://api.opensea.io/api/v2/chain/ethereum/contract/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/nfts/${tokenId}`,
+        `https://api.opensea.io/api/v2/chain/ethereum/contract/0x9aea7d84fc8d359f09493b75c68e6f2880c3dd7b/nfts/${tokenId}`,
         {
           headers: {
             'x-api-key': 'f6662070d18f4d54936bdd66b94c3f11'
@@ -2744,7 +2741,7 @@ useEffect(() => {
       setImageCache(prev => ({...prev, [tokenId]: imageUrl}));
       return imageUrl;
     } catch (error) {
-      console.error(`Error fetching image for NOiD #${tokenId}:`, error);
+      console.error(`Error fetching image for MHB #${tokenId}:`, error);
       return null;
     }
   }, [imageCache]);
@@ -2780,7 +2777,7 @@ useEffect(() => {
           const currentStreak = parseInt(localStorage.getItem(streakKey) || '0');
           
           if (currentStreak >= 10) {
-            alert(`NOiD #${stickyWinner.id} has dominated with 10 wins today! 🔥\nThey're taking a 24hr break. Starting fresh battle...`);
+            alert(`MHB #${stickyWinner.id} has dominated with 10 wins today! 🔥\nThey're taking a 24hr break. Starting fresh battle...`);
             setStickyWinner(null);
             setStickyWinStreak(0);
             // Start fresh battle
@@ -2844,7 +2841,7 @@ useEffect(() => {
     try {
       // Query for today's pre-generated battle
       const { data, error } = await supabase
-        .from('daily_battles')
+        .from('noid_daily_battles')
         .select('*')
         .eq('battle_date', todayUTC)
         .single();
@@ -2897,7 +2894,7 @@ useEffect(() => {
 
       try {
         const { error } = await supabase
-          .from('daily_battles')
+          .from('noid_daily_battles')
           .update({ [winnerField]: dailyBattleData[winnerField] + 1 })
           .eq('battle_date', today);
 
@@ -2963,7 +2960,7 @@ useEffect(() => {
 
     // Record vote in database AND decrement votes_remaining
     supabase
-      .from('votes')
+      .from('noid_votes')
       .insert([{
         user_id: userId,
         winner_noid_id: winnerNoid.id,
@@ -3010,7 +3007,7 @@ useEffect(() => {
             
             // Check if hit 10-win cap
             if (currentStreak >= 10) {
-              alert(`NOiD #${newStickyWinner.id} just hit 10 wins in a row! 🔥\nThey're taking a 24hr break. Starting fresh battle...`);
+              alert(`MHB #${newStickyWinner.id} just hit 10 wins in a row! 🔥\nThey're taking a 24hr break. Starting fresh battle...`);
               const id1 = getRandomNoid(userOwnedNoids);
               const id2 = getRandomNoid([id1, ...userOwnedNoids]);
               const [img1, img2] = await Promise.all([
@@ -3097,7 +3094,7 @@ const menuContent = (
         <button 
           className="search-header-btn"
           onClick={() => setShowSearchModal(true)}
-          title="Search for a NOiD"
+          title="Search for a MHB"
         >
           <span className="search-icon">🔍</span>
         </button>
@@ -3127,18 +3124,18 @@ const menuContent = (
             onClick={() => setView('mynoids')}
           >
             <span className="noids-icon">🖼️</span>
-            <span className="noids-text">My NOiDs</span>
+            <span className="noids-text">My MHBs</span>
           </button>
         )}
       </div>
       
       <div className="logo-section">
         <img 
-          src="/NOiDS_Battle.png" 
-          alt="NOiDS Battle Logo" 
+          src="/MHBs_Battle.png" 
+          alt="MHBs Battle Logo" 
           className="main-logo"
         />
-        <p className="subtitle">Which NOiD reigns supreme?</p>
+        <p className="subtitle">Which MHB reigns supreme?</p>
       </div>
       <TopNoidsScroller 
         onNoidClick={(noidId) => {
@@ -3167,7 +3164,7 @@ const menuContent = (
             <span className="mode-grid-icon">🎲</span>
             <div className="mode-grid-text">
               <h4>Rando Battle</h4>
-              <p>Two random NOiDS face off</p>
+              <p>Two random MHBs face off</p>
             </div>
           </button>
 
@@ -3273,7 +3270,7 @@ const menuContent = (
       {loading ? (
         <div className="loading-state">
           <div className="loading-spinner"></div>
-          <p>Loading NOiDS...</p>
+          <p>Loading MHBs...</p>
         </div>
       ) : (
         <>
@@ -3297,12 +3294,12 @@ const menuContent = (
             >
               <div className="card-glow"></div>
               <div className="image-container">
-                <img src={noid1?.image} alt={`NOiD #${noid1?.id}`} />
+                <img src={noid1?.image} alt={`MHB #${noid1?.id}`} />
               </div>
               <div className="noid-info">
-                <h3>NOiD #{noid1?.id}</h3>
+                <h3>MHB #{noid1?.id}</h3>
                 <a 
-                  href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid1?.id}`}
+                  href={`https://opensea.io/assets/ethereum/0x9aea7d84fc8d359f09493b75c68e6f2880c3dd7b/${noid1?.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="opensea-link-external"
@@ -3339,12 +3336,12 @@ const menuContent = (
           >
             <div className="card-glow"></div>
             <div className="image-container">
-              <img src={noid2?.image} alt={`NOiD #${noid2?.id}`} />
+              <img src={noid2?.image} alt={`MHB #${noid2?.id}`} />
             </div>
             <div className="noid-info">
-              <h3>NOiD #{noid2?.id}</h3>
+              <h3>MHB #{noid2?.id}</h3>
               <a 
-                href={`https://opensea.io/assets/ethereum/0xa9de7e79b35a7c2b4d586e1e1223ff70608cd902/${noid2?.id}`}
+                href={`https://opensea.io/assets/ethereum/0x9aea7d84fc8d359f09493b75c68e6f2880c3dd7b/${noid2?.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="opensea-link-external"
@@ -3464,7 +3461,7 @@ const menuContent = (
         <div className="footer-content">
           <span className="footer-version">v0.84 (Beta)</span>
           <span className="footer-divider">•</span>
-          <span className="footer-credits">NOiDS Battle built and hosted by @NoCredits</span>
+          <span className="footer-credits">MHBs Battle built and hosted by @NoCredits</span>
         </div>
         <MusicPlayer />
       </footer>
