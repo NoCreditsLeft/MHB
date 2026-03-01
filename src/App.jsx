@@ -3135,7 +3135,7 @@ const menuContent = (
           alt="Badgers Battle Logo" 
           className="main-logo"
         />
-        <p className="subtitle">Which MHB reigns supreme?</p>
+        <p className="subtitle">Which Badger reigns supreme?</p>
       </div>
       <TopNoidsScroller 
         onNoidClick={(noidId) => {

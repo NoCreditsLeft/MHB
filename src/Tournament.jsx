@@ -209,7 +209,7 @@ const CountdownOverlay = ({ seconds, title, subtitle, onComplete }) => {
       <div className="countdown-content">
         <h2 className="countdown-title">{subtitle || 'STARTING IN'}</h2>
         <div className="countdown-number">{timeLeft}</div>
-        <img src="/NOiDS_Battle_Splash.jpg" alt="NOiDS Battle" className="countdown-splash" />
+        <img src="/MHB_Battle_Splash.jpg" alt="Badger Battle" className="countdown-splash" />
         <h3 className="countdown-tournament-name">{title}</h3>
       </div>
     </div>
@@ -290,9 +290,9 @@ const generateTournamentShareCard = async (tournament, getImg) => {
   });
 
   const [winnerImg, runnerImg, thirdImg] = await Promise.all([
-    loadImg(getImg(tournament.winner_noid_id)),
-    loadImg(getImg(tournament.runner_up_noid_id)),
-    loadImg(getImg(tournament.third_place_noid_id))
+    loadImg(getImg(tournament.winner_token_id)),
+    loadImg(getImg(tournament.runner_up_token_id)),
+    loadImg(getImg(tournament.third_place_token_id))
   ]);
 
   // 1st — center large
@@ -313,7 +313,7 @@ const generateTournamentShareCard = async (tournament, getImg) => {
   ctx.fillText('🥇', 600, 520);
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 28px monospace';
-  ctx.fillText(`Badger #${tournament.winner_noid_id}`, 600, 555);
+  ctx.fillText(`Badger #${tournament.winner_token_id}`, 600, 555);
   ctx.fillStyle = '#ffd700';
   ctx.font = '18px monospace';
   ctx.fillText('CHAMPION', 600, 580);
@@ -336,10 +336,10 @@ const generateTournamentShareCard = async (tournament, getImg) => {
   ctx.fillText('🥈', 170, 460);
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 20px monospace';
-  ctx.fillText(`#${tournament.runner_up_noid_id}`, 170, 490);
+  ctx.fillText(`#${tournament.runner_up_token_id}`, 170, 490);
 
   // 3rd — right
-  if (thirdImg && tournament.third_place_noid_id) {
+  if (thirdImg && tournament.third_place_token_id) {
     ctx.save();
     ctx.strokeStyle = '#cd7f32';
     ctx.lineWidth = 4;
@@ -350,21 +350,21 @@ const generateTournamentShareCard = async (tournament, getImg) => {
     ctx.drawImage(thirdImg, 920, 200, 220, 220);
     ctx.restore();
   }
-  if (tournament.third_place_noid_id) {
+  if (tournament.third_place_token_id) {
     ctx.fillStyle = '#cd7f32';
     ctx.font = 'bold 32px monospace';
     ctx.textAlign = 'center';
     ctx.fillText('🥉', 1030, 460);
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 20px monospace';
-    ctx.fillText(`#${tournament.third_place_noid_id}`, 1030, 490);
+    ctx.fillText(`#${tournament.third_place_token_id}`, 1030, 490);
   }
 
   // Footer
   ctx.fillStyle = '#339933';
   ctx.font = '14px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('NOiDS Battle — noids-battle.vercel.app', 600, 615);
+  ctx.fillText('Badger Battle — mhb.pfpwars.com', 600, 615);
 
   return canvas.toDataURL('image/png');
 };
@@ -384,7 +384,7 @@ const ShareTournamentButton = ({ tournament, getImg }) => {
       link.click();
 
       // Open Twitter intent with pre-written post
-      const tweetText = `"${tournament.tournament_name}" Tournament Results!\n\n🥇 Badger #${tournament.winner_noid_id}\n🥈 Badger #${tournament.runner_up_noid_id}${tournament.third_place_noid_id ? `\n🥉 Badger #${tournament.third_place_noid_id}` : ''}\n\nBattle it out at mhb.pfpwars.com\n\n#NOiDSBattle @megabadgers`;
+      const tweetText = `"${tournament.tournament_name}" Tournament Results!\n\n🥇 Badger #${tournament.winner_token_id}\n🥈 Badger #${tournament.runner_up_token_id}${tournament.third_place_token_id ? `\n🥉 Badger #${tournament.third_place_token_id}` : ''}\n\nBattle it out at mhb.pfpwars.com\n\n#BadgerBattle @megabadgers`;
 
       setTimeout(() => {
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`, '_blank');
@@ -413,7 +413,7 @@ export const useLiveTournaments = () => {
     const checkLive = async () => {
       try {
         const { count } = await supabase
-          .from('tournaments')
+          .from('noid_tournaments')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'active');
         setLiveCount(count || 0);
@@ -460,7 +460,7 @@ const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTourn
     setLoading(true);
     try {
       let query = supabase
-        .from('tournaments')
+        .from('noid_tournaments')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
@@ -474,7 +474,7 @@ const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTourn
 
       const tourneysWithCounts = await Promise.all((data || []).map(async (t) => {
         const { count } = await supabase
-          .from('tournament_entries')
+          .from('noid_tournament_entries')
           .select('*', { count: 'exact', head: true })
           .eq('tournament_id', t.id);
         return { ...t, entry_count: count || 0 };
@@ -492,7 +492,7 @@ const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTourn
       setTournaments(tourneysWithCounts);
 
       // Preload winner images
-      const winnerIds = tourneysWithCounts.map(t => t.winner_noid_id).filter(Boolean);
+      const winnerIds = tourneysWithCounts.map(t => t.winner_token_id).filter(Boolean);
       if (winnerIds.length > 0) ensureImages(winnerIds);
     } catch (err) {
       console.error('Error loading tournaments:', err);
@@ -555,8 +555,8 @@ const TournamentHub = ({ walletAddress, onClose, onViewTournament, onCreateTourn
                 className="tournament-list-item glass-panel"
                 onClick={() => onViewTournament(t.id)}
               >
-                {t.winner_noid_id && getImg(t.winner_noid_id) && (
-                  <img src={getImg(t.winner_noid_id)} alt={`#${t.winner_noid_id}`} className="tl-winner-img" />
+                {t.winner_token_id && getImg(t.winner_token_id) && (
+                  <img src={getImg(t.winner_token_id)} alt={`#${t.winner_token_id}`} className="tl-winner-img" />
                 )}
                 <div className="tl-main">
                   <div className="tl-name">{t.tournament_name}</div>
@@ -609,7 +609,7 @@ const CreateTournament = ({ walletAddress, onClose, onCreated }) => {
 
     setCreating(true);
     try {
-      const { data, error } = await supabase.from('tournaments').insert([{
+      const { data, error } = await supabase.from('noid_tournaments').insert([{
         creator_wallet: walletAddress.toLowerCase(),
         creator_name: creatorName.trim() || null,
         tournament_name: name.trim(),
@@ -766,7 +766,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
   const loadLobby = async () => {
     try {
       const { data: t } = await supabase
-        .from('tournaments')
+        .from('noid_tournaments')
         .select('*')
         .eq('id', tournamentId)
         .single();
@@ -780,7 +780,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
       }
 
       const { data: e } = await supabase
-        .from('tournament_entries')
+        .from('noid_tournament_entries')
         .select('*')
         .eq('tournament_id', tournamentId)
         .order('entered_at', { ascending: true });
@@ -815,7 +815,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
     if (entries.length >= tournament.bracket_size) { alert('Tournament is full'); return; }
 
     try {
-      const { error } = await supabase.from('tournament_entries').insert([{
+      const { error } = await supabase.from('noid_tournament_entries').insert([{
         tournament_id: tournamentId,
         noid_id: noidId,
         entered_by_wallet: walletAddress.toLowerCase()
@@ -836,7 +836,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
 
   const handleRemoveEntry = async (entryId) => {
     try {
-      await supabase.from('tournament_entries').delete().eq('id', entryId);
+      await supabase.from('noid_tournament_entries').delete().eq('id', entryId);
       await loadLobby();
     } catch (err) {
       console.error('Error removing entry:', err);
@@ -846,8 +846,8 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
   const handleDeleteTournament = async () => {
     if (!window.confirm('Delete this tournament? This cannot be undone.')) return;
     try {
-      await supabase.from('tournament_entries').delete().eq('tournament_id', tournamentId);
-      await supabase.from('tournaments').delete().eq('id', tournamentId);
+      await supabase.from('noid_tournament_entries').delete().eq('tournament_id', tournamentId);
+      await supabase.from('noid_tournaments').delete().eq('id', tournamentId);
       onClose();
     } catch (err) {
       console.error('Error deleting tournament:', err);
@@ -875,7 +875,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
         }
       }
       if (randomEntries.length > 0) {
-        const { error } = await supabase.from('tournament_entries').insert(randomEntries);
+        const { error } = await supabase.from('noid_tournament_entries').insert(randomEntries);
         if (error) throw error;
       }
       await loadLobby();
@@ -888,7 +888,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
   const handleStartTournament = async () => {
     try {
       const { data: allEntries } = await supabase
-        .from('tournament_entries')
+        .from('noid_tournament_entries')
         .select('*')
         .eq('tournament_id', tournamentId);
 
@@ -902,7 +902,7 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
 
       // Assign seeds
       await Promise.all(shuffled.map((entry, idx) =>
-        supabase.from('tournament_entries').update({ seed_position: idx }).eq('id', entry.id)
+        supabase.from('noid_tournament_entries').update({ seed_position: idx }).eq('id', entry.id)
       ));
 
       // Generate round 1 matchups
@@ -938,13 +938,13 @@ const TournamentLobby = ({ tournamentId, walletAddress, onClose, onStart, parent
       }
 
       const { error: matchupError } = await supabase
-        .from('tournament_matchups')
+        .from('noid_tournament_matchups')
         .insert([...round1Matchups, ...laterMatchups]);
       if (matchupError) throw matchupError;
 
       // Set 15s countdown before first matchup activates
       const countdownEnd = new Date(Date.now() + 15000).toISOString();
-      await supabase.from('tournaments')
+      await supabase.from('noid_tournaments')
         .update({
           status: 'active',
           started_at: new Date().toISOString(),
@@ -1193,7 +1193,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   const loadTournamentState = async () => {
     try {
       const { data: t } = await supabase
-        .from('tournaments')
+        .from('noid_tournaments')
         .select('*')
         .eq('id', tournamentId)
         .single();
@@ -1216,7 +1216,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
           // Creator activates first matchup after countdown
           if (t.creator_wallet === walletAddress?.toLowerCase()) {
             const { data: firstMatchup } = await supabase
-              .from('tournament_matchups')
+              .from('noid_tournament_matchups')
               .select('id, status')
               .eq('tournament_id', tournamentId)
               .eq('round', t.current_round || 1)
@@ -1225,10 +1225,10 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
 
             if (firstMatchup && firstMatchup.status === 'pending') {
               const now = new Date().toISOString();
-              await supabase.from('tournament_matchups')
+              await supabase.from('noid_tournament_matchups')
                 .update({ status: 'active', started_at: now })
                 .eq('id', firstMatchup.id);
-              await supabase.from('tournaments')
+              await supabase.from('noid_tournaments')
                 .update({ countdown_until: null, matchup_started_at: now })
                 .eq('id', tournamentId);
             }
@@ -1237,7 +1237,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       }
 
       const { data: allMatchups } = await supabase
-        .from('tournament_matchups')
+        .from('noid_tournament_matchups')
         .select('*')
         .eq('tournament_id', tournamentId)
         .order('round', { ascending: true })
@@ -1286,7 +1286,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         if (walletAddress || localStorage.getItem('anon_voter_id')) {
           const voterId = walletAddress?.toLowerCase() || localStorage.getItem('anon_voter_id');
           const { data: existingVote } = await supabase
-            .from('tournament_votes')
+            .from('noid_tournament_votes')
             .select('voted_for_noid_id')
             .eq('matchup_id', active.id)
             .eq('voter_wallet', voterId)
@@ -1325,7 +1325,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
     setVotedFor(noidId);
 
     try {
-      const { error: voteError } = await supabase.from('tournament_votes').insert([{
+      const { error: voteError } = await supabase.from('noid_tournament_votes').insert([{
         matchup_id: activeMatchup.id,
         tournament_id: tournamentId,
         voter_wallet: voterId,
@@ -1360,7 +1360,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
     advancingRef.current = true;
     try {
       const { data: freshMatchup } = await supabase
-        .from('tournament_matchups')
+        .from('noid_tournament_matchups')
         .select('*')
         .eq('id', completedMatchup.id)
         .single();
@@ -1395,7 +1395,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
       const loserId = winnerId === freshMatchup.noid1_id ? freshMatchup.noid2_id : freshMatchup.noid1_id;
 
       // Step 1: ATOMIC — only complete if still active (prevents race with double poll calls)
-      const { data: updated } = await supabase.from('tournament_matchups')
+      const { data: updated } = await supabase.from('noid_tournament_matchups')
         .update({ winner_id: winnerId, is_coin_flip: isCoinFlip, status: 'completed', completed_at: new Date().toISOString() })
         .eq('id', freshMatchup.id)
         .eq('status', 'active')
@@ -1425,7 +1425,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
 
       if (isCoinFlip) {
         // Set coin_flip_until AND winner ID so all viewers show the same result
-        await supabase.from('tournaments')
+        await supabase.from('noid_tournaments')
           .update({ 
             coin_flip_until: new Date(now + coinFlipDuration).toISOString(),
             coin_flip_winner_id: winnerId
@@ -1437,7 +1437,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         // Tournament over: coinflip (if any) → bracket 5s → complete happens in polling
         const bracketStart = now + coinFlipDuration;
         const bracketEnd = bracketStart + 5000;
-        await supabase.from('tournaments')
+        await supabase.from('noid_tournaments')
           .update({ bracket_until: new Date(bracketEnd).toISOString(), countdown_until: null })
           .eq('id', tournamentId);
 
@@ -1447,7 +1447,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         const bracketEnd = bracketStart + 5000;
         const countdownEnd = bracketEnd + 20000;
         const nextRound = freshMatchup.round + 1;
-        await supabase.from('tournaments')
+        await supabase.from('noid_tournaments')
           .update({
             bracket_until: new Date(bracketEnd).toISOString(),
             countdown_until: new Date(countdownEnd).toISOString(),
@@ -1460,8 +1460,8 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         // More matchups in round: coinflip (if any) → activate next
         const nextStartTime = new Date(now + coinFlipDuration).toISOString();
         setTimeout(async () => {
-          await supabase.from('tournament_matchups').update({ status: 'active', started_at: new Date().toISOString() }).eq('id', nextInRound.id);
-          await supabase.from('tournaments').update({ current_matchup_index: nextInRound.matchup_index, matchup_started_at: new Date().toISOString(), coin_flip_until: null, coin_flip_winner_id: null }).eq('id', tournamentId);
+          await supabase.from('noid_tournament_matchups').update({ status: 'active', started_at: new Date().toISOString() }).eq('id', nextInRound.id);
+          await supabase.from('noid_tournaments').update({ current_matchup_index: nextInRound.matchup_index, matchup_started_at: new Date().toISOString(), coin_flip_until: null, coin_flip_winner_id: null }).eq('id', tournamentId);
         }, coinFlipDuration);
       }
 
@@ -1479,7 +1479,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
     const slot = completedMatchup.matchup_index % 2 === 0 ? 'noid1_id' : 'noid2_id';
     const nextMatchup = allMatchups.find(m => m.round === nextRound && m.matchup_index === nextMatchupIndex);
     if (nextMatchup) {
-      await supabase.from('tournament_matchups').update({ [slot]: winnerId }).eq('id', nextMatchup.id);
+      await supabase.from('noid_tournament_matchups').update({ [slot]: winnerId }).eq('id', nextMatchup.id);
     }
   };
 
@@ -1494,8 +1494,8 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         if (sfLoser !== loserId) { thirdPlaceId = sfLoser; break; }
       }
 
-      await supabase.from('tournaments')
-        .update({ status: 'completed', completed_at: new Date().toISOString(), winner_noid_id: winnerId, runner_up_noid_id: loserId, third_place_noid_id: thirdPlaceId, countdown_until: null, coin_flip_until: null, coin_flip_winner_id: null })
+      await supabase.from('noid_tournaments')
+        .update({ status: 'completed', completed_at: new Date().toISOString(), winner_token_id: winnerId, runner_up_token_id: loserId, third_place_token_id: thirdPlaceId, countdown_until: null, coin_flip_until: null, coin_flip_winner_id: null })
         .eq('id', tournamentId);
 
       const results = [
@@ -1503,7 +1503,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         { tournament_id: tournamentId, noid_id: loserId, placement: 2, rounds_survived: totalRounds }
       ];
       if (thirdPlaceId) results.push({ tournament_id: tournamentId, noid_id: thirdPlaceId, placement: 3, rounds_survived: totalRounds - 1 });
-      await supabase.from('tournament_results').insert(results);
+      await supabase.from('noid_tournament_results').insert(results);
     } catch (err) {
       console.error('Error completing tournament:', err);
     }
@@ -1573,10 +1573,10 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
   // Preload podium images via effect, not in render body
   useEffect(() => {
     if (tournamentComplete && tournament) {
-      const podiumIds = [tournament.winner_noid_id, tournament.runner_up_noid_id, tournament.third_place_noid_id].filter(Boolean);
+      const podiumIds = [tournament.winner_token_id, tournament.runner_up_token_id, tournament.third_place_token_id].filter(Boolean);
       if (podiumIds.length > 0) ensureImages(podiumIds);
     }
-  }, [tournamentComplete, tournament?.winner_noid_id, tournament?.runner_up_noid_id, tournament?.third_place_noid_id]);
+  }, [tournamentComplete, tournament?.winner_token_id, tournament?.runner_up_token_id, tournament?.third_place_token_id]);
 
   // ---- RENDER ----
 
@@ -1629,27 +1629,27 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
           <div className="trophy-icon">🏆</div>
           <h2>Tournament Complete!</h2>
           <div className="podium">
-            {tournament.winner_noid_id && (
-              <div className="podium-place first" onClick={() => onViewNoid && onViewNoid(tournament.winner_noid_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
+            {tournament.winner_token_id && (
+              <div className="podium-place first" onClick={() => onViewNoid && onViewNoid(tournament.winner_token_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
                 <span className="podium-medal">🥇</span>
-                {getImg(tournament.winner_noid_id) && <img src={getImg(tournament.winner_noid_id)} alt="" className="podium-img" />}
-                <span className="podium-noid">Badger #{tournament.winner_noid_id}</span>
+                {getImg(tournament.winner_token_id) && <img src={getImg(tournament.winner_token_id)} alt="" className="podium-img" />}
+                <span className="podium-noid">Badger #{tournament.winner_token_id}</span>
                 <span className="podium-label">Champion</span>
               </div>
             )}
-            {tournament.runner_up_noid_id && (
-              <div className="podium-place second" onClick={() => onViewNoid && onViewNoid(tournament.runner_up_noid_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
+            {tournament.runner_up_token_id && (
+              <div className="podium-place second" onClick={() => onViewNoid && onViewNoid(tournament.runner_up_token_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
                 <span className="podium-medal">🥈</span>
-                {getImg(tournament.runner_up_noid_id) && <img src={getImg(tournament.runner_up_noid_id)} alt="" className="podium-img" />}
-                <span className="podium-noid">Badger #{tournament.runner_up_noid_id}</span>
+                {getImg(tournament.runner_up_token_id) && <img src={getImg(tournament.runner_up_token_id)} alt="" className="podium-img" />}
+                <span className="podium-noid">Badger #{tournament.runner_up_token_id}</span>
                 <span className="podium-label">Runner-up</span>
               </div>
             )}
-            {tournament.third_place_noid_id && (
-              <div className="podium-place third" onClick={() => onViewNoid && onViewNoid(tournament.third_place_noid_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
+            {tournament.third_place_token_id && (
+              <div className="podium-place third" onClick={() => onViewNoid && onViewNoid(tournament.third_place_token_id)} style={{ cursor: onViewNoid ? 'pointer' : 'default' }}>
                 <span className="podium-medal">🥉</span>
-                {getImg(tournament.third_place_noid_id) && <img src={getImg(tournament.third_place_noid_id)} alt="" className="podium-img" />}
-                <span className="podium-noid">Badger #{tournament.third_place_noid_id}</span>
+                {getImg(tournament.third_place_token_id) && <img src={getImg(tournament.third_place_token_id)} alt="" className="podium-img" />}
+                <span className="podium-noid">Badger #{tournament.third_place_token_id}</span>
                 <span className="podium-label">3rd Place</span>
               </div>
             )}
@@ -1674,8 +1674,8 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
         .sort((a, b) => a.matchup_index - b.matchup_index);
       if (nextRoundMatchups.length > 0) {
         const now = new Date().toISOString();
-        supabase.from('tournament_matchups').update({ status: 'active', started_at: now }).eq('id', nextRoundMatchups[0].id)
-          .then(() => supabase.from('tournaments').update({ countdown_until: null, bracket_until: null, coin_flip_until: null, coin_flip_winner_id: null, matchup_started_at: now }).eq('id', tournamentId));
+        supabase.from('noid_tournament_matchups').update({ status: 'active', started_at: now }).eq('id', nextRoundMatchups[0].id)
+          .then(() => supabase.from('noid_tournaments').update({ countdown_until: null, bracket_until: null, coin_flip_until: null, coin_flip_winner_id: null, matchup_started_at: now }).eq('id', tournamentId));
       }
     }
     return (
@@ -1690,7 +1690,7 @@ const LiveTournament = ({ tournamentId, walletAddress, onClose, onViewNoid, pare
           <div className="round-transition-countdown">
             <div className="countdown-number">{countdownRemaining}</div>
           </div>
-          <img src="/NOiDS_Battle_Splash.jpg" alt="NOiDS Battle" className="round-transition-splash" />
+          <img src="/MHB_Battle_Splash.jpg" alt="Badger Battle" className="round-transition-splash" />
           <h3 className="round-transition-round-name">{getRoundName(tournament.bracket_size, tournament.current_round)}</h3>
         </div>
       </div>
@@ -1885,7 +1885,7 @@ const Tournament = ({ walletAddress, onClose, showWalletModal, onViewNoid, paren
   const [activeTournamentId, setActiveTournamentId] = useState(null);
 
   const handleViewTournament = async (tournamentId) => {
-    const { data: t } = await supabase.from('tournaments').select('status').eq('id', tournamentId).single();
+    const { data: t } = await supabase.from('noid_tournaments').select('status').eq('id', tournamentId).single();
     setActiveTournamentId(tournamentId);
     if (t?.status === 'active' || t?.status === 'completed') {
       setTournamentView('live');
